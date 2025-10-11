@@ -1,14 +1,39 @@
 import { Plugin } from "obsidian";
 
-interface ConductorSettings {}
+interface ConductorSettings {
+	taskId: number;
+}
 
-const DEFAULT_SETTINGS: ConductorSettings = {};
+const DEFAULT_SETTINGS: ConductorSettings = {
+	taskId: 0,
+};
 
 export default class ConductorObsidian extends Plugin {
 	settings: ConductorSettings;
 
 	async onload() {
 		await this.loadSettings();
+
+		this.addCommand({
+			id: "insert-task-id",
+			name: "Insert Task ID",
+			editorCallback: async (editor, _) => {
+				// Set new task ID
+				this.settings.taskId++;
+				const taskId = `tsk-${this.settings.taskId}`;
+
+				// Insert task ID
+				editor.replaceRange(taskId, editor.getCursor());
+
+				// Move cursor to end of new ID
+				const { line, ch } = editor.getCursor();
+				const newCursorPosition = { line, ch: ch + taskId.length };
+				editor.setCursor(newCursorPosition);
+
+				// Save new ID
+				this.saveSettings();
+			},
+		});
 	}
 
 	onunload() {}
