@@ -16,7 +16,7 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "insert-task",
-			name: "Insert Task",
+			name: "Insert New Task",
 			hotkeys: [{ modifiers: ["Ctrl"], key: "t" }],
 			editorCallback: async (editor, _) => {
 				// Set new task ID
