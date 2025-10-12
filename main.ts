@@ -15,20 +15,25 @@ export default class ConductorObsidian extends Plugin {
 		await this.loadSettings();
 
 		this.addCommand({
-			id: "insert-task-id",
-			name: "Insert Task ID",
+			id: "insert-task",
+			name: "Insert Task",
 			hotkeys: [{ modifiers: ["Ctrl"], key: "t" }],
 			editorCallback: async (editor, _) => {
 				// Set new task ID
 				this.settings.taskId++;
-				const taskId = `tsk-${this.settings.taskId}`;
+				const taskId = `TSK-${this.settings.taskId}`;
 
-				// Insert task ID
-				editor.replaceRange(taskId, editor.getCursor());
+				// Build line
+				let taskText = `- [[${taskId} - ]]`;
 
-				// Move cursor to end of new ID
-				const { line, ch } = editor.getCursor();
-				const newCursorPosition = { line, ch: ch + taskId.length };
+				// Insert Task
+				const { line } = editor.getCursor();
+				editor.setLine(line, taskText);
+
+				// Move cursor so you can write the task name immediately
+				const lineLength = editor.getLine(line).length;
+				const taskNameInsertPosition = lineLength - 2;
+				const newCursorPosition = { line, ch: taskNameInsertPosition };
 				editor.setCursor(newCursorPosition);
 
 				// Save new ID
