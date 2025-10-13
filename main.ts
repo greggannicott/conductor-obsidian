@@ -2,10 +2,12 @@ import { Plugin } from "obsidian";
 
 interface ConductorSettings {
 	taskId: number;
+	projectId: number;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
 	taskId: 0,
+	projectId: 0,
 };
 
 export default class ConductorObsidian extends Plugin {
