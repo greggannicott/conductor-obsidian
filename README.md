@@ -14,6 +14,8 @@ It is developed in a Obsidian Vault known as "obsidian-playground". The repo of 
 
 ## Running and Manual Testing
 
+Make sure you are inside of the plugin directory rather than the root of the Obsidian vault.
+
 Run the plugin with:
 
 ```zsh

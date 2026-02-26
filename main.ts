@@ -4,10 +4,12 @@ import { ChooseProjectModal } from "src/choose-project-modal";
 
 interface ConductorSettings {
 	taskId: number;
+	projectId: number;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
 	taskId: 0,
+	projectId: 0,
 };
 
 export default class ConductorObsidian extends Plugin {
@@ -21,6 +23,7 @@ export default class ConductorObsidian extends Plugin {
 			name: "Insert New Task",
 			hotkeys: [{ modifiers: ["Ctrl"], key: "t" }],
 			editorCallback: async (editor, _) => {
+				await this.loadSettings();
 				// Set new task ID
 				this.settings.taskId++;
 				const taskId = `TSK-${this.settings.taskId}`;
