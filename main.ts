@@ -47,7 +47,7 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "new-task",
+			id: "create-new-task",
 			name: "Create New Task",
 			callback: async () => {
 				let file;
