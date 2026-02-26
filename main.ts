@@ -1,4 +1,6 @@
-import { Plugin } from "obsidian";
+import { Plugin, TFile } from "obsidian";
+
+import { ChooseProjectModal } from "src/choose-project-modal";
 
 interface ConductorSettings {
 	taskId: number;
@@ -40,6 +42,49 @@ export default class ConductorObsidian extends Plugin {
 				this.saveSettings();
 			},
 		});
+
+		this.addCommand({
+			id: "new-task",
+			name: "Create New Task",
+			callback: async () => {
+				let file;
+				const filePath = "My Task.md";
+
+				// Obtain a list of possible projects
+				const projects = this.getProjects();
+
+				// Display a modal to obtain the chosen project
+				const selectProjectModal = new ChooseProjectModal(this.app);
+				selectProjectModal.projects = projects;
+				selectProjectModal.onChoose = async (
+					selectedProject: TFile,
+				) => {
+					// Read file. Create it if it doesn't exist.
+					file = this.app.vault.getFileByPath(filePath);
+					if (!file) {
+						const fileContent = "";
+						file = await this.app.vault.create(
+							filePath,
+							fileContent,
+						);
+					}
+
+					// Update the frontmatter value to set a parent project.
+					if (file) {
+						await this.app.fileManager.processFrontMatter(
+							file,
+							(fm) => {
+								fm["parents"] = [
+									`[[${selectedProject.basename}]]`,
+								];
+							},
+						);
+					}
+				};
+
+				selectProjectModal.open();
+			},
+		});
 	}
 
 	onunload() {}
@@ -54,5 +99,17 @@ export default class ConductorObsidian extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	// Get a list of projects.
+	// A project is a file that includes a `categories` value of "[[Project]]"
+	getProjects() {
+		const files = this.app.vault.getMarkdownFiles();
+		const projects = files.filter((f) => {
+			const frontmatter =
+				this.app.metadataCache.getFileCache(f)?.frontmatter;
+			return frontmatter?.categories?.contains("[[Project]]");
+		});
+		return projects;
 	}
 }
