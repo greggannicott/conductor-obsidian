@@ -1,7 +1,7 @@
 {
 	"id": "conductor-obsidian",
 	"name": "Conductor",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"minAppVersion": "0.15.0",
 	"description": "A set of tools to help use Obsidian as a project manager.",
 	"author": "Greg Gannicott",
