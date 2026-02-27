@@ -3,6 +3,7 @@ import { App } from "obsidian";
 export type Project = {
 	name: string;
 	path: string;
+	context: "Work" | "Personal";
 };
 
 // Get a list of projects.
@@ -20,9 +21,11 @@ export function getProjects(app: App): Project[] {
 			return frontmatter?.categories?.contains("[[Project]]");
 		})
 		.map((f) => {
+			const context = f.path.startsWith("Projects/Work") ? "Work" : "Personal";
 			return {
 				name: f.basename,
 				path: f.path,
+				context,
 			};
 		});
 	return projects;

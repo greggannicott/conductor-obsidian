@@ -58,8 +58,6 @@ export default class ConductorObsidian extends Plugin {
 					placeholder: "Enter task name...",
 				});
 
-				const filePath = `${taskName}.md`;
-
 				// Obtain a list of possible projects
 				const projects = getProjects(this.app);
 
@@ -69,6 +67,7 @@ export default class ConductorObsidian extends Plugin {
 				selectProjectModal.onChoose = async (
 					selectedProject: Project,
 				) => {
+					const filePath = `/Projects/${selectedProject.context}/${taskName}.md`;
 					// Read file. Create it if it doesn't exist.
 					file = this.app.vault.getFileByPath(filePath);
 					if (!file) {
