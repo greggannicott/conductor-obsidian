@@ -6,3 +6,12 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.text-input {
+	width: 100%;
+	padding: 5px;
+	height: var(--input-height);
+	border-radius: var(--input-radius);
+	font-weight: var(--input-font-weight);
+	border-width: var(--input-border-width);
+}

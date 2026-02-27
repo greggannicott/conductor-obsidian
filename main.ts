@@ -52,10 +52,10 @@ export default class ConductorObsidian extends Plugin {
 			name: "Create New Task",
 			callback: async () => {
 				let file;
-				const taskName = await TextInputModal.show(
-					this.app,
-					"Task Name",
-				);
+				const taskName = await TextInputModal.show(this.app, {
+					title: "Task Name",
+					placeholder: "Enter task name...",
+				});
 
 				const filePath = `${taskName}.md`;
 

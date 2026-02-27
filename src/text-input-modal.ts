@@ -1,33 +1,40 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal } from "obsidian";
+
+export type TextInputModalConfiguration = {
+	title: string;
+	placeholder?: string;
+};
 
 export class TextInputModal extends Modal {
 	private resolve: (value: string) => void;
+	private placeholder: string;
 
 	constructor(app: App) {
 		super(app);
 
-		let name = "";
-		new Setting(this.contentEl).setName("Name").addText((text) =>
-			text.onChange((value) => {
-				name = value;
-			}),
-		);
+		const input = this.contentEl.createEl("input", {
+			cls: ["text-input", "input"],
+		});
 
-		new Setting(this.contentEl).addButton((btn) =>
-			btn
-				.setButtonText("Submit")
-				.setCta()
-				.onClick(() => {
-					this.resolve(name);
-					this.close();
-				}),
-		);
+		if (this.placeholder) {
+			input.placeholder = this.placeholder;
+		}
+
+		input.addEventListener("keydown", (e) => {
+			if (e.key == "Enter") {
+				this.resolve(input.value);
+				this.close();
+			}
+		});
 	}
 
-	static show(app: App, title: string): Promise<string> {
+	static show(
+		app: App,
+		config: TextInputModalConfiguration,
+	): Promise<string> {
 		return new Promise((resolve) => {
 			const modal = new TextInputModal(app);
-			modal.setTitle(title);
+			modal.setTitle(config.title);
 			modal.resolve = resolve;
 			modal.open();
 		});
