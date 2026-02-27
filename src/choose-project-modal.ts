@@ -17,7 +17,7 @@ export class ChooseProjectModal extends FuzzySuggestModal<Project> {
 	}
 
 	getItemText(project: Project): string {
-		return project.name;
+		return `${project.context} -> ${project.name}`;
 	}
 
 	onChooseItem(project: Project, evt: MouseEvent | KeyboardEvent) {
