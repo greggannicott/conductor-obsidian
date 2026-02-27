@@ -2,6 +2,7 @@ import { Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
+import { getProjects } from "src/projects";
 
 interface ConductorSettings {
 	taskId: number;
@@ -60,7 +61,7 @@ export default class ConductorObsidian extends Plugin {
 				const filePath = `${taskName}.md`;
 
 				// Obtain a list of possible projects
-				const projects = this.getProjects();
+				const projects = getProjects(this.app);
 
 				// Display a modal to obtain the chosen project
 				const selectProjectModal = new ChooseProjectModal(this.app);
@@ -108,22 +109,5 @@ export default class ConductorObsidian extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	// Get a list of projects.
-	// A project is a file that includes a `categories` value of "[[Project]]"
-	getProjects() {
-		const files = this.app.vault.getMarkdownFiles();
-		const filesInProjectFolder = files.filter(
-			(f) =>
-				f.path.startsWith("Projects/Personal") ||
-				f.path.startsWith("Projects/Work"),
-		);
-		const projects = filesInProjectFolder.filter((f) => {
-			const frontmatter =
-				this.app.metadataCache.getFileCache(f)?.frontmatter;
-			return frontmatter?.categories?.contains("[[Project]]");
-		});
-		return projects;
 	}
 }
