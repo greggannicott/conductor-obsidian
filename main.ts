@@ -1,6 +1,7 @@
 import { Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
+import { TextInputModal } from "src/text-input-modal";
 
 interface ConductorSettings {
 	taskId: number;
@@ -51,7 +52,12 @@ export default class ConductorObsidian extends Plugin {
 			name: "Create New Task",
 			callback: async () => {
 				let file;
-				const filePath = "My Task.md";
+				const taskName = await TextInputModal.show(
+					this.app,
+					"Task Name",
+				);
+
+				const filePath = `${taskName}.md`;
 
 				// Obtain a list of possible projects
 				const projects = this.getProjects();
