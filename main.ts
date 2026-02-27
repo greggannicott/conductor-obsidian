@@ -2,7 +2,7 @@ import { Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
-import { getProjects } from "src/projects";
+import { getProjects, Project } from "src/projects";
 
 interface ConductorSettings {
 	taskId: number;
@@ -67,7 +67,7 @@ export default class ConductorObsidian extends Plugin {
 				const selectProjectModal = new ChooseProjectModal(this.app);
 				selectProjectModal.projects = projects;
 				selectProjectModal.onChoose = async (
-					selectedProject: TFile,
+					selectedProject: Project,
 				) => {
 					// Read file. Create it if it doesn't exist.
 					file = this.app.vault.getFileByPath(filePath);
@@ -84,9 +84,7 @@ export default class ConductorObsidian extends Plugin {
 						await this.app.fileManager.processFrontMatter(
 							file,
 							(fm) => {
-								fm["parents"] = [
-									`[[${selectedProject.basename}]]`,
-								];
+								fm["parents"] = [`[[${selectedProject.name}]]`];
 							},
 						);
 					}

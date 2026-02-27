@@ -1,9 +1,10 @@
 import { TFile, FuzzySuggestModal, App } from "obsidian";
+import { Project } from "./projects";
 
-type onChooseCallback = (project: TFile) => void;
+type onChooseCallback = (project: Project) => void;
 
-export class ChooseProjectModal extends FuzzySuggestModal<TFile> {
-	public projects: TFile[];
+export class ChooseProjectModal extends FuzzySuggestModal<Project> {
+	public projects: Project[];
 	public onChoose: onChooseCallback;
 
 	constructor(app: App) {
@@ -11,15 +12,15 @@ export class ChooseProjectModal extends FuzzySuggestModal<TFile> {
 		this.setPlaceholder("Select a project...");
 	}
 
-	getItems(): TFile[] {
+	getItems(): Project[] {
 		return this.projects;
 	}
 
-	getItemText(project: TFile): string {
-		return project.basename;
+	getItemText(project: Project): string {
+		return project.name;
 	}
 
-	onChooseItem(project: TFile, evt: MouseEvent | KeyboardEvent) {
+	onChooseItem(project: Project, evt: MouseEvent | KeyboardEvent) {
 		this.onChoose(project);
 	}
 }
