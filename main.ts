@@ -114,7 +114,12 @@ export default class ConductorObsidian extends Plugin {
 	// A project is a file that includes a `categories` value of "[[Project]]"
 	getProjects() {
 		const files = this.app.vault.getMarkdownFiles();
-		const projects = files.filter((f) => {
+		const filesInProjectFolder = files.filter(
+			(f) =>
+				f.path.startsWith("Projects/Personal") ||
+				f.path.startsWith("Projects/Work"),
+		);
+		const projects = filesInProjectFolder.filter((f) => {
 			const frontmatter =
 				this.app.metadataCache.getFileCache(f)?.frontmatter;
 			return frontmatter?.categories?.contains("[[Project]]");
