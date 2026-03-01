@@ -3,6 +3,7 @@ import { Plugin, TFile } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { getProjects, Project } from "src/projects";
+import { createFileFromTemplate } from "./utilities";
 
 interface ConductorSettings {
 	taskId: number;
@@ -71,11 +72,7 @@ export default class ConductorObsidian extends Plugin {
 					// Read file. Create it if it doesn't exist.
 					file = this.app.vault.getFileByPath(filePath);
 					if (!file) {
-						const fileContent = "";
-						file = await this.app.vault.create(
-							filePath,
-							fileContent,
-						);
+						createFileFromTemplate(this.app, filePath, "Task");
 					}
 
 					// Update the frontmatter value to set a parent project.
