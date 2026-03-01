@@ -7,13 +7,13 @@ export async function createNewTask(
 	taskName: string,
 	selectedProject: Project,
 ): Promise<void> {
-	const filePath = `Projects/${selectedProject.context}/${taskName}.md`;
-	// Read file. Create it if it doesn't exist.
-	let file = app.vault.getFileByPath(filePath);
-	if (!file) {
-		await createFileFromTemplate(this.app, filePath, "Task");
-		file = app.vault.getFileByPath(filePath);
-	}
+	const uniqueFileName = getUniqueTaskFileName(
+		taskName,
+		selectedProject.context,
+	);
+	const filePath = `Projects/${selectedProject.context}/${uniqueFileName}`;
+
+	const file = await createFileFromTemplate(this.app, filePath, "Task");
 
 	// Update the frontmatter value to set a parent project.
 	if (file) {
@@ -23,4 +23,16 @@ export async function createNewTask(
 	} else {
 		console.error(`Task file [${filePath}] does not exist`);
 	}
+}
+
+function getUniqueTaskFileName(
+	taskName: string,
+	context: "Work" | "Personal",
+): string {
+	// TODO: Make sure file name is unique
+	// IF the specified file name already exists then append a number.
+	// If a number already exists at the end, keep incrementing until it is unique
+	const path = `Projects/${context}/${taskName}.md`;
+	const uniqueName = taskName;
+	return uniqueName;
 }
