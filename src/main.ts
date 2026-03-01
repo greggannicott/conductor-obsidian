@@ -4,6 +4,7 @@ import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { getProjects, Project } from "src/projects";
 import { createFileFromTemplate } from "./utilities";
+import { createNewTask } from "./tasks";
 
 interface ConductorSettings {
 	taskId: number;
@@ -53,7 +54,6 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: async () => {
-				let file;
 				const taskName = await TextInputModal.show(this.app, {
 					title: "Task Name",
 					placeholder: "Enter task name...",
@@ -65,25 +65,11 @@ export default class ConductorObsidian extends Plugin {
 				// Display a modal to obtain the chosen project
 				const selectProjectModal = new ChooseProjectModal(this.app);
 				selectProjectModal.projects = projects;
+
 				selectProjectModal.onChoose = async (
 					selectedProject: Project,
 				) => {
-					const filePath = `/Projects/${selectedProject.context}/${taskName}.md`;
-					// Read file. Create it if it doesn't exist.
-					file = this.app.vault.getFileByPath(filePath);
-					if (!file) {
-						createFileFromTemplate(this.app, filePath, "Task");
-					}
-
-					// Update the frontmatter value to set a parent project.
-					if (file) {
-						await this.app.fileManager.processFrontMatter(
-							file,
-							(fm) => {
-								fm["parents"] = [`[[${selectedProject.name}]]`];
-							},
-						);
-					}
+					await createNewTask(this.app, taskName, selectedProject);
 				};
 
 				selectProjectModal.open();
