@@ -11,7 +11,6 @@ export async function createFileFromTemplate(
 	);
 	if (template) {
 		const content = await app.vault.read(template);
-		console.log("newFilePath", newFilePath);
 		await app.vault.create(newFilePath, content);
 		return app.vault.getFileByPath(newFilePath);
 	} else {
