@@ -1,6 +1,6 @@
 import { App } from "obsidian";
 import { Project } from "./projects";
-import { createFileFromTemplate } from "./utilities";
+import { createFileFromTemplate, vaultFileExists } from "./utilities";
 
 export async function createNewTask(
 	app: App,
@@ -8,12 +8,13 @@ export async function createNewTask(
 	selectedProject: Project,
 ): Promise<void> {
 	const uniqueFileName = getUniqueTaskFileName(
+		app,
 		taskName,
 		selectedProject.context,
 	);
-	const filePath = `Projects/${selectedProject.context}/${uniqueFileName}`;
+	const filePath = `Projects/${selectedProject.context}/${uniqueFileName}.md`;
 
-	const file = await createFileFromTemplate(this.app, filePath, "Task");
+	const file = await createFileFromTemplate(app, filePath, "Task");
 
 	// Update the frontmatter value to set a parent project.
 	if (file) {
@@ -26,13 +27,26 @@ export async function createNewTask(
 }
 
 function getUniqueTaskFileName(
+	app: App,
 	taskName: string,
 	context: "Work" | "Personal",
 ): string {
-	// TODO: Make sure file name is unique
-	// IF the specified file name already exists then append a number.
-	// If a number already exists at the end, keep incrementing until it is unique
 	const path = `Projects/${context}/${taskName}.md`;
-	const uniqueName = taskName;
-	return uniqueName;
+	if (!vaultFileExists(app, path)) {
+		return taskName;
+	}
+
+	// Name is already taken. Find the next available one.
+	let postfix = 0;
+	let proposedTaskName = "";
+	let taken = true;
+	while (taken == true) {
+		postfix++;
+		proposedTaskName = `${taskName} - ${postfix}`;
+		const proposedPath = `Projects/${context}/${proposedTaskName}.md`;
+		if (!vaultFileExists(app, proposedPath)) {
+			taken = false;
+		}
+	}
+	return proposedTaskName;
 }
