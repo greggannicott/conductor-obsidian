@@ -4,7 +4,8 @@ import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { getProjects, Project } from "src/projects";
 import { createFileFromTemplate } from "./utilities";
-import { createNewTask } from "./tasks";
+import { createNewTask, getTasks, Task } from "./tasks";
+import { ChooseTaskModal } from "./choose-task.modal";
 
 interface ConductorSettings {
 	taskId: number;
@@ -60,6 +61,19 @@ export default class ConductorObsidian extends Plugin {
 					this.app.workspace.getLeaf(false).openFile(project.file);
 				};
 				selectProjectModal.open();
+			},
+		});
+
+		this.addCommand({
+			id: "open-task",
+			name: "Open Task",
+			callback: async () => {
+				const selectTaskModal = new ChooseTaskModal(this.app);
+				selectTaskModal.tasks = getTasks(this.app);
+				selectTaskModal.onChoose = async (task: Task) => {
+					this.app.workspace.getLeaf(false).openFile(task.file);
+				};
+				selectTaskModal.open();
 			},
 		});
 

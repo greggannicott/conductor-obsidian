@@ -1,6 +1,16 @@
-import { App } from "obsidian";
+import { App, TFile } from "obsidian";
 import { Project } from "./projects";
-import { createFileFromTemplate, vaultFileExists } from "./utilities";
+import {
+	createFileFromTemplate,
+	getFilesWithCategory,
+	vaultFileExists,
+} from "./utilities";
+
+export type Task = {
+	name: string;
+	path: string;
+	file: TFile;
+};
 
 export async function createNewTask(
 	app: App,
@@ -49,4 +59,21 @@ function getUniqueTaskFileName(
 		}
 	}
 	return proposedTaskName;
+}
+
+// Get a list of tasks.
+// A task is a file that includes a `categories` value of "[[Task]]"
+export function getTasks(app: App): Task[] {
+	const tasks: Task[] = getFilesWithCategory(app, "Task").map((t: TFile) => {
+		const context = t.path.startsWith("Projects/Work")
+			? "Work"
+			: "Personal";
+		return {
+			name: t.basename,
+			path: t.path,
+			context,
+			file: t,
+		};
+	});
+	return tasks;
 }
