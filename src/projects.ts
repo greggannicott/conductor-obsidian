@@ -1,10 +1,11 @@
-import { App } from "obsidian";
+import { App, TFile } from "obsidian";
 import { getFilesWithCategory } from "./utilities";
 
 export type Project = {
 	name: string;
 	path: string;
 	context: "Work" | "Personal";
+	file: TFile;
 };
 
 // Get a list of projects.
@@ -19,6 +20,7 @@ export function getProjects(app: App): Project[] {
 				name: f.basename,
 				path: f.path,
 				context,
+				file: f,
 			};
 		},
 	);

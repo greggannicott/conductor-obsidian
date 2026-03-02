@@ -51,6 +51,19 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "open-project",
+			name: "Open Project",
+			callback: async () => {
+				const selectProjectModal = new ChooseProjectModal(this.app);
+				selectProjectModal.projects = getProjects(this.app);
+				selectProjectModal.onChoose = async (project: Project) => {
+					this.app.workspace.getLeaf(false).openFile(project.file);
+				};
+				selectProjectModal.open();
+			},
+		});
+
+		this.addCommand({
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: async () => {
