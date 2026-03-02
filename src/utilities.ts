@@ -26,3 +26,16 @@ export function vaultFileExists(app: App, path: string): boolean {
 	const file = app.vault.getFileByPath(path);
 	return file !== null;
 }
+
+export function getFilesWithCategory(app: App, category: string): TFile[] {
+	const files = app.vault.getMarkdownFiles();
+	const filesInProjectFolder = files.filter(
+		(f) =>
+			f.path.startsWith("Projects/Personal") ||
+			f.path.startsWith("Projects/Work"),
+	);
+	return filesInProjectFolder.filter((f) => {
+		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
+		return frontmatter?.categories?.contains(`[[${category}]]`);
+	});
+}
