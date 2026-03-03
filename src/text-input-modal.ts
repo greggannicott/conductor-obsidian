@@ -26,6 +26,29 @@ export class TextInputModal extends Modal {
 			cls: ["text-input", "input"],
 		});
 
+		const promptInstructions = this.contentEl.createEl("div", {
+			cls: "prompt-instructions",
+		});
+		const enterPromptInstruction = promptInstructions.createEl("div", {
+			cls: "prompt-instuction",
+		});
+		enterPromptInstruction.createEl("span", {
+			cls: "prompt-instruction-command",
+			text: "↵",
+		});
+		enterPromptInstruction.createEl("span", { text: "create task" });
+
+		const shiftEnterPromptInstruction = promptInstructions.createEl("div", {
+			cls: "prompt-instuction",
+		});
+		shiftEnterPromptInstruction.createEl("span", {
+			cls: "prompt-instruction-command",
+			text: "shift+↵",
+		});
+		shiftEnterPromptInstruction.createEl("span", {
+			text: "create task in background",
+		});
+
 		if (this.placeholder) {
 			input.placeholder = this.placeholder;
 		}
