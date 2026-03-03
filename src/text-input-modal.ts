@@ -20,10 +20,13 @@ type SubmitEvent = {
 
 export class TextInputModal extends Modal {
 	private resolve: (value: SubmitEvent) => void;
-	private placeholder: string;
 	private keybindings: TextInputKeybinding[];
 
-	constructor(app: App, keybindings: TextInputKeybinding[] = []) {
+	constructor(
+		app: App,
+		keybindings: TextInputKeybinding[] = [],
+		placeholder?: string,
+	) {
 		super(app);
 		this.keybindings = keybindings;
 
@@ -46,8 +49,8 @@ export class TextInputModal extends Modal {
 			instructionEl.createEl("span", { text: kb.instruction });
 		}
 
-		if (this.placeholder) {
-			input.placeholder = this.placeholder;
+		if (placeholder) {
+			input.placeholder = placeholder;
 		}
 
 		input.addEventListener("keydown", (e) => {
@@ -80,7 +83,11 @@ export class TextInputModal extends Modal {
 		const keybindings = config.keybindings ?? defaultKeybindings;
 
 		return new Promise((resolve) => {
-			const modal = new TextInputModal(app, keybindings);
+			const modal = new TextInputModal(
+				app,
+				keybindings,
+				config.placeholder,
+			);
 			modal.setTitle(config.title);
 			modal.resolve = resolve;
 			modal.open();
