@@ -81,11 +81,6 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: async () => {
-				const taskName = await TextInputModal.show(this.app, {
-					title: "Task Name",
-					placeholder: "Enter task name...",
-				});
-
 				// Obtain a list of possible projects
 				const projects = getProjects(this.app);
 
@@ -96,6 +91,10 @@ export default class ConductorObsidian extends Plugin {
 				selectProjectModal.onChoose = async (
 					selectedProject: Project,
 				) => {
+					const taskName = await TextInputModal.show(this.app, {
+						title: "Task Name",
+						placeholder: "Enter task name...",
+					});
 					await createNewTask(this.app, taskName, selectedProject);
 					new Notice(`New task [${taskName}] created...`);
 				};
