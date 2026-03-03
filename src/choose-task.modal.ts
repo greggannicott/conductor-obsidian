@@ -17,10 +17,16 @@ export class ChooseTaskModal extends FuzzySuggestModal<Task> {
 	}
 
 	getItemText(task: Task): string {
-		return `${task.name}`;
+		if (task.parents?.length == 1) {
+			return `${task.parents[0]} -> ${task.name}`;
+		} else if (task.parents?.length > 1) {
+			return `${task.parents.join(", ")} -> ${task.name}`;
+		} else {
+			return task.name;
+		}
 	}
 
-	onChooseItem(task: Task, evt: MouseEvent | KeyboardEvent) {
+	onChooseItem(task: Task, _evt: MouseEvent | KeyboardEvent) {
 		this.onChoose(task);
 	}
 }

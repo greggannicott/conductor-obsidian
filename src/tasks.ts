@@ -10,6 +10,7 @@ export type Task = {
 	name: string;
 	path: string;
 	file: TFile;
+	parents: string[];
 };
 
 export async function createNewTask(
@@ -65,6 +66,15 @@ function getUniqueTaskFileName(
 // A task is a file that includes a `categories` value of "[[Task]]"
 export function getTasks(app: App): Task[] {
 	const tasks: Task[] = getFilesWithCategory(app, "Task").map((t: TFile) => {
+		const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
+		const parents = frontmatter?.parents?.map((p: string) => {
+			const matches = p.match(/\[\[(.+)\]\]/);
+			if (matches && matches.length > 0) {
+				return matches[1];
+			} else {
+				return null;
+			}
+		});
 		const context = t.path.startsWith("Projects/Work")
 			? "Work"
 			: "Personal";
@@ -72,6 +82,7 @@ export function getTasks(app: App): Task[] {
 			name: t.basename,
 			path: t.path,
 			context,
+			parents,
 			file: t,
 		};
 	});
