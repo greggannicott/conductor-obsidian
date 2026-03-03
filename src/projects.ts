@@ -4,9 +4,11 @@ import { getFilesWithCategory } from "./utilities";
 export type Project = {
 	name: string;
 	path: string;
-	context: "Work" | "Personal";
+	context: Context;
 	file: TFile;
 };
+
+export type Context = "Work" | "Personal";
 
 // Get a list of projects.
 // A project is a file that includes a `categories` value of "[[Project]]"

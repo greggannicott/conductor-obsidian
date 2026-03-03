@@ -5,8 +5,17 @@ export type TextInputModalConfiguration = {
 	placeholder?: string;
 };
 
+export const enum ConfirmationKeybinding {
+	Enter,
+}
+
+type SubmitEvent = {
+	value: string;
+	submitKeybinding: ConfirmationKeybinding;
+};
+
 export class TextInputModal extends Modal {
-	private resolve: (value: string) => void;
+	private resolve: (value: SubmitEvent) => void;
 	private placeholder: string;
 
 	constructor(app: App) {
@@ -22,7 +31,11 @@ export class TextInputModal extends Modal {
 
 		input.addEventListener("keydown", (e) => {
 			if (e.key == "Enter") {
-				this.resolve(input.value);
+				e.preventDefault();
+				this.resolve({
+					value: input.value,
+					submitKeybinding: ConfirmationKeybinding.Enter,
+				});
 				this.close();
 			}
 		});
@@ -31,7 +44,7 @@ export class TextInputModal extends Modal {
 	static show(
 		app: App,
 		config: TextInputModalConfiguration,
-	): Promise<string> {
+	): Promise<SubmitEvent> {
 		return new Promise((resolve) => {
 			const modal = new TextInputModal(app);
 			modal.setTitle(config.title);

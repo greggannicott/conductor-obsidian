@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { Project } from "./projects";
+import { Context, Project } from "./projects";
 import {
 	createFileFromTemplate,
 	getFilesWithCategory,
@@ -17,7 +17,7 @@ export async function createNewTask(
 	app: App,
 	taskName: string,
 	selectedProject: Project,
-): Promise<void> {
+): Promise<Task | null> {
 	const uniqueFileName = getUniqueTaskFileName(
 		app,
 		taskName,
@@ -32,15 +32,18 @@ export async function createNewTask(
 		await app.fileManager.processFrontMatter(file, (fm) => {
 			fm["parents"] = [`[[${selectedProject.name}]]`];
 		});
+		const newTask = getTask(app, filePath);
+		return newTask;
 	} else {
 		console.error(`Task file [${filePath}] does not exist`);
+		return null;
 	}
 }
 
 function getUniqueTaskFileName(
 	app: App,
 	taskName: string,
-	context: "Work" | "Personal",
+	context: Context,
 ): string {
 	const path = `Projects/${context}/${taskName}.md`;
 	if (!vaultFileExists(app, path)) {
@@ -60,6 +63,24 @@ function getUniqueTaskFileName(
 		}
 	}
 	return proposedTaskName;
+}
+
+function getTask(app: App, filePath: string): Task | null {
+	const file = app.vault.getFileByPath(filePath);
+	if (file) {
+		const name = file.basename;
+		const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+		const parents = frontmatter && frontmatter["parents"];
+		return {
+			name,
+			path: filePath,
+			parents,
+			file,
+		};
+	} else {
+		console.error(`Unable to create task from file [${filePath}]`);
+		return null;
+	}
 }
 
 // Get a list of tasks.
