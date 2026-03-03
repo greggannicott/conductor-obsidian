@@ -117,7 +117,7 @@ export default class ConductorObsidian extends Plugin {
 						selectedProject,
 					);
 					if (task) {
-						new Notice(`New task [${name}] created...`);
+						new Notice(`New task [${task.name}] created...`);
 						switch (submitKeybinding) {
 							case "enter":
 								this.app.workspace
