@@ -44,7 +44,7 @@ version=$(cat manifest.json | jq -r '.version')
 existing_version=$(git tag | grep "^${version}$")
 if [[ -n $existing_version ]];
 then
-	echo "Tag for version number already. Increment version in manifest.json"
+	echo "Tag for version number already exists. Increment version in manifest.json"
 else
 	git tag -a $version -m "$version" && git push origin $version
 fi
