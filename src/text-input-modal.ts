@@ -1,26 +1,31 @@
 import { App, Modal } from "obsidian";
 
+export type TextInputKeybinding = {
+	id: string;
+	commandText: string;
+	check: (e: KeyboardEvent) => boolean;
+	instruction: string;
+};
+
 export type TextInputModalConfiguration = {
 	title: string;
 	placeholder?: string;
+	keybindings?: TextInputKeybinding[];
 };
-
-export const enum ConfirmationKeybinding {
-	Enter,
-	ShiftEnter,
-}
 
 type SubmitEvent = {
 	value: string;
-	submitKeybinding: ConfirmationKeybinding;
+	submitKeybinding: string;
 };
 
 export class TextInputModal extends Modal {
 	private resolve: (value: SubmitEvent) => void;
 	private placeholder: string;
+	private keybindings: TextInputKeybinding[];
 
-	constructor(app: App) {
+	constructor(app: App, keybindings: TextInputKeybinding[] = []) {
 		super(app);
+		this.keybindings = keybindings;
 
 		const input = this.contentEl.createEl("input", {
 			cls: ["text-input", "input"],
@@ -29,45 +34,33 @@ export class TextInputModal extends Modal {
 		const promptInstructions = this.contentEl.createEl("div", {
 			cls: "prompt-instructions",
 		});
-		const enterPromptInstruction = promptInstructions.createEl("div", {
-			cls: "prompt-instuction",
-		});
-		enterPromptInstruction.createEl("span", {
-			cls: "prompt-instruction-command",
-			text: "↵",
-		});
-		enterPromptInstruction.createEl("span", { text: "create task" });
 
-		const shiftEnterPromptInstruction = promptInstructions.createEl("div", {
-			cls: "prompt-instuction",
-		});
-		shiftEnterPromptInstruction.createEl("span", {
-			cls: "prompt-instruction-command",
-			text: "shift+↵",
-		});
-		shiftEnterPromptInstruction.createEl("span", {
-			text: "create task in background",
-		});
+		for (const kb of this.keybindings) {
+			const instructionEl = promptInstructions.createEl("div", {
+				cls: "prompt-instuction",
+			});
+			instructionEl.createEl("span", {
+				cls: "prompt-instruction-command",
+				text: kb.commandText,
+			});
+			instructionEl.createEl("span", { text: kb.instruction });
+		}
 
 		if (this.placeholder) {
 			input.placeholder = this.placeholder;
 		}
 
 		input.addEventListener("keydown", (e) => {
-			if (e.shiftKey && e.key === "Enter") {
-				e.preventDefault();
-				this.resolve({
-					value: input.value,
-					submitKeybinding: ConfirmationKeybinding.ShiftEnter,
-				});
-				this.close();
-			} else if (e.key == "Enter") {
-				e.preventDefault();
-				this.resolve({
-					value: input.value,
-					submitKeybinding: ConfirmationKeybinding.Enter,
-				});
-				this.close();
+			for (const kb of this.keybindings) {
+				if (kb.check(e)) {
+					e.preventDefault();
+					this.resolve({
+						value: input.value,
+						submitKeybinding: kb.id,
+					});
+					this.close();
+					break;
+				}
 			}
 		});
 	}
@@ -76,8 +69,18 @@ export class TextInputModal extends Modal {
 		app: App,
 		config: TextInputModalConfiguration,
 	): Promise<SubmitEvent> {
+		const defaultKeybindings: TextInputKeybinding[] = [
+			{
+				id: "enter",
+				commandText: "↵",
+				check: (e) => e.key === "Enter",
+				instruction: "submit",
+			},
+		];
+		const keybindings = config.keybindings ?? defaultKeybindings;
+
 		return new Promise((resolve) => {
-			const modal = new TextInputModal(app);
+			const modal = new TextInputModal(app, keybindings);
 			modal.setTitle(config.title);
 			modal.resolve = resolve;
 			modal.open();

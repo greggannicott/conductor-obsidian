@@ -1,7 +1,7 @@
 import { Notice, Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
-import { ConfirmationKeybinding, TextInputModal } from "src/text-input-modal";
+import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import { getProjects, Project } from "src/projects";
 import { createFileFromTemplate } from "./utilities";
 import { createNewTask, getTasks, Task } from "./tasks";
@@ -91,10 +91,25 @@ export default class ConductorObsidian extends Plugin {
 				selectProjectModal.onChoose = async (
 					selectedProject: Project,
 				) => {
+					const keybindings: TextInputKeybinding[] = [
+						{
+							id: "shift-enter",
+							commandText: "shift+↵",
+							check: (e) => e.shiftKey && e.key === "Enter",
+							instruction: "create task in background",
+						},
+						{
+							id: "enter",
+							commandText: "↵",
+							check: (e) => e.key === "Enter",
+							instruction: "create task",
+						},
+					];
 					const { value: name, submitKeybinding } =
 						await TextInputModal.show(this.app, {
 							title: "Task Name",
 							placeholder: "Enter task name...",
+							keybindings,
 						});
 					const task = await createNewTask(
 						this.app,
@@ -104,12 +119,12 @@ export default class ConductorObsidian extends Plugin {
 					if (task) {
 						new Notice(`New task [${name}] created...`);
 						switch (submitKeybinding) {
-							case ConfirmationKeybinding.Enter:
+							case "enter":
 								this.app.workspace
 									.getLeaf(false)
 									.openFile(task.file);
 								break;
-							case ConfirmationKeybinding.ShiftEnter:
+							case "shift-enter":
 								// Don't display the file
 								break;
 							default:
