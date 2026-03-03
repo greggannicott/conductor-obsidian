@@ -105,14 +105,17 @@ export default class ConductorObsidian extends Plugin {
 						new Notice(`New task [${name}] created...`);
 						switch (submitKeybinding) {
 							case ConfirmationKeybinding.Enter:
-								console.log("current");
-								console.log("opening", task);
 								this.app.workspace
 									.getLeaf(false)
 									.openFile(task.file);
 								break;
+							case ConfirmationKeybinding.ShiftEnter:
+								// Don't display the file
+								break;
 							default:
-								console.log("default");
+								console.error(
+									`Unknown ConfirmationKeybinding type [${submitKeybinding}]`,
+								);
 								break;
 						}
 					}

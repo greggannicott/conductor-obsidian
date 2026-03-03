@@ -7,6 +7,7 @@ export type TextInputModalConfiguration = {
 
 export const enum ConfirmationKeybinding {
 	Enter,
+	ShiftEnter,
 }
 
 type SubmitEvent = {
@@ -30,7 +31,14 @@ export class TextInputModal extends Modal {
 		}
 
 		input.addEventListener("keydown", (e) => {
-			if (e.key == "Enter") {
+			if (e.shiftKey && e.key === "Enter") {
+				e.preventDefault();
+				this.resolve({
+					value: input.value,
+					submitKeybinding: ConfirmationKeybinding.ShiftEnter,
+				});
+				this.close();
+			} else if (e.key == "Enter") {
 				e.preventDefault();
 				this.resolve({
 					value: input.value,
