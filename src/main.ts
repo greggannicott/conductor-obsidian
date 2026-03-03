@@ -1,4 +1,4 @@
-import { Plugin, TFile } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
@@ -97,6 +97,7 @@ export default class ConductorObsidian extends Plugin {
 					selectedProject: Project,
 				) => {
 					await createNewTask(this.app, taskName, selectedProject);
+					new Notice(`New task [${taskName}] created...`);
 				};
 
 				selectProjectModal.open();
