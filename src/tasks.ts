@@ -65,7 +65,7 @@ function getUniqueTaskFileName(
 	return proposedTaskName;
 }
 
-function getTask(app: App, filePath: string): Task | null {
+export function getTask(app: App, filePath: string): Task | null {
 	const file = app.vault.getFileByPath(filePath);
 	if (file) {
 		const name = file.basename;
@@ -85,7 +85,7 @@ function getTask(app: App, filePath: string): Task | null {
 
 // Get a list of tasks.
 // A task is a file that includes a `categories` value of "[[Task]]"
-export function getTasks(app: App, project?: Project): Task[] {
+export function getTasks(app: App, project?: Project | null): Task[] {
 	const tasks: Task[] = getFilesWithCategory(app, "Task")
 		.map((t: TFile) => {
 			const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
