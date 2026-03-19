@@ -1,4 +1,4 @@
-import { TFile, FuzzySuggestModal, App } from "obsidian";
+import { FuzzySuggestModal, App } from "obsidian";
 import { Project } from "./projects";
 
 type onChooseCallback = (project: Project) => void;
@@ -20,7 +20,7 @@ export class ChooseProjectModal extends FuzzySuggestModal<Project> {
 		return `${project.context} -> ${project.name}`;
 	}
 
-	onChooseItem(project: Project, evt: MouseEvent | KeyboardEvent) {
+	onChooseItem(project: Project, _: MouseEvent | KeyboardEvent) {
 		this.onChoose(project);
 	}
 }

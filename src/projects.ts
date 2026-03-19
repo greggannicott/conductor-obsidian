@@ -14,17 +14,17 @@ export type Context = "Work" | "Personal";
 // A project is a file that includes a `categories` value of "[[Project]]"
 export function getProjects(app: App): Project[] {
 	const projects: Project[] = getFilesWithCategory(app, "Project").map(
-		(f) => {
-			const context = f.path.startsWith("Projects/Work")
-				? "Work"
-				: "Personal";
-			return {
-				name: f.basename,
-				path: f.path,
-				context,
-				file: f,
-			};
-		},
+		getProjectFromFile,
 	);
 	return projects;
+}
+
+export function getProjectFromFile(f: TFile): Project {
+	const context = f.path.startsWith("Projects/Work") ? "Work" : "Personal";
+	return {
+		name: f.basename,
+		path: f.path,
+		context,
+		file: f,
+	};
 }

@@ -1,9 +1,8 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { Notice, Plugin } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
-import { getProjects, Project } from "src/projects";
-import { createFileFromTemplate } from "./utilities";
+import { getProjectFromFile, getProjects, Project } from "src/projects";
 import { createNewTask, getTasks, Task } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
@@ -81,64 +80,77 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: async () => {
-				// Obtain a list of possible projects
-				const projects = getProjects(this.app);
-
-				// Display a modal to obtain the chosen project
-				const selectProjectModal = new ChooseProjectModal(this.app);
-				selectProjectModal.projects = projects;
-
-				selectProjectModal.onChoose = async (
-					selectedProject: Project,
-				) => {
-					const keybindings: TextInputKeybinding[] = [
-						{
-							id: "shift-enter",
-							commandText: "shift+↵",
-							check: (e) => e.shiftKey && e.key === "Enter",
-							instruction: "create task in background",
-						},
-						{
-							id: "enter",
-							commandText: "↵",
-							check: (e) => e.key === "Enter",
-							instruction: "create task",
-						},
-					];
-					const { value: name, submitKeybinding } =
-						await TextInputModal.show(this.app, {
-							title: "Task Name",
-							placeholder: "Enter task name...",
-							keybindings,
-						});
-					const task = await createNewTask(
-						this.app,
-						name,
-						selectedProject,
-					);
-					if (task) {
-						new Notice(`New task [${task.name}] created...`);
-						switch (submitKeybinding) {
-							case "enter":
-								this.app.workspace
-									.getLeaf(false)
-									.openFile(task.file);
-								break;
-							case "shift-enter":
-								// Don't display the file
-								break;
-							default:
-								console.error(
-									`Unknown ConfirmationKeybinding type [${submitKeybinding}]`,
-								);
-								break;
-						}
+				// See if the focussed file is a project. If it is, use that as the chosen project.
+				let activeProject!: Project;
+				const activeFile = this.app.workspace.activeEditor?.file;
+				if (activeFile) {
+					const frontmatter = this.app.metadataCache.getCache(
+						activeFile.path,
+					)?.frontmatter;
+					const categories = frontmatter?.categories;
+					const isProject = categories.includes("[[Project]]");
+					if (isProject) {
+						activeProject = getProjectFromFile(activeFile);
 					}
-				};
+				}
 
-				selectProjectModal.open();
+				if (activeProject) {
+					this.displayTaskNameInput(activeProject);
+				} else {
+					// Obtain a list of possible projects
+					const projects = getProjects(this.app);
+
+					// Display a modal to obtain the chosen project
+					const selectProjectModal = new ChooseProjectModal(this.app);
+					selectProjectModal.projects = projects;
+
+					selectProjectModal.onChoose = this.displayTaskNameInput;
+					selectProjectModal.open();
+				}
 			},
 		});
+	}
+
+	async displayTaskNameInput(selectedProject: Project) {
+		const keybindings: TextInputKeybinding[] = [
+			{
+				id: "shift-enter",
+				commandText: "shift+↵",
+				check: (e) => e.shiftKey && e.key === "Enter",
+				instruction: "create task in background",
+			},
+			{
+				id: "enter",
+				commandText: "↵",
+				check: (e) => e.key === "Enter",
+				instruction: "create task",
+			},
+		];
+		const { value: name, submitKeybinding } = await TextInputModal.show(
+			this.app,
+			{
+				title: "Task Name",
+				placeholder: "Enter task name...",
+				keybindings,
+			},
+		);
+		const task = await createNewTask(this.app, name, selectedProject);
+		if (task) {
+			new Notice(`New task [${task.name}] created...`);
+			switch (submitKeybinding) {
+				case "enter":
+					this.app.workspace.getLeaf(false).openFile(task.file);
+					break;
+				case "shift-enter":
+					// Don't display the file
+					break;
+				default:
+					console.error(
+						`Unknown ConfirmationKeybinding type [${submitKeybinding}]`,
+					);
+					break;
+			}
+		}
 	}
 
 	onunload() {}
