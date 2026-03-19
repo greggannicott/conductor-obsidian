@@ -130,7 +130,7 @@ export default class ConductorObsidian extends Plugin {
 			this.app,
 			{
 				title: "Task Name",
-				placeholder: "Enter task name...",
+				placeholder: `Enter task name for project '${selectedProject.name}'...`,
 				keybindings,
 			},
 		);
