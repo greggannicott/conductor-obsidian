@@ -85,27 +85,34 @@ function getTask(app: App, filePath: string): Task | null {
 
 // Get a list of tasks.
 // A task is a file that includes a `categories` value of "[[Task]]"
-export function getTasks(app: App): Task[] {
-	const tasks: Task[] = getFilesWithCategory(app, "Task").map((t: TFile) => {
-		const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
-		const parents = frontmatter?.parents?.map((p: string) => {
-			const matches = p.match(/\[\[(.+)\]\]/);
-			if (matches && matches.length > 0) {
-				return matches[1];
-			} else {
-				return null;
+export function getTasks(app: App, project?: Project): Task[] {
+	const tasks: Task[] = getFilesWithCategory(app, "Task")
+		.map((t: TFile) => {
+			const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
+			const parents = frontmatter?.parents?.map((p: string) => {
+				const matches = p.match(/\[\[(.+)\]\]/);
+				if (matches && matches.length > 0) {
+					return matches[1];
+				} else {
+					return null;
+				}
+			});
+			const context = t.path.startsWith("Projects/Work")
+				? "Work"
+				: "Personal";
+			return {
+				name: t.basename,
+				path: t.path,
+				context,
+				parents,
+				file: t,
+			};
+		})
+		.filter((t) => {
+			if (project) {
+				return project.name == t.parents[0];
 			}
+			return true;
 		});
-		const context = t.path.startsWith("Projects/Work")
-			? "Work"
-			: "Personal";
-		return {
-			name: t.basename,
-			path: t.path,
-			context,
-			parents,
-			file: t,
-		};
-	});
 	return tasks;
 }
