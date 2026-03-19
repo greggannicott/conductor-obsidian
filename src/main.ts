@@ -2,7 +2,7 @@ import { Notice, Plugin } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
-import { getProjectFromFile, getProjects, Project } from "src/projects";
+import { getActiveProject, getProjects, Project } from "src/projects";
 import { createNewTask, getTasks, Task } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
@@ -47,18 +47,7 @@ export default class ConductorObsidian extends Plugin {
 			name: "Create New Task",
 			callback: async () => {
 				// See if the focussed file is a project. If it is, use that as the chosen project.
-				let activeProject!: Project;
-				const activeFile = this.app.workspace.activeEditor?.file;
-				if (activeFile) {
-					const frontmatter = this.app.metadataCache.getCache(
-						activeFile.path,
-					)?.frontmatter;
-					const categories = frontmatter?.categories;
-					const isProject = categories.includes("[[Project]]");
-					if (isProject) {
-						activeProject = getProjectFromFile(activeFile);
-					}
-				}
+				const activeProject = getActiveProject(this.app);
 
 				if (activeProject) {
 					this.displayTaskNameInput(activeProject);
