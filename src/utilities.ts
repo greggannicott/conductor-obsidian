@@ -1,5 +1,11 @@
 import { App, TFile } from "obsidian";
 
+export const enum Category {
+	Unknown,
+	Project,
+	Task,
+}
+
 export async function createFileFromTemplate(
 	app: App,
 	newFilePath: string,
@@ -37,4 +43,17 @@ export function getFilesWithCategory(app: App, category: string): TFile[] {
 		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
 		return frontmatter?.categories?.contains(`[[${category}]]`);
 	});
+}
+
+export function getCategory(app: App, file: TFile): Category {
+	const categories: string[] = app.metadataCache.getCache(file.path)
+		?.frontmatter?.categories;
+
+	if (categories.includes("[[Project]]")) {
+		return Category.Project;
+	} else if (categories.includes("[[Task]]")) {
+		return Category.Task;
+	} else {
+		return Category.Unknown;
+	}
 }

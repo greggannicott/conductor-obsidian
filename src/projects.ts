@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { getFilesWithCategory } from "./utilities";
+import { Category, getCategory, getFilesWithCategory } from "./utilities";
 
 export type Project = {
 	name: string;
@@ -16,13 +16,13 @@ export function getActiveProject(app: App): Project {
 	const activeFile = app.workspace.activeEditor?.file;
 	let activeProject!: Project;
 	if (activeFile) {
-		const frontmatter = app.metadataCache.getCache(
-			activeFile.path,
-		)?.frontmatter;
-		const categories = frontmatter?.categories;
-		const isProject = categories.includes("[[Project]]");
-		if (isProject) {
-			activeProject = getProjectFromFile(activeFile);
+		const category = getCategory(app, activeFile);
+		switch (category) {
+			case Category.Project:
+				activeProject = getProjectFromFile(activeFile);
+				break;
+			default:
+				break;
 		}
 	}
 	return activeProject;
