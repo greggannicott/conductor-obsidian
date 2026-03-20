@@ -27,7 +27,10 @@ export function getActiveProject(app: App): Project | null {
 				activeProject = getProjectFromFile(activeFile);
 				break;
 			case Category.Task:
-				activeProject = getProjectFromTask(app, activeFile.path);
+				const task = getTask(app, activeFile.path);
+				if (task?.parents[0]) {
+					activeProject = task.parents[0];
+				}
 				break;
 			default:
 				break;
@@ -65,20 +68,16 @@ export function getProjectFromFile(f: TFile): Project {
 	};
 }
 
-// Returns the project associated with a task
-export function getProjectFromTask(app: App, path: string): Project | null {
+export function getProjectFromLink(
+	app: App,
+	link: string,
+	path: string,
+): Project | null {
 	let project!: Project | null;
-	const task = getTask(app, path);
-	const projectLinkPath = task?.parents[0];
-	if (projectLinkPath) {
-		const cleanPath = projectLinkPath.replace(/^\[\[|\]\]$/g, "");
-		const projectPath = app.metadataCache.getFirstLinkpathDest(
-			cleanPath,
-			path,
-		);
-		if (projectPath) {
-			project = getProjectFromPath(app, projectPath.path);
-		}
+	const cleanPath = link.replace(/^\[\[|\]\]$/g, "");
+	const projectPath = app.metadataCache.getFirstLinkpathDest(cleanPath, path);
+	if (projectPath) {
+		project = getProjectFromPath(app, projectPath.path);
 	}
 	return project;
 }

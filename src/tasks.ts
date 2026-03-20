@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { Context, Project } from "./projects";
+import { Context, getProjectFromLink, Project } from "./projects";
 import {
 	createFileFromTemplate,
 	getFilesWithCategory,
@@ -10,7 +10,7 @@ export type Task = {
 	name: string;
 	path: string;
 	file: TFile;
-	parents: string;
+	parents: Project[];
 	context: Context;
 };
 
@@ -72,7 +72,11 @@ export function getTask(app: App, filePath: string): Task | null {
 	if (file) {
 		const name = file.basename;
 		const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-		const parents = frontmatter && frontmatter["parents"];
+		const parents =
+			frontmatter &&
+			frontmatter["parents"]?.map((link: string) => {
+				return getProjectFromLink(app, link, filePath);
+			});
 		const context = filePath.startsWith("Projects/Work")
 			? Context.Work
 			: Context.Personal;
