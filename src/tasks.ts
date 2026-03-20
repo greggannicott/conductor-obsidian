@@ -84,9 +84,22 @@ export function getTask(app: App, filePath: string): Task | null {
 	}
 }
 
+export type getTaskOptions = {
+	project: Project | null;
+};
+
 // Get a list of tasks.
 // A task is a file that includes a `categories` value of "[[Task]]"
-export function getTasks(app: App, project?: Project | null): Task[] {
+export function getTasks(app: App, overrideOptions?: getTaskOptions): Task[] {
+	let options: getTaskOptions = {
+		project: null,
+	};
+	if (overrideOptions) {
+		options = {
+			...options,
+			...overrideOptions,
+		};
+	}
 	const tasks: Task[] = getFilesWithCategory(app, "Task")
 		.map((t: TFile) => {
 			const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
@@ -110,8 +123,8 @@ export function getTasks(app: App, project?: Project | null): Task[] {
 			};
 		})
 		.filter((t) => {
-			if (project) {
-				return project.name == t.parents[0];
+			if (options.project) {
+				return t.parents && options.project.name == t.parents[0];
 			}
 			return true;
 		});

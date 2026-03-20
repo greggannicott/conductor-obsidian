@@ -35,7 +35,10 @@ export default class ConductorObsidian extends Plugin {
 			callback: async () => {
 				const selectTaskModal = new ChooseTaskModal(this.app);
 				const activeProject = getActiveProject(this.app);
-				selectTaskModal.tasks = getTasks(this.app, activeProject);
+				const options = {
+					project: activeProject,
+				};
+				selectTaskModal.tasks = getTasks(this.app, options);
 				selectTaskModal.onChoose = async (task: Task) => {
 					this.app.workspace.getLeaf(false).openFile(task.file);
 				};
