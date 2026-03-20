@@ -45,9 +45,10 @@ function getUniqueTaskFileName(
 	taskName: string,
 	context: Context,
 ): string {
-	const path = `Projects/${context}/${taskName}.md`;
+	const sanitizedName = taskName.replace(/[:\\/]/g, "");
+	const path = `Projects/${context}/${sanitizedName}.md`;
 	if (!vaultFileExists(app, path)) {
-		return taskName;
+		return sanitizedName;
 	}
 
 	// Name is already taken. Find the next available one.
@@ -56,7 +57,7 @@ function getUniqueTaskFileName(
 	let taken = true;
 	while (taken == true) {
 		postfix++;
-		proposedTaskName = `${taskName} - ${postfix}`;
+		proposedTaskName = `${sanitizedName} - ${postfix}`;
 		const proposedPath = `Projects/${context}/${proposedTaskName}.md`;
 		if (!vaultFileExists(app, proposedPath)) {
 			taken = false;
