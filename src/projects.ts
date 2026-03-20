@@ -9,7 +9,11 @@ export type Project = {
 	file: TFile;
 };
 
-export type Context = "Work" | "Personal";
+// export type Context = "Work" | "Personal";
+export enum Context {
+	Personal = "Personal",
+	Work = "Work",
+}
 
 // The the project that is currently active.
 // A project is active if the focussed file is a project.
@@ -50,7 +54,9 @@ export function getProjectFromPath(app: App, path: string): Project | null {
 }
 
 export function getProjectFromFile(f: TFile): Project {
-	const context = f.path.startsWith("Projects/Work") ? "Work" : "Personal";
+	const context = f.path.startsWith("Projects/Work")
+		? Context.Work
+		: Context.Personal;
 	return {
 		name: f.basename,
 		path: f.path,
