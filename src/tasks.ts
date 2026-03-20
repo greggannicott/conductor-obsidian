@@ -10,7 +10,8 @@ export type Task = {
 	name: string;
 	path: string;
 	file: TFile;
-	parents: string[];
+	parents: string;
+	context: Context;
 };
 
 export async function createNewTask(
@@ -72,11 +73,15 @@ export function getTask(app: App, filePath: string): Task | null {
 		const name = file.basename;
 		const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 		const parents = frontmatter && frontmatter["parents"];
+		const context = filePath.startsWith("Projects/Work")
+			? Context.Work
+			: Context.Personal;
 		return {
 			name,
 			path: filePath,
 			parents,
 			file,
+			context,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
@@ -112,8 +117,8 @@ export function getTasks(app: App, overrideOptions?: getTaskOptions): Task[] {
 				}
 			});
 			const context = t.path.startsWith("Projects/Work")
-				? "Work"
-				: "Personal";
+				? Context.Work
+				: Context.Personal;
 			return {
 				name: t.basename,
 				path: t.path,
