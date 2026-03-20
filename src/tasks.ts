@@ -11,7 +11,6 @@ export type Task = {
 	path: string;
 	file: TFile;
 	parents: Project[];
-	context: Context;
 };
 
 export async function createNewTask(
@@ -77,15 +76,11 @@ export function getTask(app: App, filePath: string): Task | null {
 			frontmatter["parents"]?.map((link: string) => {
 				return getProjectFromLink(app, link, filePath);
 			});
-		const context = filePath.startsWith("Projects/Work")
-			? Context.Work
-			: Context.Personal;
 		return {
 			name,
 			path: filePath,
 			parents,
 			file,
-			context,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
