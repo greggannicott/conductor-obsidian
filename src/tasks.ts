@@ -11,7 +11,15 @@ export type Task = {
 	path: string;
 	file: TFile;
 	parents: Project[];
+	status: TaskStatus;
 };
+
+export enum TaskStatus {
+	ToDo = "01 - To Do",
+	Doing = "02 - Doing",
+	Done = "03 - Done",
+	Abandoned = "04 - Abandoned",
+}
 
 export async function createNewTask(
 	app: App,
@@ -76,11 +84,13 @@ export function getTask(app: App, filePath: string): Task | null {
 			frontmatter["parents"]?.map((link: string) => {
 				return getProjectFromLink(app, link, filePath);
 			});
+		const status = frontmatter && frontmatter["status"];
 		return {
 			name,
 			path: filePath,
 			parents,
 			file,
+			status,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
