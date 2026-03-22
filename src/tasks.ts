@@ -13,6 +13,7 @@ export type Task = {
 	parents: Project[];
 	status: TaskStatus;
 	jiraId: string;
+	impeded: boolean;
 };
 
 export enum TaskStatus {
@@ -87,6 +88,8 @@ export function getTask(app: App, filePath: string): Task | null {
 			});
 		const status = frontmatter && frontmatter["status"];
 		const jiraId = frontmatter && frontmatter["jira-id"];
+		const impeded =
+			frontmatter && frontmatter["impeded"] === true ? true : false;
 		return {
 			name,
 			path: filePath,
@@ -94,6 +97,7 @@ export function getTask(app: App, filePath: string): Task | null {
 			file,
 			status,
 			jiraId,
+			impeded,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
