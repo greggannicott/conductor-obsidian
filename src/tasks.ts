@@ -94,7 +94,10 @@ export type getTaskOptions = {
 
 // Get a list of tasks.
 // A task is a file that includes a `categories` value of "[[Task]]"
-export function getTasks(app: App, overrideOptions?: getTaskOptions): Task[] {
+export function getTasks(
+	app: App,
+	overrideOptions?: getTaskOptions,
+): (Task | null)[] {
 	let options: getTaskOptions = {
 		project: null,
 	};
@@ -104,31 +107,13 @@ export function getTasks(app: App, overrideOptions?: getTaskOptions): Task[] {
 			...overrideOptions,
 		};
 	}
-	const tasks: Task[] = getFilesWithCategory(app, "Task")
-		.map((t: TFile) => {
-			const frontmatter = app.metadataCache.getFileCache(t)?.frontmatter;
-			const parents = frontmatter?.parents?.map((p: string) => {
-				const matches = p.match(/\[\[(.+)\]\]/);
-				if (matches && matches.length > 0) {
-					return matches[1];
-				} else {
-					return null;
-				}
-			});
-			const context = t.path.startsWith("Projects/Work")
-				? Context.Work
-				: Context.Personal;
-			return {
-				name: t.basename,
-				path: t.path,
-				context,
-				parents,
-				file: t,
-			};
+	const tasks = getFilesWithCategory(app, "Task")
+		.map((t: TFile): Task | null => {
+			return getTask(app, t.path);
 		})
 		.filter((t) => {
 			if (options.project) {
-				return t.parents && options.project.name == t.parents[0];
+				return t?.parents && options.project.name === t.parents[0].name;
 			}
 			return true;
 		});
