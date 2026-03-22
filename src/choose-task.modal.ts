@@ -3,8 +3,8 @@ import { Task } from "./tasks";
 
 type onChooseCallback = (task: Task) => void;
 
-export class ChooseTaskModal extends FuzzySuggestModal<Task> {
-	public tasks: Task[];
+export class ChooseTaskModal extends FuzzySuggestModal<Task | null> {
+	public tasks: (Task | null)[];
 	public onChoose: onChooseCallback;
 
 	constructor(app: App) {
@@ -12,13 +12,13 @@ export class ChooseTaskModal extends FuzzySuggestModal<Task> {
 		this.setPlaceholder("Select a task...");
 	}
 
-	getItems(): Task[] {
+	getItems(): (Task | null)[] {
 		return this.tasks;
 	}
 
 	getItemText(task: Task): string {
 		if (task.parents?.length == 1) {
-			return `${task.parents[0]} -> ${task.name}`;
+			return `${task.parents[0].name} -> ${task.name}`;
 		} else if (task.parents?.length > 1) {
 			return `${task.parents.join(", ")} -> ${task.name}`;
 		} else {
