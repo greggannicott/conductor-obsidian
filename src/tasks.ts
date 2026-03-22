@@ -100,6 +100,7 @@ export function getTask(app: App, filePath: string): Task | null {
 
 export type getTaskOptions = {
 	project: Project | null;
+	excludeCompletedTasks?: boolean;
 };
 
 // Get a list of tasks.
@@ -110,6 +111,7 @@ export function getTasks(
 ): (Task | null)[] {
 	let options: getTaskOptions = {
 		project: null,
+		excludeCompletedTasks: true,
 	};
 	if (overrideOptions) {
 		options = {
@@ -124,6 +126,15 @@ export function getTasks(
 		.filter((t) => {
 			if (options.project) {
 				return t?.parents && options.project.name === t.parents[0].name;
+			}
+			return true;
+		})
+		.filter((t) => {
+			if (options.excludeCompletedTasks) {
+				return (
+					t?.status === TaskStatus.ToDo ||
+					t?.status === TaskStatus.Doing
+				);
 			}
 			return true;
 		});

@@ -3,7 +3,7 @@ import { Notice, Plugin } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
-import { createNewTask, getTasks, Task } from "./tasks";
+import { createNewTask, getTasks, Task, getTaskOptions } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
 interface ConductorSettings {}
@@ -35,7 +35,7 @@ export default class ConductorObsidian extends Plugin {
 			callback: async () => {
 				const selectTaskModal = new ChooseTaskModal(this.app);
 				const activeProject = getActiveProject(this.app);
-				const options = {
+				const options: getTaskOptions = {
 					project: activeProject,
 				};
 				selectTaskModal.tasks = getTasks(this.app, options);
