@@ -49,9 +49,9 @@ export function getCategory(app: App, file: TFile): Category {
 	const categories: string[] = app.metadataCache.getCache(file.path)
 		?.frontmatter?.categories;
 
-	if (categories.includes("[[Project]]")) {
+	if (categories?.includes("[[Project]]")) {
 		return Category.Project;
-	} else if (categories.includes("[[Task]]")) {
+	} else if (categories?.includes("[[Task]]")) {
 		return Category.Task;
 	} else {
 		return Category.Unknown;
