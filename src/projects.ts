@@ -7,12 +7,25 @@ export type Project = {
 	path: string;
 	context: Context;
 	file: TFile;
+	parents: Project[];
+	jiraId: string;
+	branch: string;
+	ongoing: boolean;
+	status: ProjectStatus;
+	projectId: string;
+	repoDirectoryName: string;
 };
 
-// export type Context = "Work" | "Personal";
 export enum Context {
 	Personal = "Personal",
 	Work = "Work",
+}
+
+export enum ProjectStatus {
+	ToDo = "01 - To Do",
+	Doing = "02 - Doing",
+	Done = "03 - Done",
+	Abandoned = "04 - Abandoned",
 }
 
 // The the project that is currently active.
@@ -24,7 +37,7 @@ export function getActiveProject(app: App): Project | null {
 		const category = getCategory(app, activeFile);
 		switch (category) {
 			case Category.Project:
-				activeProject = getProjectFromFile(activeFile);
+				activeProject = getProjectFromFile(app, activeFile);
 				break;
 			case Category.Task:
 				const task = getTask(app, activeFile.path);
@@ -43,7 +56,9 @@ export function getActiveProject(app: App): Project | null {
 // A project is a file that includes a `categories` value of "[[Project]]"
 export function getProjects(app: App): Project[] {
 	const projects: Project[] = getFilesWithCategory(app, "Project").map(
-		getProjectFromFile,
+		(f) => {
+			return getProjectFromFile(app, f);
+		},
 	);
 	return projects;
 }
@@ -51,20 +66,40 @@ export function getProjects(app: App): Project[] {
 export function getProjectFromPath(app: App, path: string): Project | null {
 	const file = app.vault.getFileByPath(path);
 	if (file) {
-		return getProjectFromFile(file);
+		return getProjectFromFile(app, file);
 	}
 	return null;
 }
 
-export function getProjectFromFile(f: TFile): Project {
+export function getProjectFromFile(app: App, f: TFile): Project {
+	const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
 	const context = f.path.startsWith("Projects/Work")
 		? Context.Work
 		: Context.Personal;
+	const parents =
+		frontmatter &&
+		frontmatter["parents"]?.map((link: string) => {
+			return getProjectFromLink(app, link, f.path);
+		});
+	const jiraId = frontmatter && frontmatter["jira-id"];
+	const branch = frontmatter && frontmatter["branch"];
+	const ongoing =
+		frontmatter && frontmatter["ongoing"] === true ? true : false;
+	const status = frontmatter && frontmatter["status"];
+	const projectId = frontmatter && frontmatter["project-id"];
+	const repoDirectoryName = frontmatter && frontmatter["repo-directory-name"];
 	return {
 		name: f.basename,
 		path: f.path,
 		context,
 		file: f,
+		parents,
+		jiraId,
+		branch,
+		ongoing,
+		status,
+		projectId,
+		repoDirectoryName,
 	};
 }
 
