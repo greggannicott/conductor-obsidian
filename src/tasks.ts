@@ -14,6 +14,7 @@ export type Task = {
 	status: TaskStatus;
 	jiraId: string;
 	impeded: boolean;
+	priority: TaskPriority;
 };
 
 export enum TaskStatus {
@@ -21,6 +22,12 @@ export enum TaskStatus {
 	Doing = "02 - Doing",
 	Done = "03 - Done",
 	Abandoned = "04 - Abandoned",
+}
+
+export enum TaskPriority {
+	High = "01 - High",
+	Medium = "02 - Medium",
+	Low = "03 - Low",
 }
 
 export async function createNewTask(
@@ -90,6 +97,7 @@ export function getTask(app: App, filePath: string): Task | null {
 		const jiraId = frontmatter && frontmatter["jira-id"];
 		const impeded =
 			frontmatter && frontmatter["impeded"] === true ? true : false;
+		const priority = frontmatter && frontmatter["priority"];
 		return {
 			name,
 			path: filePath,
@@ -98,6 +106,7 @@ export function getTask(app: App, filePath: string): Task | null {
 			status,
 			jiraId,
 			impeded,
+			priority,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
