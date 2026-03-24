@@ -43,9 +43,27 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "set-task-to-todo",
+			name: "Set Task Status to '01 - To Do'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.ToDo),
+		});
+
+		this.addCommand({
 			id: "set-task-to-doing",
-			name: "Set Task to '02 - Doing'",
+			name: "Set Task Status to '02 - Doing'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Doing),
+		});
+
+		this.addCommand({
+			id: "set-task-to-done",
+			name: "Set Task Status to '03 - Done'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.Done),
+		});
+
+		this.addCommand({
+			id: "set-task-to-abandoned",
+			name: "Set Task Status to '04 - Abandoned'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.Abandoned),
 		});
 	}
 
