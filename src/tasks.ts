@@ -1,7 +1,9 @@
 import { App, TFile } from "obsidian";
 import { Context, getProjectFromLink, Project } from "./projects";
 import {
+	Category,
 	createFileFromTemplate,
+	getCategory,
 	getFilesWithCategory,
 	vaultFileExists,
 } from "./utilities";
@@ -158,4 +160,30 @@ export function getTasks(
 			return true;
 		});
 	return tasks;
+}
+
+export async function updateTask(app: App, task: Task): Promise<void> {
+	const file = app.vault.getFileByPath(task.path);
+	if (file) {
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			fm["status"] = task.status;
+			fm["jira-id"] = task.jiraId;
+			fm["impeded"] = task.impeded;
+			fm["priority"] = task.priority;
+			fm["branch"] = task.branch;
+		});
+	}
+}
+
+// The task that is currently active.
+// A task is active if the focussed file is a task.
+export function getActiveTask(app: App): Task | null {
+	const activeFile = app.workspace.activeEditor?.file;
+	let activeTask!: Task | null;
+	if (activeFile) {
+		if (getCategory(app, activeFile) == Category.Task) {
+			activeTask = getTask(app, activeFile.path);
+		}
+	}
+	return activeTask;
 }

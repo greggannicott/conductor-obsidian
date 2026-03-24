@@ -3,7 +3,15 @@ import { Notice, Plugin } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
-import { createNewTask, getTasks, Task, getTaskOptions } from "./tasks";
+import {
+	createNewTask,
+	getTasks,
+	Task,
+	getTaskOptions,
+	TaskStatus,
+	getActiveTask,
+	updateTask,
+} from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
 interface ConductorSettings {}
@@ -32,6 +40,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: this.createNewTask,
+		});
+
+		this.addCommand({
+			id: "set-task-to-doing",
+			name: "Set Task to '02 - Doing'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.Doing),
 		});
 	}
 
@@ -73,6 +87,15 @@ export default class ConductorObsidian extends Plugin {
 
 			selectProjectModal.onChoose = this.displayTaskNameInput;
 			selectProjectModal.open();
+		}
+	};
+
+	setActiveTaskStatus = async (status: TaskStatus) => {
+		const activeTask = getActiveTask(this.app);
+		if (activeTask) {
+			activeTask.status = status;
+			updateTask(this.app, activeTask);
+			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
 		}
 	};
 
