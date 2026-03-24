@@ -29,7 +29,7 @@ export enum ProjectStatus {
 }
 
 // The the project that is currently active.
-// A project is active if the focussed file is a project.
+// A project is active if the focussed file is a project, or if a task belonging to the project.
 export function getActiveProject(app: App): Project | null {
 	const activeFile = app.workspace.activeEditor?.file;
 	let activeProject!: Project | null;
