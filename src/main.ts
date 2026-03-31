@@ -131,6 +131,18 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
+	createNewTaskForAnyProject = async () => {
+		// Obtain a list of possible projects
+		const projects = getProjects(this.app);
+
+		// Display a modal to obtain the chosen project
+		const selectProjectModal = new ChooseProjectModal(this.app);
+		selectProjectModal.projects = projects;
+
+		selectProjectModal.onChoose = this.displayTaskNameInput;
+		selectProjectModal.open();
+	};
+
 	setActiveTaskStatus = async (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
 		if (activeTask) {
