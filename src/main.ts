@@ -49,6 +49,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "create-new-task-for-any-project",
+			name: "Create New Task For Any Project",
+			callback: this.createNewTaskForAnyProject,
+		});
+
+		this.addCommand({
 			id: "set-task-to-todo",
 			name: "Set Task Status to '01 - To Do'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.ToDo),
