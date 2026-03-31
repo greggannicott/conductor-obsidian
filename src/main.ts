@@ -37,6 +37,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "open-task-from-any-project",
+			name: "Open Task From Any Project",
+			callback: this.openTaskFromAnyProject,
+		});
+
+		this.addCommand({
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: this.createNewTask,
@@ -87,6 +93,23 @@ export default class ConductorObsidian extends Plugin {
 			this.app.workspace.getLeaf(false).openFile(task.file);
 		};
 		selectTaskModal.open();
+	};
+
+	openTaskFromAnyProject = async () => {
+		const selectProjectModal = new ChooseProjectModal(this.app);
+		selectProjectModal.projects = getProjects(this.app);
+		selectProjectModal.onChoose = async (project: Project) => {
+			const selectTaskModal = new ChooseTaskModal(this.app);
+			const options: getTaskOptions = {
+				project,
+			};
+			selectTaskModal.tasks = getTasks(this.app, options);
+			selectTaskModal.onChoose = async (task: Task) => {
+				this.app.workspace.getLeaf(false).openFile(task.file);
+			};
+			selectTaskModal.open();
+		};
+		selectProjectModal.open();
 	};
 
 	createNewTask = async () => {
