@@ -104,38 +104,38 @@ export default class ConductorObsidian extends Plugin {
 		});
 	}
 
-	openProject = async () => {
+	openProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		selectProjectModal.projects = getProjects(this.app);
-		selectProjectModal.onChoose = async (project: Project) => {
+		selectProjectModal.onChoose = (project: Project) => {
 			this.app.workspace.getLeaf(false).openFile(project.file);
 		};
 		selectProjectModal.open();
 	};
 
-	openTask = async () => {
+	openTask = () => {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const activeProject = getActiveProject(this.app);
 		const options: getTaskOptions = {
 			project: activeProject,
 		};
 		selectTaskModal.tasks = getTasks(this.app, options);
-		selectTaskModal.onChoose = async (task: Task) => {
+		selectTaskModal.onChoose = (task: Task) => {
 			this.app.workspace.getLeaf(false).openFile(task.file);
 		};
 		selectTaskModal.open();
 	};
 
-	openTaskFromAnyProject = async () => {
+	openTaskFromAnyProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		selectProjectModal.projects = getProjects(this.app);
-		selectProjectModal.onChoose = async (project: Project) => {
+		selectProjectModal.onChoose = (project: Project) => {
 			const selectTaskModal = new ChooseTaskModal(this.app);
 			const options: getTaskOptions = {
 				project,
 			};
 			selectTaskModal.tasks = getTasks(this.app, options);
-			selectTaskModal.onChoose = async (task: Task) => {
+			selectTaskModal.onChoose = (task: Task) => {
 				this.app.workspace.getLeaf(false).openFile(task.file);
 			};
 			selectTaskModal.open();
@@ -150,7 +150,7 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
-	createNewTask = async () => {
+	createNewTask = () => {
 		// See if the focussed file is a project. If it is, use that as the chosen project.
 		const activeProject = getActiveProject(this.app);
 
@@ -169,7 +169,7 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
-	createNewTaskForAnyProject = async () => {
+	createNewTaskForAnyProject = () => {
 		// Obtain a list of possible projects
 		const projects = getProjects(this.app);
 
@@ -181,7 +181,7 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
-	setActiveTaskStatus = async (status: TaskStatus) => {
+	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
 		if (activeTask) {
 			activeTask.status = status;
