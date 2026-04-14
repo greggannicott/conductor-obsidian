@@ -11,6 +11,7 @@ import {
 	TaskStatus,
 	getActiveTask,
 	updateTask,
+	TaskPriority,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
@@ -82,6 +83,24 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-task-to-abandoned",
 			name: "Set Task Status to '04 - Abandoned'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Abandoned),
+		});
+
+		this.addCommand({
+			id: "set-task-to-high-priority",
+			name: "Set Task Priority to '01 - High'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.High),
+		});
+
+		this.addCommand({
+			id: "set-task-to-medium-priority",
+			name: "Set Task Priority to '02 - Medium'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.Medium),
+		});
+
+		this.addCommand({
+			id: "set-task-to-low-priority",
+			name: "Set Task Priority to '03 - Low'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.Low),
 		});
 	}
 
@@ -168,6 +187,15 @@ export default class ConductorObsidian extends Plugin {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+		}
+	};
+
+	setActiveTaskPriority = (priority: TaskPriority) => {
+		const activeTask = getActiveTask(this.app);
+		if (activeTask) {
+			activeTask.priority = priority;
+			updateTask(this.app, activeTask);
+			new Notice(`Task [${activeTask.name}] set to [${priority}]...`);
 		}
 	};
 
