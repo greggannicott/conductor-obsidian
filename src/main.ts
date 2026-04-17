@@ -11,6 +11,7 @@ import {
 	TaskStatus,
 	getActiveTask,
 	updateTask,
+	TaskPriority,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 
@@ -37,9 +38,27 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "open-task-from-any-project",
+			name: "Open Task From Any Project",
+			callback: this.openTaskFromAnyProject,
+		});
+
+		this.addCommand({
+			id: "open-parent",
+			name: "Open Parent Project",
+			callback: this.openParentProject,
+		});
+
+		this.addCommand({
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: this.createNewTask,
+		});
+
+		this.addCommand({
+			id: "create-new-task-for-any-project",
+			name: "Create New Task For Any Project",
+			callback: this.createNewTaskForAnyProject,
 		});
 
 		this.addCommand({
@@ -71,31 +90,73 @@ export default class ConductorObsidian extends Plugin {
 			name: "Create Tasks from Checkboxes",
 			callback: () => this.createNewTasksFromCheckboxes(),
 		});
+
+		this.addCommand({
+			id: "set-task-to-high-priority",
+			name: "Set Task Priority to '01 - High'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.High),
+		});
+
+		this.addCommand({
+			id: "set-task-to-medium-priority",
+			name: "Set Task Priority to '02 - Medium'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.Medium),
+		});
+
+		this.addCommand({
+			id: "set-task-to-low-priority",
+			name: "Set Task Priority to '03 - Low'",
+			callback: () => this.setActiveTaskPriority(TaskPriority.Low),
+		});
 	}
 
-	openProject = async () => {
+	openProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		selectProjectModal.projects = getProjects(this.app);
-		selectProjectModal.onChoose = async (project: Project) => {
+		selectProjectModal.onChoose = (project: Project) => {
 			this.app.workspace.getLeaf(false).openFile(project.file);
 		};
 		selectProjectModal.open();
 	};
 
-	openTask = async () => {
+	openTask = () => {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const activeProject = getActiveProject(this.app);
 		const options: getTaskOptions = {
 			project: activeProject,
 		};
 		selectTaskModal.tasks = getTasks(this.app, options);
-		selectTaskModal.onChoose = async (task: Task) => {
+		selectTaskModal.onChoose = (task: Task) => {
 			this.app.workspace.getLeaf(false).openFile(task.file);
 		};
 		selectTaskModal.open();
 	};
 
-	createNewTask = async () => {
+	openTaskFromAnyProject = () => {
+		const selectProjectModal = new ChooseProjectModal(this.app);
+		selectProjectModal.projects = getProjects(this.app);
+		selectProjectModal.onChoose = (project: Project) => {
+			const selectTaskModal = new ChooseTaskModal(this.app);
+			const options: getTaskOptions = {
+				project,
+			};
+			selectTaskModal.tasks = getTasks(this.app, options);
+			selectTaskModal.onChoose = (task: Task) => {
+				this.app.workspace.getLeaf(false).openFile(task.file);
+			};
+			selectTaskModal.open();
+		};
+		selectProjectModal.open();
+	};
+
+	openParentProject = () => {
+		const activeProject = getActiveProject(this.app);
+		if (activeProject) {
+			this.app.workspace.getLeaf(false).openFile(activeProject.file);
+		}
+	};
+
+	createNewTask = () => {
 		// See if the focussed file is a project. If it is, use that as the chosen project.
 		const activeProject = getActiveProject(this.app);
 
@@ -114,6 +175,18 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
+	createNewTaskForAnyProject = () => {
+		// Obtain a list of possible projects
+		const projects = getProjects(this.app);
+
+		// Display a modal to obtain the chosen project
+		const selectProjectModal = new ChooseProjectModal(this.app);
+		selectProjectModal.projects = projects;
+
+		selectProjectModal.onChoose = this.displayTaskNameInput;
+		selectProjectModal.open();
+	};
+
 	createNewTasksFromCheckboxes = async () => {
 		// Get the active editor
 		const editor = this.app.workspace.activeEditor?.editor;
@@ -124,19 +197,22 @@ export default class ConductorObsidian extends Plugin {
 
 		// Get selected text or current line
 		let selectedText = editor.getSelection();
-		let selectionRange: { from: { line: number; ch: number }; to: { line: number; ch: number } } | null = null;
+		let selectionRange: {
+			from: { line: number; ch: number };
+			to: { line: number; ch: number };
+		} | null = null;
 
 		if (!selectedText) {
 			const cursor = editor.getCursor();
 			selectedText = editor.getLine(cursor.line);
 			selectionRange = {
 				from: { line: cursor.line, ch: 0 },
-				to: { line: cursor.line, ch: selectedText.length }
+				to: { line: cursor.line, ch: selectedText.length },
 			};
 		} else {
 			selectionRange = {
 				from: editor.getCursor("from"),
-				to: editor.getCursor("to")
+				to: editor.getCursor("to"),
 			};
 		}
 
@@ -144,7 +220,12 @@ export default class ConductorObsidian extends Plugin {
 		const lines = selectedText.split("\n");
 		const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
 		const linkPattern = /\[\[.+\]\]/;
-		const checkboxLines: { lineIndex: number; indent: string; text: string; fullLine: string }[] = [];
+		const checkboxLines: {
+			lineIndex: number;
+			indent: string;
+			text: string;
+			fullLine: string;
+		}[] = [];
 
 		lines.forEach((line, index) => {
 			const match = line.match(checkboxPattern);
@@ -156,7 +237,7 @@ export default class ConductorObsidian extends Plugin {
 						lineIndex: index,
 						indent: match[1],
 						text: checkboxText.trim(),
-						fullLine: line
+						fullLine: line,
 					});
 				}
 			}
@@ -194,11 +275,18 @@ export default class ConductorObsidian extends Plugin {
 		const replacements: { lineIndex: number; newLine: string }[] = [];
 
 		for (const checkboxLine of checkboxLines) {
-			const task = await createNewTask(this.app, checkboxLine.text, selectedProject);
+			const task = await createNewTask(
+				this.app,
+				checkboxLine.text,
+				selectedProject,
+			);
 			if (task) {
 				createdCount++;
 				const newLine = `${checkboxLine.indent}- [ ] [[${task.name}]]`;
-				replacements.push({ lineIndex: checkboxLine.lineIndex, newLine });
+				replacements.push({
+					lineIndex: checkboxLine.lineIndex,
+					newLine,
+				});
 			}
 		}
 
@@ -210,19 +298,34 @@ export default class ConductorObsidian extends Plugin {
 			});
 
 			const newText = updatedLines.join("\n");
-			editor.replaceRange(newText, selectionRange.from, selectionRange.to);
+			editor.replaceRange(
+				newText,
+				selectionRange.from,
+				selectionRange.to,
+			);
 		}
 
 		// Display success message
-		new Notice(`Created ${createdCount} task${createdCount !== 1 ? 's' : ''} for project [${selectedProject.name}]`);
+		new Notice(
+			`Created ${createdCount} task${createdCount !== 1 ? "s" : ""} for project [${selectedProject.name}]`,
+		);
 	};
 
-	setActiveTaskStatus = async (status: TaskStatus) => {
+	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
 		if (activeTask) {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+		}
+	};
+
+	setActiveTaskPriority = (priority: TaskPriority) => {
+		const activeTask = getActiveTask(this.app);
+		if (activeTask) {
+			activeTask.priority = priority;
+			updateTask(this.app, activeTask);
+			new Notice(`Task [${activeTask.name}] set to [${priority}]...`);
 		}
 	};
 
