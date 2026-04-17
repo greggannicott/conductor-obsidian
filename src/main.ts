@@ -220,11 +220,13 @@ export default class ConductorObsidian extends Plugin {
 		const lines = selectedText.split("\n");
 		const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
 		const linkPattern = /\[\[.+\]\]/;
+		const bulletPattern = /^(\s*)[-*] (.+)$/;
 		const checkboxLines: {
 			lineIndex: number;
 			indent: string;
 			text: string;
 			fullLine: string;
+			nestedBullets: string[];
 		}[] = [];
 
 		lines.forEach((line, index) => {
@@ -238,7 +240,19 @@ export default class ConductorObsidian extends Plugin {
 						indent: match[1],
 						text: checkboxText.trim(),
 						fullLine: line,
+						nestedBullets: [],
 					});
+				}
+			} else if (checkboxLines.length > 0) {
+				// Check if this is a nested bullet point
+				const bulletMatch = line.match(bulletPattern);
+				if (bulletMatch) {
+					const lastCheckbox = checkboxLines[checkboxLines.length - 1];
+					const bulletIndent = bulletMatch[1];
+					// If this bullet is indented more than the last checkbox, it's nested
+					if (bulletIndent.length > lastCheckbox.indent.length) {
+						lastCheckbox.nestedBullets.push(line);
+					}
 				}
 			}
 		});
@@ -282,6 +296,30 @@ export default class ConductorObsidian extends Plugin {
 			);
 			if (task) {
 				createdCount++;
+				
+				// If there are nested bullets, append them to the task file
+				if (checkboxLine.nestedBullets.length > 0) {
+					const taskFile = task.file;
+					const currentContent = await this.app.vault.read(taskFile);
+					
+					// Find the minimum indentation level among nested bullets
+					let minIndent = Infinity;
+					checkboxLine.nestedBullets.forEach(bullet => {
+						const match = bullet.match(/^(\s*)/);
+						if (match) {
+							minIndent = Math.min(minIndent, match[1].length);
+						}
+					});
+					
+					// Remove the minimum indentation from all bullets
+					const normalizedBullets = checkboxLine.nestedBullets.map(bullet => {
+						return bullet.substring(minIndent);
+					});
+					
+					const notesSection = `\n# Notes\n\n${normalizedBullets.join("\n")}\n`;
+					await this.app.vault.modify(taskFile, currentContent + notesSection);
+				}
+				
 				const newLine = `${checkboxLine.indent}- [ ] [[${task.name}]]`;
 				replacements.push({
 					lineIndex: checkboxLine.lineIndex,
