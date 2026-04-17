@@ -65,6 +65,12 @@ export default class ConductorObsidian extends Plugin {
 			name: "Set Task Status to '04 - Abandoned'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Abandoned),
 		});
+
+		this.addCommand({
+			id: "create-tasks-from-checkboxes",
+			name: "Create Tasks from Checkboxes",
+			callback: () => this.createNewTasksFromCheckboxes(),
+		});
 	}
 
 	openProject = async () => {
@@ -106,6 +112,104 @@ export default class ConductorObsidian extends Plugin {
 			selectProjectModal.onChoose = this.displayTaskNameInput;
 			selectProjectModal.open();
 		}
+	};
+
+	createNewTasksFromCheckboxes = async () => {
+		// Get the active editor
+		const editor = this.app.workspace.activeEditor?.editor;
+		if (!editor) {
+			new Notice("No active editor found");
+			return;
+		}
+
+		// Get selected text or current line
+		let selectedText = editor.getSelection();
+		let selectionRange: { from: { line: number; ch: number }; to: { line: number; ch: number } } | null = null;
+
+		if (!selectedText) {
+			const cursor = editor.getCursor();
+			selectedText = editor.getLine(cursor.line);
+			selectionRange = {
+				from: { line: cursor.line, ch: 0 },
+				to: { line: cursor.line, ch: selectedText.length }
+			};
+		} else {
+			selectionRange = {
+				from: editor.getCursor("from"),
+				to: editor.getCursor("to")
+			};
+		}
+
+		// Find all lines with unchecked checkboxes
+		const lines = selectedText.split("\n");
+		const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
+		const checkboxLines: { lineIndex: number; indent: string; text: string; fullLine: string }[] = [];
+
+		lines.forEach((line, index) => {
+			const match = line.match(checkboxPattern);
+			if (match) {
+				checkboxLines.push({
+					lineIndex: index,
+					indent: match[1],
+					text: match[2].trim(),
+					fullLine: line
+				});
+			}
+		});
+
+		// Check if any unchecked checkboxes were found
+		if (checkboxLines.length === 0) {
+			new Notice("No unchecked checkboxes found");
+			return;
+		}
+
+		// Get or prompt for active project
+		let selectedProject = getActiveProject(this.app);
+
+		if (!selectedProject) {
+			// Prompt user to select a project
+			const projects = getProjects(this.app);
+			selectedProject = await new Promise<Project | null>((resolve) => {
+				const selectProjectModal = new ChooseProjectModal(this.app);
+				selectProjectModal.projects = projects;
+				selectProjectModal.onChoose = (project: Project) => {
+					resolve(project);
+				};
+				selectProjectModal.open();
+			});
+
+			if (!selectedProject) {
+				new Notice("No project selected");
+				return;
+			}
+		}
+
+		// Create tasks for each checkbox
+		let createdCount = 0;
+		const replacements: { lineIndex: number; newLine: string }[] = [];
+
+		for (const checkboxLine of checkboxLines) {
+			const task = await createNewTask(this.app, checkboxLine.text, selectedProject);
+			if (task) {
+				createdCount++;
+				const newLine = `${checkboxLine.indent}- [ ] [[${task.name}]]`;
+				replacements.push({ lineIndex: checkboxLine.lineIndex, newLine });
+			}
+		}
+
+		// Replace the checkbox lines with links to the created tasks
+		if (replacements.length > 0 && selectionRange) {
+			const updatedLines = [...lines];
+			replacements.forEach(({ lineIndex, newLine }) => {
+				updatedLines[lineIndex] = newLine;
+			});
+
+			const newText = updatedLines.join("\n");
+			editor.replaceRange(newText, selectionRange.from, selectionRange.to);
+		}
+
+		// Display success message
+		new Notice(`Created ${createdCount} task${createdCount !== 1 ? 's' : ''} for project [${selectedProject.name}]`);
 	};
 
 	setActiveTaskStatus = async (status: TaskStatus) => {
