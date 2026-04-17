@@ -140,20 +140,25 @@ export default class ConductorObsidian extends Plugin {
 			};
 		}
 
-		// Find all lines with unchecked checkboxes
+		// Find all lines with unchecked checkboxes (excluding those that already contain links)
 		const lines = selectedText.split("\n");
 		const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
+		const linkPattern = /\[\[.+\]\]/;
 		const checkboxLines: { lineIndex: number; indent: string; text: string; fullLine: string }[] = [];
 
 		lines.forEach((line, index) => {
 			const match = line.match(checkboxPattern);
 			if (match) {
-				checkboxLines.push({
-					lineIndex: index,
-					indent: match[1],
-					text: match[2].trim(),
-					fullLine: line
-				});
+				const checkboxText = match[2];
+				// Skip checkboxes that already contain a link
+				if (!linkPattern.test(checkboxText)) {
+					checkboxLines.push({
+						lineIndex: index,
+						indent: match[1],
+						text: checkboxText.trim(),
+						fullLine: line
+					});
+				}
 			}
 		});
 
