@@ -59,17 +59,16 @@ export function getCategory(app: App, file: TFile): Category {
 }
 
 /**
- * Toggles a tag in the file's frontmatter.
- * If the tag exists, it will be removed. If it doesn't exist, it will be added.
- * Creates frontmatter if it doesn't exist.
+ * Helper function to process tags in frontmatter.
+ * Ensures tags property exists and is an array.
  * @param app - The Obsidian App instance
  * @param file - The TFile to modify
- * @param tagName - Tag name without the # symbol (e.g., "inbox")
+ * @param processCallback - Callback function that modifies the tags array
  */
-export async function toggleTag(
+async function processTagsInFrontmatter(
 	app: App,
 	file: TFile,
-	tagName: string,
+	processCallback: (tags: string[]) => void,
 ): Promise<void> {
 	await app.fileManager.processFrontMatter(file, (frontmatter) => {
 		// Initialize tags array if it doesn't exist
@@ -82,13 +81,30 @@ export async function toggleTag(
 			frontmatter.tags = [frontmatter.tags];
 		}
 
-		const tagIndex = frontmatter.tags.indexOf(tagName);
+		// Execute the specific tag operation
+		processCallback(frontmatter.tags);
+	});
+}
+
+/**
+ * Toggles a tag in the file's frontmatter.
+ * If the tag exists, it will be removed. If it doesn't exist, it will be added.
+ * Creates frontmatter if it doesn't exist.
+ * @param app - The Obsidian App instance
+ * @param file - The TFile to modify
+ * @param tagName - Tag name without the # symbol (e.g., "inbox")
+ */
+export async function toggleTag(
+	app: App,
+	file: TFile,
+	tagName: string,
+): Promise<void> {
+	await processTagsInFrontmatter(app, file, (tags) => {
+		const tagIndex = tags.indexOf(tagName);
 		if (tagIndex !== -1) {
-			// Tag exists, remove it
-			frontmatter.tags.splice(tagIndex, 1);
+			tags.splice(tagIndex, 1);
 		} else {
-			// Tag doesn't exist, add it
-			frontmatter.tags.push(tagName);
+			tags.push(tagName);
 		}
 	});
 }
@@ -106,20 +122,9 @@ export async function addTag(
 	file: TFile,
 	tagName: string,
 ): Promise<void> {
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
-		// Initialize tags array if it doesn't exist
-		if (!frontmatter.tags) {
-			frontmatter.tags = [];
-		}
-
-		// Ensure tags is an array
-		if (!Array.isArray(frontmatter.tags)) {
-			frontmatter.tags = [frontmatter.tags];
-		}
-
-		// Only add if tag doesn't already exist
-		if (!frontmatter.tags.includes(tagName)) {
-			frontmatter.tags.push(tagName);
+	await processTagsInFrontmatter(app, file, (tags) => {
+		if (!tags.includes(tagName)) {
+			tags.push(tagName);
 		}
 	});
 }
@@ -137,20 +142,10 @@ export async function removeTag(
 	file: TFile,
 	tagName: string,
 ): Promise<void> {
-	await app.fileManager.processFrontMatter(file, (frontmatter) => {
-		// Initialize tags array if it doesn't exist
-		if (!frontmatter.tags) {
-			frontmatter.tags = [];
-		}
-
-		// Ensure tags is an array
-		if (!Array.isArray(frontmatter.tags)) {
-			frontmatter.tags = [frontmatter.tags];
-		}
-
-		const tagIndex = frontmatter.tags.indexOf(tagName);
+	await processTagsInFrontmatter(app, file, (tags) => {
+		const tagIndex = tags.indexOf(tagName);
 		if (tagIndex !== -1) {
-			frontmatter.tags.splice(tagIndex, 1);
+			tags.splice(tagIndex, 1);
 		}
 	});
 }
