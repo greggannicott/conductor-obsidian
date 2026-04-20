@@ -68,6 +68,23 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
   git add "$MANIFEST_FILE"
   git commit -m "chore: Version number bump"
   echo "Changes committed to git"
+  
+  # Prompt for creating tag and pushing
+  echo ""
+  read "tag_response?Create new tag and push changes? (y/n): "
+  
+  if [[ "$tag_response" =~ ^[Yy]$ ]]; then
+    version=$(cat manifest.json | jq -r '.version')
+    existing_version=$(git tag | grep "^${version}$")
+    if [[ -n $existing_version ]]; then
+      echo "Tag for version number already exists. Increment version in manifest.json"
+    else
+      git tag -a $version -m "$version" && git push origin $version
+      echo "Tag $version created and pushed"
+    fi
+  else
+    echo "Skipping tag creation and push"
+  fi
 else
-  echo "Skipping git commit"
+  echo "Skipping git commit and subsequent pushlish steps"
 fi

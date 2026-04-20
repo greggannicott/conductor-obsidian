@@ -30,24 +30,17 @@ The Developer Console can be opened in Obsidian and `console.log` statements are
 
 ## Releasing New Version
 
-- Incremenet the version number by running:
+Run the following:
 
 ```zsh
-./publish.zsh
+./publish.zsh [level]
 ```
 
-- Create and push a new tag (which matches the version number in the `manifest.json`):
+`[level]` is optional and can be one of:
 
-```zsh
-version=$(cat manifest.json | jq -r '.version')
-existing_version=$(git tag | grep "^${version}$")
-if [[ -n $existing_version ]];
-then
-	echo "Tag for version number already exists. Increment version in manifest.json"
-else
-	git tag -a $version -m "$version" && git push origin $version
-fi
-```
+- `patch` (default)
+- `minor`
+- `major`
 
 This will create a new release in GitHub.
 
