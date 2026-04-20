@@ -127,6 +127,24 @@ export default class ConductorObsidian extends Plugin {
 			name: "Toggle #inbox Tag",
 			callback: () => this.toggleTagOnActiveFile("inbox"),
 		});
+
+		this.addCommand({
+			id: "add-reviewed-tag",
+			name: "Add #reviewed Tag",
+			callback: () => this.addTagToActiveFile("reviewed"),
+		});
+
+		this.addCommand({
+			id: "remove-reviewed-tag",
+			name: "Remove #reviewed Tag",
+			callback: () => this.removeTagFromActiveFile("reviewed"),
+		});
+
+		this.addCommand({
+			id: "toggle-reviewed-tag",
+			name: "Toggle #reviewed Tag",
+			callback: () => this.toggleTagOnActiveFile("reviewed"),
+		});
 	}
 
 	openProject = () => {
