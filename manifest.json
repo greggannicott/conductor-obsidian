@@ -1,10 +1,10 @@
 {
-	"id": "conductor-obsidian",
-	"name": "Conductor",
-	"version": "0.2.9",
-	"minAppVersion": "0.15.0",
-	"description": "A set of tools to help use Obsidian as a project manager.",
-	"author": "Greg Gannicott",
-	"authorUrl": "http://greg.gannicott.co.uk",
-	"isDesktopOnly": true
+  "id": "conductor-obsidian",
+  "name": "Conductor",
+  "version": "0.2.10",
+  "minAppVersion": "0.15.0",
+  "description": "A set of tools to help use Obsidian as a project manager.",
+  "author": "Greg Gannicott",
+  "authorUrl": "http://greg.gannicott.co.uk",
+  "isDesktopOnly": true
 }
