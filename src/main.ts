@@ -14,6 +14,7 @@ import {
 	TaskPriority,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
+import { addTag, removeTag, toggleTag } from "./utilities";
 
 interface ConductorSettings {}
 
@@ -107,6 +108,24 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-task-to-low-priority",
 			name: "Set Task Priority to '03 - Low'",
 			callback: () => this.setActiveTaskPriority(TaskPriority.Low),
+		});
+
+		this.addCommand({
+			id: "add-inbox-tag",
+			name: "Add #inbox Tag",
+			callback: () => this.addTagToActiveFile("inbox"),
+		});
+
+		this.addCommand({
+			id: "remove-inbox-tag",
+			name: "Remove #inbox Tag",
+			callback: () => this.removeTagFromActiveFile("inbox"),
+		});
+
+		this.addCommand({
+			id: "toggle-inbox-tag",
+			name: "Toggle #inbox Tag",
+			callback: () => this.toggleTagOnActiveFile("inbox"),
 		});
 	}
 
@@ -247,7 +266,8 @@ export default class ConductorObsidian extends Plugin {
 				// Check if this is a nested bullet point
 				const bulletMatch = line.match(bulletPattern);
 				if (bulletMatch) {
-					const lastCheckbox = checkboxLines[checkboxLines.length - 1];
+					const lastCheckbox =
+						checkboxLines[checkboxLines.length - 1];
 					const bulletIndent = bulletMatch[1];
 					// If this bullet is indented more than the last checkbox, it's nested
 					if (bulletIndent.length > lastCheckbox.indent.length) {
@@ -296,30 +316,35 @@ export default class ConductorObsidian extends Plugin {
 			);
 			if (task) {
 				createdCount++;
-				
+
 				// If there are nested bullets, append them to the task file
 				if (checkboxLine.nestedBullets.length > 0) {
 					const taskFile = task.file;
 					const currentContent = await this.app.vault.read(taskFile);
-					
+
 					// Find the minimum indentation level among nested bullets
 					let minIndent = Infinity;
-					checkboxLine.nestedBullets.forEach(bullet => {
+					checkboxLine.nestedBullets.forEach((bullet) => {
 						const match = bullet.match(/^(\s*)/);
 						if (match) {
 							minIndent = Math.min(minIndent, match[1].length);
 						}
 					});
-					
+
 					// Remove the minimum indentation from all bullets
-					const normalizedBullets = checkboxLine.nestedBullets.map(bullet => {
-						return bullet.substring(minIndent);
-					});
-					
+					const normalizedBullets = checkboxLine.nestedBullets.map(
+						(bullet) => {
+							return bullet.substring(minIndent);
+						},
+					);
+
 					const notesSection = `\n# Notes\n\n${normalizedBullets.join("\n")}\n`;
-					await this.app.vault.modify(taskFile, currentContent + notesSection);
+					await this.app.vault.modify(
+						taskFile,
+						currentContent + notesSection,
+					);
 				}
-				
+
 				const newLine = `${checkboxLine.indent}- [ ] [[${task.name}]]`;
 				replacements.push({
 					lineIndex: checkboxLine.lineIndex,
@@ -406,6 +431,27 @@ export default class ConductorObsidian extends Plugin {
 					);
 					break;
 			}
+		}
+	}
+
+	addTagToActiveFile(tag: string) {
+		const activeFile = this.app.workspace.activeEditor?.file;
+		if (activeFile) {
+			addTag(this.app, activeFile, tag);
+		}
+	}
+
+	removeTagFromActiveFile(tag: string) {
+		const activeFile = this.app.workspace.activeEditor?.file;
+		if (activeFile) {
+			removeTag(this.app, activeFile, tag);
+		}
+	}
+
+	toggleTagOnActiveFile(tag: string) {
+		const activeFile = this.app.workspace.activeEditor?.file;
+		if (activeFile) {
+			toggleTag(this.app, activeFile, tag);
 		}
 	}
 

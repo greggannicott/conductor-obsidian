@@ -57,3 +57,100 @@ export function getCategory(app: App, file: TFile): Category {
 		return Category.Unknown;
 	}
 }
+
+/**
+ * Toggles a tag in the file's frontmatter.
+ * If the tag exists, it will be removed. If it doesn't exist, it will be added.
+ * Creates frontmatter if it doesn't exist.
+ * @param app - The Obsidian App instance
+ * @param file - The TFile to modify
+ * @param tagName - Tag name without the # symbol (e.g., "inbox")
+ */
+export async function toggleTag(
+	app: App,
+	file: TFile,
+	tagName: string,
+): Promise<void> {
+	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		// Initialize tags array if it doesn't exist
+		if (!frontmatter.tags) {
+			frontmatter.tags = [];
+		}
+
+		// Ensure tags is an array
+		if (!Array.isArray(frontmatter.tags)) {
+			frontmatter.tags = [frontmatter.tags];
+		}
+
+		const tagIndex = frontmatter.tags.indexOf(tagName);
+		if (tagIndex !== -1) {
+			// Tag exists, remove it
+			frontmatter.tags.splice(tagIndex, 1);
+		} else {
+			// Tag doesn't exist, add it
+			frontmatter.tags.push(tagName);
+		}
+	});
+}
+
+/**
+ * Adds a tag to the file's frontmatter.
+ * If the tag already exists, no action is taken.
+ * Creates frontmatter if it doesn't exist.
+ * @param app - The Obsidian App instance
+ * @param file - The TFile to modify
+ * @param tagName - Tag name without the # symbol (e.g., "inbox")
+ */
+export async function addTag(
+	app: App,
+	file: TFile,
+	tagName: string,
+): Promise<void> {
+	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		// Initialize tags array if it doesn't exist
+		if (!frontmatter.tags) {
+			frontmatter.tags = [];
+		}
+
+		// Ensure tags is an array
+		if (!Array.isArray(frontmatter.tags)) {
+			frontmatter.tags = [frontmatter.tags];
+		}
+
+		// Only add if tag doesn't already exist
+		if (!frontmatter.tags.includes(tagName)) {
+			frontmatter.tags.push(tagName);
+		}
+	});
+}
+
+/**
+ * Removes a tag from the file's frontmatter.
+ * If the tag doesn't exist, no action is taken.
+ * Creates frontmatter if it doesn't exist.
+ * @param app - The Obsidian App instance
+ * @param file - The TFile to modify
+ * @param tagName - Tag name without the # symbol (e.g., "inbox")
+ */
+export async function removeTag(
+	app: App,
+	file: TFile,
+	tagName: string,
+): Promise<void> {
+	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		// Initialize tags array if it doesn't exist
+		if (!frontmatter.tags) {
+			frontmatter.tags = [];
+		}
+
+		// Ensure tags is an array
+		if (!Array.isArray(frontmatter.tags)) {
+			frontmatter.tags = [frontmatter.tags];
+		}
+
+		const tagIndex = frontmatter.tags.indexOf(tagName);
+		if (tagIndex !== -1) {
+			frontmatter.tags.splice(tagIndex, 1);
+		}
+	});
+}
