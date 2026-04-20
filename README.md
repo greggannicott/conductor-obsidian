@@ -30,11 +30,10 @@ The Developer Console can be opened in Obsidian and `console.log` statements are
 
 ## Releasing New Version
 
-- Incremement the version number in `manifest.json`.
-- Commit change of version number:
+- Incremenet the version number by running:
 
 ```zsh
-git add manifest.json && git commit -m "chore: Version number bump"
+./publish.zsh
 ```
 
 - Create and push a new tag (which matches the version number in the `manifest.json`):
