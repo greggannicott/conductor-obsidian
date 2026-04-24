@@ -27,11 +27,29 @@ export enum TaskStatus {
 	Abandoned = "04 - Abandoned",
 }
 
+export const incompletedTaskTypes: TaskStatus[] = [
+	TaskStatus.ToDo,
+	TaskStatus.Doing,
+];
+
 export enum TaskPriority {
 	High = "01 - High",
 	Medium = "02 - Medium",
 	Low = "03 - Low",
 }
+
+export type TaskFilters = {
+	projectFilter?: ProjectFilter;
+	statusFilter?: StatusFilter;
+};
+
+type ProjectFilter = {
+	projectIs: string[];
+};
+
+type StatusFilter = {
+	statusContains: TaskStatus[];
+};
 
 export async function createNewTask(
 	app: App,
@@ -119,25 +137,23 @@ export function getTask(app: App, filePath: string): Task | null {
 	}
 }
 
-export type getTaskOptions = {
-	project: Project | null;
-	excludeCompletedTasks?: boolean;
-};
-
 // Get a list of tasks.
-// A task is a file that includes a `categories` value of "[[Task]]"
+// A task is a file that includes a `categories` value of "[[Task]]".
+// By default, only incomplete tasks are returned.
 export function getTasks(
 	app: App,
-	overrideOptions?: getTaskOptions,
+	overideFilters?: TaskFilters,
 ): (Task | null)[] {
-	let options: getTaskOptions = {
-		project: null,
-		excludeCompletedTasks: true,
+	let filters: TaskFilters = {
+		projectFilter: undefined,
+		statusFilter: {
+			statusContains: incompletedTaskTypes,
+		},
 	};
-	if (overrideOptions) {
-		options = {
-			...options,
-			...overrideOptions,
+	if (overideFilters) {
+		filters = {
+			...filters,
+			...overideFilters,
 		};
 	}
 	const tasks = getFilesWithCategory(app, "Task")
@@ -145,16 +161,20 @@ export function getTasks(
 			return getTask(app, t.path);
 		})
 		.filter((t) => {
-			if (options.project) {
-				return t?.parents && options.project.name === t.parents[0].name;
+			if (filters.projectFilter) {
+				return (
+					t?.parents &&
+					filters.projectFilter.projectIs.includes(t.parents[0].name)
+				);
 			}
 			return true;
 		})
 		.filter((t) => {
-			if (options.excludeCompletedTasks) {
+			if (filters.statusFilter) {
 				return (
-					t?.status === TaskStatus.ToDo ||
-					t?.status === TaskStatus.Doing
+					t &&
+					t.status &&
+					filters.statusFilter.statusContains.includes(t.status)
 				);
 			}
 			return true;

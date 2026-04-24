@@ -13,11 +13,11 @@ import {
 	createNewTask,
 	getTasks,
 	Task,
-	getTaskOptions,
 	TaskStatus,
 	getActiveTask,
 	updateTask,
 	TaskPriority,
+	TaskFilters,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
@@ -188,10 +188,15 @@ export default class ConductorObsidian extends Plugin {
 	openTask = () => {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const activeProject = getActiveProject(this.app);
-		const options: getTaskOptions = {
-			project: activeProject,
+		let filters: TaskFilters = {
+			projectFilter: undefined,
 		};
-		selectTaskModal.tasks = getTasks(this.app, options);
+		if (activeProject) {
+			filters.projectFilter = {
+				projectIs: [activeProject.name],
+			};
+		}
+		selectTaskModal.tasks = getTasks(this.app, filters);
 		selectTaskModal.onChoose = (task: Task) => {
 			this.app.workspace.getLeaf(false).openFile(task.file);
 		};
@@ -203,10 +208,12 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.projects = getProjects(this.app);
 		selectProjectModal.onChoose = (project: Project) => {
 			const selectTaskModal = new ChooseTaskModal(this.app);
-			const options: getTaskOptions = {
-				project,
+			const filters: TaskFilters = {
+				projectFilter: {
+					projectIs: [project.name],
+				},
 			};
-			selectTaskModal.tasks = getTasks(this.app, options);
+			selectTaskModal.tasks = getTasks(this.app, filters);
 			selectTaskModal.onChoose = (task: Task) => {
 				this.app.workspace.getLeaf(false).openFile(task.file);
 			};
