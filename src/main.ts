@@ -18,6 +18,7 @@ import {
 	updateTask,
 	TaskPriority,
 	TaskFilters,
+	TaskType,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
@@ -214,6 +215,9 @@ export default class ConductorObsidian extends Plugin {
 		const filters: TaskFilters = {
 			statusFilter: {
 				statusContains: [TaskStatus.Doing],
+			},
+			typeFilter: {
+				typeExcludes: [TaskType.BlogPost],
 			},
 		};
 		selectTaskModal.tasks = getTasks(this.app, filters);

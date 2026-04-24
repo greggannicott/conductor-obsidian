@@ -18,6 +18,7 @@ export type Task = {
 	impeded: boolean;
 	priority: TaskPriority;
 	branch: string;
+	type: TaskType[];
 };
 
 export enum TaskStatus {
@@ -38,9 +39,15 @@ export enum TaskPriority {
 	Low = "03 - Low",
 }
 
+export enum TaskType {
+	BlogPost = "[[Blog Post]]",
+	QuestionTask = "[[Question Task]]",
+}
+
 export type TaskFilters = {
 	projectFilter?: ProjectFilter;
 	statusFilter?: StatusFilter;
+	typeFilter?: TypeFilter;
 };
 
 type ProjectFilter = {
@@ -49,6 +56,11 @@ type ProjectFilter = {
 
 type StatusFilter = {
 	statusContains: TaskStatus[];
+};
+
+type TypeFilter = {
+	typeContains?: TaskType[];
+	typeExcludes?: TaskType[];
 };
 
 export async function createNewTask(
@@ -120,6 +132,7 @@ export function getTask(app: App, filePath: string): Task | null {
 			frontmatter && frontmatter["impeded"] === true ? true : false;
 		const priority = frontmatter && frontmatter["priority"];
 		const branch = frontmatter && frontmatter["branch"];
+		const types = frontmatter && frontmatter["type"];
 		return {
 			name,
 			path: filePath,
@@ -130,6 +143,7 @@ export function getTask(app: App, filePath: string): Task | null {
 			impeded,
 			priority,
 			branch,
+			type: types,
 		};
 	} else {
 		console.error(`Unable to create task from file [${filePath}]`);
@@ -149,6 +163,7 @@ export function getTasks(
 		statusFilter: {
 			statusContains: incompletedTaskTypes,
 		},
+		typeFilter: undefined,
 	};
 	if (overideFilters) {
 		filters = {
@@ -160,7 +175,7 @@ export function getTasks(
 		.map((t: TFile): Task | null => {
 			return getTask(app, t.path);
 		})
-		.filter((t) => {
+		.filter((t: Task) => {
 			if (filters.projectFilter) {
 				return (
 					t?.parents &&
@@ -169,13 +184,53 @@ export function getTasks(
 			}
 			return true;
 		})
-		.filter((t) => {
+		.filter((t: Task) => {
 			if (filters.statusFilter) {
 				return (
 					t &&
 					t.status &&
 					filters.statusFilter.statusContains.includes(t.status)
 				);
+			}
+			return true;
+		})
+		.filter((t: Task) => {
+			if (filters.typeFilter?.typeContains) {
+				for (
+					let i = 0;
+					i < filters.typeFilter.typeContains.length;
+					i++
+				) {
+					const includeType = filters.typeFilter.typeContains[i];
+					for (let j = 0; j < t.type?.length; j++) {
+						const taskType = t.type[j];
+						if (taskType === includeType) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+			return true;
+		})
+		.filter((t: Task) => {
+			if (filters.typeFilter?.typeExcludes) {
+				if (!t.type) {
+					return true;
+				}
+				for (
+					let i = 0;
+					i < filters.typeFilter.typeExcludes.length;
+					i++
+				) {
+					const excludeType = filters.typeFilter.typeExcludes[i];
+					for (let j = 0; j < t.type.length; j++) {
+						const taskType = t.type[j];
+						if (taskType === excludeType) {
+							return false;
+						}
+					}
+				}
 			}
 			return true;
 		});
