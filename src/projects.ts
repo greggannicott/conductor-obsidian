@@ -22,11 +22,11 @@ export type ProjectFilters = {
 };
 
 type StatusFilter = {
-	statusContains: ProjectStatus[];
+	statusIs: ProjectStatus[];
 };
 
 type OngoingFilter = {
-	ongoing: boolean;
+	ongoingIs: boolean;
 };
 
 export enum Context {
@@ -74,12 +74,12 @@ export function getProjects(app: App, filter?: ProjectFilters): Project[] {
 	if (filter) {
 		if (filter.statusFilter) {
 			projects = projects.filter((p) =>
-				filter.statusFilter?.statusContains?.includes(p.status),
+				filter.statusFilter?.statusIs?.includes(p.status),
 			);
 		}
 		if (filter.ongoingFilter) {
 			projects = projects.filter(
-				(p) => p.ongoing === filter.ongoingFilter?.ongoing,
+				(p) => p.ongoing === filter.ongoingFilter?.ongoingIs,
 			);
 		}
 	}

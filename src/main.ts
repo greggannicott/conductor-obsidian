@@ -179,10 +179,10 @@ export default class ConductorObsidian extends Plugin {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		const filter: ProjectFilters = {
 			statusFilter: {
-				statusContains: [ProjectStatus.ToDo, ProjectStatus.Doing],
+				statusIs: [ProjectStatus.ToDo, ProjectStatus.Doing],
 			},
 			ongoingFilter: {
-				ongoing: false,
+				ongoingIs: false,
 			},
 		};
 		selectProjectModal.projects = getProjects(this.app, filter);
@@ -214,7 +214,7 @@ export default class ConductorObsidian extends Plugin {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const filters: TaskFilters = {
 			statusFilter: {
-				statusContains: [TaskStatus.Doing],
+				statusIs: [TaskStatus.Doing],
 			},
 			typeFilter: {
 				typeExcludes: [TaskType.BlogPost],

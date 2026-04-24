@@ -55,11 +55,11 @@ type ProjectFilter = {
 };
 
 type StatusFilter = {
-	statusContains: TaskStatus[];
+	statusIs: TaskStatus[];
 };
 
 type TypeFilter = {
-	typeContains?: TaskType[];
+	typeIncludes?: TaskType[];
 	typeExcludes?: TaskType[];
 };
 
@@ -161,7 +161,7 @@ export function getTasks(
 	let filters: TaskFilters = {
 		projectFilter: undefined,
 		statusFilter: {
-			statusContains: incompletedTaskTypes,
+			statusIs: incompletedTaskTypes,
 		},
 		typeFilter: undefined,
 	};
@@ -189,19 +189,19 @@ export function getTasks(
 				return (
 					t &&
 					t.status &&
-					filters.statusFilter.statusContains.includes(t.status)
+					filters.statusFilter.statusIs.includes(t.status)
 				);
 			}
 			return true;
 		})
 		.filter((t: Task) => {
-			if (filters.typeFilter?.typeContains) {
+			if (filters.typeFilter?.typeIncludes) {
 				for (
 					let i = 0;
-					i < filters.typeFilter.typeContains.length;
+					i < filters.typeFilter.typeIncludes.length;
 					i++
 				) {
-					const includeType = filters.typeFilter.typeContains[i];
+					const includeType = filters.typeFilter.typeIncludes[i];
 					for (let j = 0; j < t.type?.length; j++) {
 						const taskType = t.type[j];
 						if (taskType === includeType) {
