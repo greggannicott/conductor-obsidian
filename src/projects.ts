@@ -16,6 +16,19 @@ export type Project = {
 	repoDirectoryName: string;
 };
 
+export type ProjectsFilter = {
+	statusFilter?: statusFilter;
+	ongoingFilter?: ongoingFilter;
+};
+
+type statusFilter = {
+	statusContains: ProjectStatus[];
+};
+
+type ongoingFilter = {
+	ongoing: boolean;
+};
+
 export enum Context {
 	Personal = "Personal",
 	Work = "Work",
@@ -54,12 +67,22 @@ export function getActiveProject(app: App): Project | null {
 
 // Get a list of projects.
 // A project is a file that includes a `categories` value of "[[Project]]"
-export function getProjects(app: App): Project[] {
-	const projects: Project[] = getFilesWithCategory(app, "Project").map(
-		(f) => {
-			return getProjectFromFile(app, f);
-		},
-	);
+export function getProjects(app: App, filter?: ProjectsFilter): Project[] {
+	let projects: Project[] = getFilesWithCategory(app, "Project").map((f) => {
+		return getProjectFromFile(app, f);
+	});
+	if (filter) {
+		if (filter.statusFilter) {
+			projects = projects.filter((p) =>
+				filter.statusFilter?.statusContains?.includes(p.status),
+			);
+		}
+		if (filter.ongoingFilter) {
+			projects = projects.filter(
+				(p) => p.ongoing === filter.ongoingFilter?.ongoing,
+			);
+		}
+	}
 	return projects;
 }
 

@@ -2,7 +2,13 @@ import { Notice, Plugin } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
-import { getActiveProject, getProjects, Project } from "src/projects";
+import {
+	getActiveProject,
+	getProjects,
+	Project,
+	ProjectsFilter,
+	ProjectStatus,
+} from "src/projects";
 import {
 	createNewTask,
 	getTasks,
@@ -30,6 +36,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-project",
 			name: "Open Project",
 			callback: this.openProject,
+		});
+
+		this.addCommand({
+			id: "open-active-project",
+			name: "Open Active Project",
+			callback: this.openActiveProject,
 		});
 
 		this.addCommand({
@@ -150,6 +162,23 @@ export default class ConductorObsidian extends Plugin {
 	openProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		selectProjectModal.projects = getProjects(this.app);
+		selectProjectModal.onChoose = (project: Project) => {
+			this.app.workspace.getLeaf(false).openFile(project.file);
+		};
+		selectProjectModal.open();
+	};
+
+	openActiveProject = () => {
+		const selectProjectModal = new ChooseProjectModal(this.app);
+		const filter: ProjectsFilter = {
+			statusFilter: {
+				statusContains: [ProjectStatus.ToDo, ProjectStatus.Doing],
+			},
+			ongoingFilter: {
+				ongoing: false,
+			},
+		};
+		selectProjectModal.projects = getProjects(this.app, filter);
 		selectProjectModal.onChoose = (project: Project) => {
 			this.app.workspace.getLeaf(false).openFile(project.file);
 		};
