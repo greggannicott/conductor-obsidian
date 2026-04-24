@@ -219,6 +219,9 @@ export default class ConductorObsidian extends Plugin {
 			typeFilter: {
 				typeExcludes: [TaskType.BlogPost],
 			},
+			impededFilter: {
+				impededIs: false,
+			},
 		};
 		selectTaskModal.tasks = getTasks(this.app, filters);
 		selectTaskModal.onChoose = (task: Task) => {

@@ -48,6 +48,7 @@ export type TaskFilters = {
 	projectFilter?: ProjectFilter;
 	statusFilter?: StatusFilter;
 	typeFilter?: TypeFilter;
+	impededFilter?: ImpededFilter;
 };
 
 type ProjectFilter = {
@@ -61,6 +62,10 @@ type StatusFilter = {
 type TypeFilter = {
 	typeIncludes?: TaskType[];
 	typeExcludes?: TaskType[];
+};
+
+type ImpededFilter = {
+	impededIs: boolean;
 };
 
 export async function createNewTask(
@@ -233,6 +238,11 @@ export function getTasks(
 				}
 			}
 			return true;
+		})
+		.filter((t: Task) => {
+			if (filters.impededFilter) {
+				return t.impeded === filters.impededFilter.impededIs;
+			}
 		});
 	return tasks;
 }
