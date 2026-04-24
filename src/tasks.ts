@@ -169,6 +169,7 @@ export function getTasks(
 			statusIs: incompletedTaskTypes,
 		},
 		typeFilter: undefined,
+		impededFilter: undefined,
 	};
 	if (overideFilters) {
 		filters = {
@@ -191,11 +192,11 @@ export function getTasks(
 		})
 		.filter((t: Task) => {
 			if (filters.statusFilter) {
-				return (
+				const result =
 					t &&
 					t.status &&
-					filters.statusFilter.statusIs.includes(t.status)
-				);
+					filters.statusFilter.statusIs.includes(t.status);
+				return result;
 			}
 			return true;
 		})
@@ -243,6 +244,7 @@ export function getTasks(
 			if (filters.impededFilter) {
 				return t.impeded === filters.impededFilter.impededIs;
 			}
+			return true;
 		});
 	return tasks;
 }
