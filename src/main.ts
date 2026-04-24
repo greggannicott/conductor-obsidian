@@ -6,7 +6,7 @@ import {
 	getActiveProject,
 	getProjects,
 	Project,
-	ProjectsFilter,
+	ProjectFilters,
 	ProjectStatus,
 } from "src/projects";
 import {
@@ -170,7 +170,7 @@ export default class ConductorObsidian extends Plugin {
 
 	openActiveProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
-		const filter: ProjectsFilter = {
+		const filter: ProjectFilters = {
 			statusFilter: {
 				statusContains: [ProjectStatus.ToDo, ProjectStatus.Doing],
 			},

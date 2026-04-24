@@ -16,16 +16,16 @@ export type Project = {
 	repoDirectoryName: string;
 };
 
-export type ProjectsFilter = {
-	statusFilter?: statusFilter;
-	ongoingFilter?: ongoingFilter;
+export type ProjectFilters = {
+	statusFilter?: StatusFilter;
+	ongoingFilter?: OngoingFilter;
 };
 
-type statusFilter = {
+type StatusFilter = {
 	statusContains: ProjectStatus[];
 };
 
-type ongoingFilter = {
+type OngoingFilter = {
 	ongoing: boolean;
 };
 
@@ -67,7 +67,7 @@ export function getActiveProject(app: App): Project | null {
 
 // Get a list of projects.
 // A project is a file that includes a `categories` value of "[[Project]]"
-export function getProjects(app: App, filter?: ProjectsFilter): Project[] {
+export function getProjects(app: App, filter?: ProjectFilters): Project[] {
 	let projects: Project[] = getFilesWithCategory(app, "Project").map((f) => {
 		return getProjectFromFile(app, f);
 	});
