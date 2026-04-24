@@ -40,7 +40,7 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "open-active-project",
-			name: "Open Active Project",
+			name: "Open an Active Project",
 			callback: this.openActiveProject,
 		});
 
@@ -48,6 +48,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-task",
 			name: "Open Task",
 			callback: this.openTask,
+		});
+
+		this.addCommand({
+			id: "open-active-task",
+			name: "Open an Active Task",
+			callback: this.openActiveTask,
 		});
 
 		this.addCommand({
@@ -196,6 +202,20 @@ export default class ConductorObsidian extends Plugin {
 				projectIs: [activeProject.name],
 			};
 		}
+		selectTaskModal.tasks = getTasks(this.app, filters);
+		selectTaskModal.onChoose = (task: Task) => {
+			this.app.workspace.getLeaf(false).openFile(task.file);
+		};
+		selectTaskModal.open();
+	};
+
+	openActiveTask = () => {
+		const selectTaskModal = new ChooseTaskModal(this.app);
+		const filters: TaskFilters = {
+			statusFilter: {
+				statusContains: [TaskStatus.Doing],
+			},
+		};
 		selectTaskModal.tasks = getTasks(this.app, filters);
 		selectTaskModal.onChoose = (task: Task) => {
 			this.app.workspace.getLeaf(false).openFile(task.file);
