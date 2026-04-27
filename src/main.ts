@@ -4,6 +4,7 @@ import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import {
 	getActiveProject,
+	getActiveProjectJiraId,
 	getProjects,
 	Project,
 	ProjectFilters,
@@ -23,9 +24,13 @@ import {
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
 
-interface ConductorSettings {}
+interface ConductorSettings {
+	jiraBaseUrl?: string;
+}
 
-const DEFAULT_SETTINGS: ConductorSettings = {};
+const DEFAULT_SETTINGS: ConductorSettings = {
+	jiraBaseUrl: "https://jira.syncsort.com",
+};
 
 export default class ConductorObsidian extends Plugin {
 	settings: ConductorSettings;
@@ -554,47 +559,31 @@ export default class ConductorObsidian extends Plugin {
 		}
 	}
 
+	private buildJiraUrl(jiraId: string): string {
+		const baseUrl = this.settings.jiraBaseUrl || "https://jira.syncsort.com";
+		return `${baseUrl}/browse/${jiraId}`;
+	}
+
 	openParentProjectJiraTicket() {
-		const activeProject = getActiveProject(this.app);
-		if (!activeProject) {
-			return;
-		}
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
 
-		const jiraId = activeProject.jiraId;
-		if (!jiraId) {
-			return;
-		}
-
-		const jiraUrl = `https://jira.syncsort.com/browse/${jiraId}`;
+		const jiraUrl = this.buildJiraUrl(jiraId);
 		window.open(jiraUrl, "_blank");
 	}
 
 	copyParentProjectJiraId() {
-		const activeProject = getActiveProject(this.app);
-		if (!activeProject) {
-			return;
-		}
-
-		const jiraId = activeProject.jiraId;
-		if (!jiraId) {
-			return;
-		}
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
 
 		navigator.clipboard.writeText(jiraId);
 	}
 
 	copyParentProjectJiraURL() {
-		const activeProject = getActiveProject(this.app);
-		if (!activeProject) {
-			return;
-		}
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
 
-		const jiraId = activeProject.jiraId;
-		if (!jiraId) {
-			return;
-		}
-
-		const jiraUrl = `https://jira.syncsort.com/browse/${jiraId}`;
+		const jiraUrl = this.buildJiraUrl(jiraId);
 		navigator.clipboard.writeText(jiraUrl);
 	}
 

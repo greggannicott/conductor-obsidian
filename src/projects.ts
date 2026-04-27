@@ -65,6 +65,15 @@ export function getActiveProject(app: App): Project | null {
 	return activeProject;
 }
 
+// Get the Jira ID of the currently active project
+export function getActiveProjectJiraId(app: App): string | null {
+	const activeProject = getActiveProject(app);
+	if (!activeProject?.jiraId) {
+		return null;
+	}
+	return activeProject.jiraId;
+}
+
 // Get a list of projects.
 // A project is a file that includes a `categories` value of "[[Project]]"
 export function getProjects(app: App, filter?: ProjectFilters): Project[] {
