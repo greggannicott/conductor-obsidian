@@ -164,6 +164,12 @@ export default class ConductorObsidian extends Plugin {
 			name: "Toggle #reviewed Tag",
 			callback: () => this.toggleTagOnActiveFile("reviewed"),
 		});
+
+		this.addCommand({
+			id: "open-parent-project-jira-ticket",
+			name: "Open Parent Project's Jira Ticket",
+			callback: () => this.openParentProjectJiraTicket(),
+		});
 	}
 
 	openProject = () => {
@@ -534,6 +540,21 @@ export default class ConductorObsidian extends Plugin {
 		if (activeFile) {
 			toggleTag(this.app, activeFile, tag);
 		}
+	}
+
+	openParentProjectJiraTicket() {
+		const activeProject = getActiveProject(this.app);
+		if (!activeProject) {
+			return;
+		}
+
+		const jiraId = activeProject.jiraId;
+		if (!jiraId) {
+			return;
+		}
+
+		const jiraUrl = `https://jira.syncsort.com/browse/${jiraId}`;
+		window.open(jiraUrl, "_blank");
 	}
 
 	onunload() {}
