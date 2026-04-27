@@ -170,6 +170,12 @@ export default class ConductorObsidian extends Plugin {
 			name: "Open Parent Project's Jira Ticket",
 			callback: () => this.openParentProjectJiraTicket(),
 		});
+
+		this.addCommand({
+			id: "copy-parent-project-jira-id",
+			name: "Copy Parent Project's Jira ID",
+			callback: () => this.copyParentProjectJiraId(),
+		});
 	}
 
 	openProject = () => {
@@ -555,6 +561,20 @@ export default class ConductorObsidian extends Plugin {
 
 		const jiraUrl = `https://jira.syncsort.com/browse/${jiraId}`;
 		window.open(jiraUrl, "_blank");
+	}
+
+	copyParentProjectJiraId() {
+		const activeProject = getActiveProject(this.app);
+		if (!activeProject) {
+			return;
+		}
+
+		const jiraId = activeProject.jiraId;
+		if (!jiraId) {
+			return;
+		}
+
+		navigator.clipboard.writeText(jiraId);
 	}
 
 	onunload() {}
