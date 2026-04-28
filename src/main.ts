@@ -177,6 +177,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "add-review-tag",
+			name: "Add #review Tag",
+			callback: () => this.addTagToActiveFile("review"),
+		});
+
+		this.addCommand({
 			id: "remove-review-tag",
 			name: "Remove #review Tag",
 			callback: () => this.removeTagFromActiveFile("review"),
@@ -502,12 +508,14 @@ export default class ConductorObsidian extends Plugin {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
-			
+
 			// Open parent project when task is marked as Done
 			if (status === TaskStatus.Done) {
 				const activeProject = getActiveProject(this.app);
 				if (activeProject) {
-					this.app.workspace.getLeaf(false).openFile(activeProject.file);
+					this.app.workspace
+						.getLeaf(false)
+						.openFile(activeProject.file);
 				}
 			}
 		}
@@ -586,7 +594,8 @@ export default class ConductorObsidian extends Plugin {
 	}
 
 	private buildJiraUrl(jiraId: string): string {
-		const baseUrl = this.settings.jiraBaseUrl || "https://jira.syncsort.com";
+		const baseUrl =
+			this.settings.jiraBaseUrl || "https://jira.syncsort.com";
 		return `${baseUrl}/browse/${jiraId}`;
 	}
 
