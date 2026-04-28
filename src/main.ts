@@ -484,6 +484,14 @@ export default class ConductorObsidian extends Plugin {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+			
+			// Open parent project when task is marked as Done
+			if (status === TaskStatus.Done) {
+				const activeProject = getActiveProject(this.app);
+				if (activeProject) {
+					this.app.workspace.getLeaf(false).openFile(activeProject.file);
+				}
+			}
 		}
 	};
 
