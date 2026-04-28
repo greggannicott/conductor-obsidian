@@ -153,21 +153,39 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "add-reviewed-tag",
-			name: "Add #reviewed Tag",
-			callback: () => this.addTagToActiveFile("reviewed"),
+			id: "add-reflected-tag",
+			name: "Add #reflected Tag",
+			callback: () => this.addTagToActiveFile("reflected"),
 		});
 
 		this.addCommand({
-			id: "remove-reviewed-tag",
-			name: "Remove #reviewed Tag",
-			callback: () => this.removeTagFromActiveFile("reviewed"),
+			id: "remove-reflected-tag",
+			name: "Remove #reflected Tag",
+			callback: () => this.removeTagFromActiveFile("reflected"),
 		});
 
 		this.addCommand({
-			id: "toggle-reviewed-tag",
-			name: "Toggle #reviewed Tag",
-			callback: () => this.toggleTagOnActiveFile("reviewed"),
+			id: "toggle-reflected-tag",
+			name: "Toggle #reflected Tag",
+			callback: () => this.toggleTagOnActiveFile("reflected"),
+		});
+
+		this.addCommand({
+			id: "open-parent-project-jira-ticket",
+			name: "Open Parent Project's Jira Ticket",
+			callback: () => this.openParentProjectJiraTicket(),
+		});
+
+		this.addCommand({
+			id: "remove-review-tag",
+			name: "Remove #review Tag",
+			callback: () => this.removeTagFromActiveFile("review"),
+		});
+
+		this.addCommand({
+			id: "toggle-review-tag",
+			name: "Toggle #review Tag",
+			callback: () => this.toggleTagOnActiveFile("review"),
 		});
 
 		this.addCommand({
