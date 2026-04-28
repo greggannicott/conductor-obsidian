@@ -69,6 +69,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "open-task-from-an-active-project",
+			name: "Open Task From an Active Project",
+			callback: this.openTaskFromAnActiveProject,
+		});
+
+		this.addCommand({
 			id: "open-parent",
 			name: "Open Parent Project",
 			callback: this.openParentProject,
@@ -294,6 +300,39 @@ export default class ConductorObsidian extends Plugin {
 			selectTaskModal.open();
 		};
 		selectProjectModal.open();
+	};
+
+	openTaskFromAnActiveProject = () => {
+		// Obtain a list of active projects
+		const projectFilter: ProjectFilters = {
+			statusFilter: {
+				statusIs: [ProjectStatus.ToDo, ProjectStatus.Doing],
+			},
+			ongoingFilter: {
+				ongoingIs: false,
+			},
+		};
+		const activeProjects = getProjects(this.app, projectFilter);
+
+		// Obtain a list of tasks that belong to those projects. The status should be either To Do or Doing
+		const selectTaskModal = new ChooseTaskModal(this.app);
+		const taskFilters: TaskFilters = {
+			projectFilter: {
+				projectIs: activeProjects.map((p) => p.name),
+			},
+			statusFilter: {
+				statusIs: [TaskStatus.ToDo, TaskStatus.Doing],
+			},
+		};
+
+		// List those tasks
+		selectTaskModal.tasks = getTasks(this.app, taskFilters);
+
+		// Open the selected task
+		selectTaskModal.onChoose = (task: Task) => {
+			this.app.workspace.getLeaf(false).openFile(task.file);
+		};
+		selectTaskModal.open();
 	};
 
 	openParentProject = () => {
