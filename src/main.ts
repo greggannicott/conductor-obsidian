@@ -170,6 +170,24 @@ export default class ConductorObsidian extends Plugin {
 			name: "Open Parent Project's Jira Ticket",
 			callback: () => this.openParentProjectJiraTicket(),
 		});
+
+		this.addCommand({
+			id: "remove-review-tag",
+			name: "Remove #review Tag",
+			callback: () => this.removeTagFromActiveFile("review"),
+		});
+
+		this.addCommand({
+			id: "toggle-review-tag",
+			name: "Toggle #review Tag",
+			callback: () => this.toggleTagOnActiveFile("review"),
+		});
+
+		this.addCommand({
+			id: "open-parent-project-jira-ticket",
+			name: "Open Parent Project's Jira Ticket",
+			callback: () => this.openParentProjectJiraTicket(),
+		});
 	}
 
 	openProject = () => {
