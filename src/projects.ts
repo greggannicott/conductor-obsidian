@@ -41,6 +41,11 @@ export enum ProjectStatus {
 	Abandoned = "04 - Abandoned",
 }
 
+export const outstandingProjectTypes: ProjectStatus[] = [
+	ProjectStatus.ToDo,
+	ProjectStatus.InProgress,
+];
+
 // The the project that is currently active.
 // A project is active if the focussed file is a project, or if a task belonging to the project.
 export function getActiveProject(app: App): Project | null {

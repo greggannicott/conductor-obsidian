@@ -6,6 +6,7 @@ import {
 	getActiveProject,
 	getActiveProjectJiraId,
 	getProjects,
+	outstandingProjectTypes,
 	Project,
 	ProjectFilters,
 	ProjectStatus,
@@ -20,6 +21,7 @@ import {
 	TaskPriority,
 	TaskFilters,
 	TaskType,
+	outstandingTaskTypes,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
@@ -45,9 +47,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-active-project",
-			name: "Open an Active Project",
-			callback: this.openActiveProject,
+			id: "open-outstanding-project",
+			name: "Open an Outstanding Project",
+			callback: this.openOutstandingProject,
 		});
 
 		this.addCommand({
@@ -57,9 +59,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-active-task",
-			name: "Open an Active Task",
-			callback: this.openActiveTask,
+			id: "open-in-progress-task",
+			name: "Open an In Progress Task",
+			callback: this.openInProgressTask,
 		});
 
 		this.addCommand({
@@ -69,9 +71,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-task-from-an-active-project",
+			id: "open-task-from-an-outstanding-project",
 			name: "Open Task From an Outstanding Project",
-			callback: this.openTaskFromAnActiveProject,
+			callback: this.openTaskFromAnOutstandingProject,
 		});
 
 		this.addCommand({
@@ -234,7 +236,7 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
-	openActiveProject = () => {
+	openOutstandingProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		const filter: ProjectFilters = {
 			statusFilter: {
@@ -269,7 +271,7 @@ export default class ConductorObsidian extends Plugin {
 		selectTaskModal.open();
 	};
 
-	openActiveTask = () => {
+	openInProgressTask = () => {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const filters: TaskFilters = {
 			statusFilter: {
@@ -308,26 +310,26 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
-	openTaskFromAnActiveProject = () => {
-		// Obtain a list of active projects
+	openTaskFromAnOutstandingProject = () => {
+		// Obtain a list of outstanding projects
 		const projectFilter: ProjectFilters = {
 			statusFilter: {
-				statusIs: [ProjectStatus.ToDo, ProjectStatus.InProgress],
+				statusIs: outstandingProjectTypes,
 			},
 			ongoingFilter: {
 				ongoingIs: false,
 			},
 		};
-		const activeProjects = getProjects(this.app, projectFilter);
+		const outstandingProjects = getProjects(this.app, projectFilter);
 
 		// Obtain a list of tasks that belong to those projects. The status should be either To Do or In Progress
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const taskFilters: TaskFilters = {
 			projectFilter: {
-				projectIs: activeProjects.map((p) => p.name),
+				projectIs: outstandingProjects.map((p) => p.name),
 			},
 			statusFilter: {
-				statusIs: [TaskStatus.ToDo, TaskStatus.InProgress],
+				statusIs: outstandingTaskTypes,
 			},
 		};
 
@@ -351,13 +353,13 @@ export default class ConductorObsidian extends Plugin {
 				ongoingIs: false,
 			},
 		};
-		const activeProjects = getProjects(this.app, projectFilter);
+		const inProgressProjects = getProjects(this.app, projectFilter);
 
 		// Obtain a list of tasks that belong to those projects. The status should be In Progress
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const taskFilters: TaskFilters = {
 			projectFilter: {
-				projectIs: activeProjects.map((p) => p.name),
+				projectIs: inProgressProjects.map((p) => p.name),
 			},
 			statusFilter: {
 				statusIs: [TaskStatus.InProgress],
