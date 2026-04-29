@@ -365,13 +365,19 @@ export default class ConductorObsidian extends Plugin {
 		};
 
 		// List those tasks
-		selectTaskModal.tasks = getTasks(this.app, taskFilters);
+		const tasks = getTasks(this.app, taskFilters);
 
-		// Open the selected task
-		selectTaskModal.onChoose = (task: Task) => {
-			this.app.workspace.getLeaf(false).openFile(task.file);
-		};
-		selectTaskModal.open();
+		if (tasks.length === 1 && tasks[0]?.file) {
+			this.app.workspace.getLeaf(false).openFile(tasks[0].file);
+		} else {
+			selectTaskModal.tasks = getTasks(this.app, taskFilters);
+
+			// Open the selected task
+			selectTaskModal.onChoose = (task: Task) => {
+				this.app.workspace.getLeaf(false).openFile(task.file);
+			};
+			selectTaskModal.open();
+		}
 	};
 
 	openParentProject = () => {
