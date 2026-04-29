@@ -105,9 +105,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "set-task-to-doing",
-			name: "Set Task Status to '02 - Doing'",
-			callback: () => this.setActiveTaskStatus(TaskStatus.Doing),
+			id: "set-task-to-in-progress",
+			name: "Set Task Status to '02 - In Progress'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.InProgress),
 		});
 
 		this.addCommand({
@@ -238,7 +238,7 @@ export default class ConductorObsidian extends Plugin {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		const filter: ProjectFilters = {
 			statusFilter: {
-				statusIs: [ProjectStatus.ToDo, ProjectStatus.Doing],
+				statusIs: [ProjectStatus.ToDo, ProjectStatus.InProgress],
 			},
 			ongoingFilter: {
 				ongoingIs: false,
@@ -273,7 +273,7 @@ export default class ConductorObsidian extends Plugin {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const filters: TaskFilters = {
 			statusFilter: {
-				statusIs: [TaskStatus.Doing],
+				statusIs: [TaskStatus.InProgress],
 			},
 			typeFilter: {
 				typeExcludes: [TaskType.BlogPost],
@@ -312,7 +312,7 @@ export default class ConductorObsidian extends Plugin {
 		// Obtain a list of active projects
 		const projectFilter: ProjectFilters = {
 			statusFilter: {
-				statusIs: [ProjectStatus.ToDo, ProjectStatus.Doing],
+				statusIs: [ProjectStatus.ToDo, ProjectStatus.InProgress],
 			},
 			ongoingFilter: {
 				ongoingIs: false,
@@ -320,14 +320,14 @@ export default class ConductorObsidian extends Plugin {
 		};
 		const activeProjects = getProjects(this.app, projectFilter);
 
-		// Obtain a list of tasks that belong to those projects. The status should be either To Do or Doing
+		// Obtain a list of tasks that belong to those projects. The status should be either To Do or In Progress
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const taskFilters: TaskFilters = {
 			projectFilter: {
 				projectIs: activeProjects.map((p) => p.name),
 			},
 			statusFilter: {
-				statusIs: [TaskStatus.ToDo, TaskStatus.Doing],
+				statusIs: [TaskStatus.ToDo, TaskStatus.InProgress],
 			},
 		};
 
@@ -345,7 +345,7 @@ export default class ConductorObsidian extends Plugin {
 		// Obtain a list of in progress
 		const projectFilter: ProjectFilters = {
 			statusFilter: {
-				statusIs: [ProjectStatus.Doing],
+				statusIs: [ProjectStatus.InProgress],
 			},
 			ongoingFilter: {
 				ongoingIs: false,
@@ -353,14 +353,14 @@ export default class ConductorObsidian extends Plugin {
 		};
 		const activeProjects = getProjects(this.app, projectFilter);
 
-		// Obtain a list of tasks that belong to those projects. The status should be Doing
+		// Obtain a list of tasks that belong to those projects. The status should be In Progress
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const taskFilters: TaskFilters = {
 			projectFilter: {
 				projectIs: activeProjects.map((p) => p.name),
 			},
 			statusFilter: {
-				statusIs: [TaskStatus.Doing],
+				statusIs: [TaskStatus.InProgress],
 			},
 		};
 

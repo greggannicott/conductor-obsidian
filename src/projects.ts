@@ -36,7 +36,7 @@ export enum Context {
 
 export enum ProjectStatus {
 	ToDo = "01 - To Do",
-	Doing = "02 - Doing",
+	InProgress = "02 - In Progress",
 	Done = "03 - Done",
 	Abandoned = "04 - Abandoned",
 }
