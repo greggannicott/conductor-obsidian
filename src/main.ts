@@ -70,8 +70,14 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "open-task-from-an-active-project",
-			name: "Open Task From an Active Project",
+			name: "Open Task From an Outstanding Project",
 			callback: this.openTaskFromAnActiveProject,
+		});
+
+		this.addCommand({
+			id: "open-in-progress-task-from-an-in-progress-project",
+			name: "Open In Progress Task From an In Progress Project",
+			callback: this.openInProgressTaskFromInProgressProject,
 		});
 
 		this.addCommand({
@@ -322,6 +328,39 @@ export default class ConductorObsidian extends Plugin {
 			},
 			statusFilter: {
 				statusIs: [TaskStatus.ToDo, TaskStatus.Doing],
+			},
+		};
+
+		// List those tasks
+		selectTaskModal.tasks = getTasks(this.app, taskFilters);
+
+		// Open the selected task
+		selectTaskModal.onChoose = (task: Task) => {
+			this.app.workspace.getLeaf(false).openFile(task.file);
+		};
+		selectTaskModal.open();
+	};
+
+	openInProgressTaskFromInProgressProject = () => {
+		// Obtain a list of in progress
+		const projectFilter: ProjectFilters = {
+			statusFilter: {
+				statusIs: [ProjectStatus.Doing],
+			},
+			ongoingFilter: {
+				ongoingIs: false,
+			},
+		};
+		const activeProjects = getProjects(this.app, projectFilter);
+
+		// Obtain a list of tasks that belong to those projects. The status should be Doing
+		const selectTaskModal = new ChooseTaskModal(this.app);
+		const taskFilters: TaskFilters = {
+			projectFilter: {
+				projectIs: activeProjects.map((p) => p.name),
+			},
+			statusFilter: {
+				statusIs: [TaskStatus.Doing],
 			},
 		};
 
