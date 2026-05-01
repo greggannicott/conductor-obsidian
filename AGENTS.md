@@ -10,7 +10,7 @@
 - Install: `npm install`
 - Dev watch (writes `main.js` with inline sourcemap): `npm run dev`
 - Production build (typecheck then minified bundle): `npm run build`
-- Manual test loop in Obsidian: after changes, run Obsidian command "Reload app without saving".
+- Manual test: Developer handles testing, so make code changes and let him know it is ready to test.
 
 ## Lint
 
