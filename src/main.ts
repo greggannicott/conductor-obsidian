@@ -240,37 +240,19 @@ export default class ConductorObsidian extends Plugin {
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle('🔴 - High');
 								subItem.onClick(() => {
-									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
-									const task = tasks.find(t => t.file === file);
-									if (task) {
-										task.priority = TaskPriority.High;
-										updateTask(this.app, task);
-										new Notice(`Task [${task.name}] set to [${TaskPriority.High}]...`);
-									}
+									this.setTaskPriority(file, TaskPriority.High);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle('🟡 - Medium');
 								subItem.onClick(() => {
-									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
-									const task = tasks.find(t => t.file === file);
-									if (task) {
-										task.priority = TaskPriority.Medium;
-										updateTask(this.app, task);
-										new Notice(`Task [${task.name}] set to [${TaskPriority.Medium}]...`);
-									}
+									this.setTaskPriority(file, TaskPriority.Medium);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle('🟢 - Low');
 								subItem.onClick(() => {
-									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
-									const task = tasks.find(t => t.file === file);
-									if (task) {
-										task.priority = TaskPriority.Low;
-										updateTask(this.app, task);
-										new Notice(`Task [${task.name}] set to [${TaskPriority.Low}]...`);
-									}
+									this.setTaskPriority(file, TaskPriority.Low);
 								});
 							});
 						});
@@ -666,6 +648,16 @@ export default class ConductorObsidian extends Plugin {
 			activeTask.priority = priority;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${priority}]...`);
+		}
+	};
+
+	setTaskPriority = (file: TFile, priority: TaskPriority) => {
+		const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
+		const task = tasks.find(t => t.file === file);
+		if (task) {
+			task.priority = priority;
+			updateTask(this.app, task);
+			new Notice(`Task [${task.name}] set to [${priority}]...`);
 		}
 	};
 
