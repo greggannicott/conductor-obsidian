@@ -1,4 +1,4 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
@@ -225,6 +225,59 @@ export default class ConductorObsidian extends Plugin {
 			name: "Copy Parent Project's Jira URL",
 			callback: () => this.copyParentProjectJiraURL(),
 		});
+
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				if (file instanceof TFile) {
+					const metadata = this.app.metadataCache.getFileCache(file);
+					const categories = metadata?.frontmatter?.categories;
+					const isTask = categories && Array.isArray(categories) && categories.includes('[[Task]]');
+
+					if (isTask) {
+						menu.addItem((item) => {
+							item.setTitle('Set Priority');
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle('🔴 - High');
+								subItem.onClick(() => {
+									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
+									const task = tasks.find(t => t.file === file);
+									if (task) {
+										task.priority = TaskPriority.High;
+										updateTask(this.app, task);
+										new Notice(`Task [${task.name}] set to [${TaskPriority.High}]...`);
+									}
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle('🟡 - Medium');
+								subItem.onClick(() => {
+									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
+									const task = tasks.find(t => t.file === file);
+									if (task) {
+										task.priority = TaskPriority.Medium;
+										updateTask(this.app, task);
+										new Notice(`Task [${task.name}] set to [${TaskPriority.Medium}]...`);
+									}
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle('🟢 - Low');
+								subItem.onClick(() => {
+									const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
+									const task = tasks.find(t => t.file === file);
+									if (task) {
+										task.priority = TaskPriority.Low;
+										updateTask(this.app, task);
+										new Notice(`Task [${task.name}] set to [${TaskPriority.Low}]...`);
+									}
+								});
+							});
+						});
+					}
+				}
+			})
+		);
 	}
 
 	openProject = () => {
