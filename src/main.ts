@@ -642,12 +642,25 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
+	getPriorityDisplay = (priority: TaskPriority): string => {
+		switch (priority) {
+			case TaskPriority.High:
+				return '🔴 - High';
+			case TaskPriority.Medium:
+				return '🟡 - Medium';
+			case TaskPriority.Low:
+				return '🟢 - Low';
+			default:
+				return priority;
+		}
+	};
+
 	setActiveTaskPriority = (priority: TaskPriority) => {
 		const activeTask = getActiveTask(this.app);
 		if (activeTask) {
 			activeTask.priority = priority;
 			updateTask(this.app, activeTask);
-			new Notice(`Task [${activeTask.name}] set to [${priority}]...`);
+			new Notice(`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`);
 		}
 	};
 
@@ -657,7 +670,7 @@ export default class ConductorObsidian extends Plugin {
 		if (task) {
 			task.priority = priority;
 			updateTask(this.app, task);
-			new Notice(`Task [${task.name}] set to [${priority}]...`);
+			new Notice(`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`);
 		}
 	};
 
