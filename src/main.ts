@@ -4,7 +4,9 @@ import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import {
 	getActiveProject,
+	getActiveProjectJiraId,
 	getProjects,
+	outstandingProjectTypes,
 	Project,
 	ProjectFilters,
 	ProjectStatus,
@@ -19,13 +21,18 @@ import {
 	TaskPriority,
 	TaskFilters,
 	TaskType,
+	outstandingTaskTypes,
 } from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
 
-interface ConductorSettings {}
+interface ConductorSettings {
+	jiraBaseUrl?: string;
+}
 
-const DEFAULT_SETTINGS: ConductorSettings = {};
+const DEFAULT_SETTINGS: ConductorSettings = {
+	jiraBaseUrl: "https://jira.syncsort.com",
+};
 
 export default class ConductorObsidian extends Plugin {
 	settings: ConductorSettings;
@@ -40,9 +47,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-active-project",
-			name: "Open an Active Project",
-			callback: this.openActiveProject,
+			id: "open-outstanding-project",
+			name: "Open an Outstanding Project",
+			callback: this.openOutstandingProject,
 		});
 
 		this.addCommand({
@@ -52,15 +59,27 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "open-active-task",
-			name: "Open an Active Task",
-			callback: this.openActiveTask,
+			id: "open-in-progress-task",
+			name: "Open an In Progress Task",
+			callback: this.openInProgressTask,
 		});
 
 		this.addCommand({
 			id: "open-task-from-any-project",
 			name: "Open Task From Any Project",
 			callback: this.openTaskFromAnyProject,
+		});
+
+		this.addCommand({
+			id: "open-task-from-an-outstanding-project",
+			name: "Open Task From an Outstanding Project",
+			callback: this.openTaskFromAnOutstandingProject,
+		});
+
+		this.addCommand({
+			id: "open-in-progress-task-from-an-in-progress-project",
+			name: "Open In Progress Task From an In Progress Project",
+			callback: this.openInProgressTaskFromInProgressProject,
 		});
 
 		this.addCommand({
@@ -88,9 +107,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "set-task-to-doing",
-			name: "Set Task Status to '02 - Doing'",
-			callback: () => this.setActiveTaskStatus(TaskStatus.Doing),
+			id: "set-task-to-in-progress",
+			name: "Set Task Status to '02 - In Progress'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.InProgress),
 		});
 
 		this.addCommand({
@@ -172,6 +191,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "add-review-tag",
+			name: "Add #review Tag",
+			callback: () => this.addTagToActiveFile("review"),
+		});
+
+		this.addCommand({
 			id: "remove-review-tag",
 			name: "Remove #review Tag",
 			callback: () => this.removeTagFromActiveFile("review"),
@@ -188,6 +213,18 @@ export default class ConductorObsidian extends Plugin {
 			name: "Open Parent Project's Jira Ticket",
 			callback: () => this.openParentProjectJiraTicket(),
 		});
+
+		this.addCommand({
+			id: "copy-parent-project-jira-id",
+			name: "Copy Parent Project's Jira ID",
+			callback: () => this.copyParentProjectJiraId(),
+		});
+
+		this.addCommand({
+			id: "copy-parent-project-jira-url",
+			name: "Copy Parent Project's Jira URL",
+			callback: () => this.copyParentProjectJiraURL(),
+		});
 	}
 
 	openProject = () => {
@@ -199,11 +236,11 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
-	openActiveProject = () => {
+	openOutstandingProject = () => {
 		const selectProjectModal = new ChooseProjectModal(this.app);
 		const filter: ProjectFilters = {
 			statusFilter: {
-				statusIs: [ProjectStatus.ToDo, ProjectStatus.Doing],
+				statusIs: [ProjectStatus.ToDo, ProjectStatus.InProgress],
 			},
 			ongoingFilter: {
 				ongoingIs: false,
@@ -234,11 +271,11 @@ export default class ConductorObsidian extends Plugin {
 		selectTaskModal.open();
 	};
 
-	openActiveTask = () => {
+	openInProgressTask = () => {
 		const selectTaskModal = new ChooseTaskModal(this.app);
 		const filters: TaskFilters = {
 			statusFilter: {
-				statusIs: [TaskStatus.Doing],
+				statusIs: [TaskStatus.InProgress],
 			},
 			typeFilter: {
 				typeExcludes: [TaskType.BlogPost],
@@ -271,6 +308,78 @@ export default class ConductorObsidian extends Plugin {
 			selectTaskModal.open();
 		};
 		selectProjectModal.open();
+	};
+
+	openTaskFromAnOutstandingProject = () => {
+		// Obtain a list of outstanding projects
+		const projectFilter: ProjectFilters = {
+			statusFilter: {
+				statusIs: outstandingProjectTypes,
+			},
+			ongoingFilter: {
+				ongoingIs: false,
+			},
+		};
+		const outstandingProjects = getProjects(this.app, projectFilter);
+
+		// Obtain a list of tasks that belong to those projects. The status should be either To Do or In Progress
+		const selectTaskModal = new ChooseTaskModal(this.app);
+		const taskFilters: TaskFilters = {
+			projectFilter: {
+				projectIs: outstandingProjects.map((p) => p.name),
+			},
+			statusFilter: {
+				statusIs: outstandingTaskTypes,
+			},
+		};
+
+		// List those tasks
+		selectTaskModal.tasks = getTasks(this.app, taskFilters);
+
+		// Open the selected task
+		selectTaskModal.onChoose = (task: Task) => {
+			this.app.workspace.getLeaf(false).openFile(task.file);
+		};
+		selectTaskModal.open();
+	};
+
+	openInProgressTaskFromInProgressProject = () => {
+		// Obtain a list of in progress
+		const projectFilter: ProjectFilters = {
+			statusFilter: {
+				statusIs: [ProjectStatus.InProgress],
+			},
+			ongoingFilter: {
+				ongoingIs: false,
+			},
+		};
+		const inProgressProjects = getProjects(this.app, projectFilter);
+
+		// Obtain a list of tasks that belong to those projects. The status should be In Progress
+		const selectTaskModal = new ChooseTaskModal(this.app);
+		const taskFilters: TaskFilters = {
+			projectFilter: {
+				projectIs: inProgressProjects.map((p) => p.name),
+			},
+			statusFilter: {
+				statusIs: [TaskStatus.InProgress],
+			},
+		};
+
+		// List those tasks
+		const tasks = getTasks(this.app, taskFilters);
+
+		if (tasks.length === 1 && tasks[0]?.file) {
+			this.app.workspace.getLeaf(false).openFile(tasks[0].file);
+		} else {
+			selectTaskModal.tasks = getTasks(this.app, taskFilters);
+
+			// Open the selected task
+			selectTaskModal.onChoose = (task: Task) => {
+				this.app.workspace.getLeaf(false).openFile(task.file);
+			};
+			selectTaskModal.open();
+		}
 	};
 
 	openParentProject = () => {
@@ -485,6 +594,16 @@ export default class ConductorObsidian extends Plugin {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
 			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+
+			// Open parent project when task is marked as Done
+			if (status === TaskStatus.Done) {
+				const activeProject = getActiveProject(this.app);
+				if (activeProject) {
+					this.app.workspace
+						.getLeaf(false)
+						.openFile(activeProject.file);
+				}
+			}
 		}
 	};
 
@@ -560,19 +679,33 @@ export default class ConductorObsidian extends Plugin {
 		}
 	}
 
+	private buildJiraUrl(jiraId: string): string {
+		const baseUrl =
+			this.settings.jiraBaseUrl || "https://jira.syncsort.com";
+		return `${baseUrl}/browse/${jiraId}`;
+	}
+
 	openParentProjectJiraTicket() {
-		const activeProject = getActiveProject(this.app);
-		if (!activeProject) {
-			return;
-		}
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
 
-		const jiraId = activeProject.jiraId;
-		if (!jiraId) {
-			return;
-		}
-
-		const jiraUrl = `https://jira.syncsort.com/browse/${jiraId}`;
+		const jiraUrl = this.buildJiraUrl(jiraId);
 		window.open(jiraUrl, "_blank");
+	}
+
+	copyParentProjectJiraId() {
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
+
+		navigator.clipboard.writeText(jiraId);
+	}
+
+	copyParentProjectJiraURL() {
+		const jiraId = getActiveProjectJiraId(this.app);
+		if (!jiraId) return;
+
+		const jiraUrl = this.buildJiraUrl(jiraId);
+		navigator.clipboard.writeText(jiraUrl);
 	}
 
 	onunload() {}

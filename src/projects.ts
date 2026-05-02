@@ -36,10 +36,15 @@ export enum Context {
 
 export enum ProjectStatus {
 	ToDo = "01 - To Do",
-	Doing = "02 - Doing",
+	InProgress = "02 - In Progress",
 	Done = "03 - Done",
 	Abandoned = "04 - Abandoned",
 }
+
+export const outstandingProjectTypes: ProjectStatus[] = [
+	ProjectStatus.ToDo,
+	ProjectStatus.InProgress,
+];
 
 // The the project that is currently active.
 // A project is active if the focussed file is a project, or if a task belonging to the project.
@@ -63,6 +68,15 @@ export function getActiveProject(app: App): Project | null {
 		}
 	}
 	return activeProject;
+}
+
+// Get the Jira ID of the currently active project
+export function getActiveProjectJiraId(app: App): string | null {
+	const activeProject = getActiveProject(app);
+	if (!activeProject?.jiraId) {
+		return null;
+	}
+	return activeProject.jiraId;
 }
 
 // Get a list of projects.

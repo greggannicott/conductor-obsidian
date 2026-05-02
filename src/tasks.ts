@@ -23,14 +23,14 @@ export type Task = {
 
 export enum TaskStatus {
 	ToDo = "01 - To Do",
-	Doing = "02 - Doing",
+	InProgress = "02 - In Progress",
 	Done = "03 - Done",
 	Abandoned = "04 - Abandoned",
 }
 
-export const incompletedTaskTypes: TaskStatus[] = [
+export const outstandingTaskTypes: TaskStatus[] = [
 	TaskStatus.ToDo,
-	TaskStatus.Doing,
+	TaskStatus.InProgress,
 ];
 
 export enum TaskPriority {
@@ -166,7 +166,7 @@ export function getTasks(
 	let filters: TaskFilters = {
 		projectFilter: undefined,
 		statusFilter: {
-			statusIs: incompletedTaskTypes,
+			statusIs: outstandingTaskTypes,
 		},
 		typeFilter: undefined,
 		impededFilter: undefined,
