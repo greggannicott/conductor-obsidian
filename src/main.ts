@@ -14,6 +14,7 @@ import {
 import {
 	createNewTask,
 	getTasks,
+	getTask,
 	Task,
 	TaskStatus,
 	getActiveTask,
@@ -227,38 +228,86 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on('file-menu', (menu, file) => {
+			this.app.workspace.on("file-menu", (menu, file) => {
 				if (file instanceof TFile) {
 					const metadata = this.app.metadataCache.getFileCache(file);
 					const categories = metadata?.frontmatter?.categories;
-					const isTask = categories && Array.isArray(categories) && categories.includes('[[Task]]');
+					const isTask =
+						categories &&
+						Array.isArray(categories) &&
+						categories.includes("[[Task]]");
 
 					if (isTask) {
 						menu.addItem((item) => {
-							item.setTitle('Set Priority');
+							item.setTitle("Set Status");
 							const submenu = (item as any).setSubmenu();
 							submenu.addItem((subItem: any) => {
-								subItem.setTitle('🔴 - High');
+								subItem.setTitle("⭕ - To Do");
 								subItem.onClick(() => {
-									this.setTaskPriority(file, TaskPriority.High);
+									this.setTaskStatus(file, TaskStatus.ToDo);
 								});
 							});
 							submenu.addItem((subItem: any) => {
-								subItem.setTitle('🟡 - Medium');
+								subItem.setTitle("🔄 - In Progress");
 								subItem.onClick(() => {
-									this.setTaskPriority(file, TaskPriority.Medium);
+									this.setTaskStatus(
+										file,
+										TaskStatus.InProgress,
+									);
+								});
+							});
+							submenu.addSeparator();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("✅ - Done");
+								subItem.onClick(() => {
+									this.setTaskStatus(file, TaskStatus.Done);
 								});
 							});
 							submenu.addItem((subItem: any) => {
-								subItem.setTitle('🟢 - Low');
+								subItem.setTitle("❌ - Abandoned");
 								subItem.onClick(() => {
-									this.setTaskPriority(file, TaskPriority.Low);
+									this.setTaskStatus(
+										file,
+										TaskStatus.Abandoned,
+									);
+								});
+							});
+						});
+
+						menu.addItem((item) => {
+							item.setTitle("Set Priority");
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🔴 - High");
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.High,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🟡 - Medium");
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.Medium,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🟢 - Low");
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.Low,
+									);
 								});
 							});
 						});
 					}
 				}
-			})
+			}),
 		);
 	}
 
@@ -628,7 +677,9 @@ export default class ConductorObsidian extends Plugin {
 		if (activeTask) {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
-			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+			new Notice(
+				`Task [${activeTask.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
 
 			// Open parent project when task is marked as Done
 			if (status === TaskStatus.Done) {
@@ -645,13 +696,28 @@ export default class ConductorObsidian extends Plugin {
 	getPriorityDisplay = (priority: TaskPriority): string => {
 		switch (priority) {
 			case TaskPriority.High:
-				return '🔴 - High';
+				return "🔴 - High";
 			case TaskPriority.Medium:
-				return '🟡 - Medium';
+				return "🟡 - Medium";
 			case TaskPriority.Low:
-				return '🟢 - Low';
+				return "🟢 - Low";
 			default:
 				return priority;
+		}
+	};
+
+	getStatusDisplay = (status: TaskStatus): string => {
+		switch (status) {
+			case TaskStatus.ToDo:
+				return "⭕ - To Do";
+			case TaskStatus.InProgress:
+				return "🔄 - In Progress";
+			case TaskStatus.Done:
+				return "✅ - Done";
+			case TaskStatus.Abandoned:
+				return "❌ - Abandoned";
+			default:
+				return status;
 		}
 	};
 
@@ -660,17 +726,37 @@ export default class ConductorObsidian extends Plugin {
 		if (activeTask) {
 			activeTask.priority = priority;
 			updateTask(this.app, activeTask);
-			new Notice(`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`);
+			new Notice(
+				`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
 		}
 	};
 
 	setTaskPriority = (file: TFile, priority: TaskPriority) => {
-		const tasks = getTasks(this.app).filter((t): t is Task => t !== null);
-		const task = tasks.find(t => t.file === file);
+		const task = getTask(this.app, file.path);
 		if (task) {
 			task.priority = priority;
 			updateTask(this.app, task);
 			new Notice(`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`);
+		}
+	};
+
+	setTaskStatus = (file: TFile, status: TaskStatus) => {
+		const task = getTask(this.app, file.path);
+		if (task) {
+			task.status = status;
+			updateTask(this.app, task);
+			new Notice(`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`);
+
+			// Open parent project when task is marked as Done
+			if (status === TaskStatus.Done) {
+				const activeProject = getActiveProject(this.app);
+				if (activeProject) {
+					this.app.workspace
+						.getLeaf(false)
+						.openFile(activeProject.file);
+				}
+			}
 		}
 	};
 
