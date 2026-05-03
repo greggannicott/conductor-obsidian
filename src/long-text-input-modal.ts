@@ -24,7 +24,7 @@ export class LongTextInputModal extends Modal {
 
 	constructor(app: App, config: LongTextInputModalConfiguration) {
 		super(app);
-		
+
 		const defaultKeybindings: LongTextInputKeybinding[] = [
 			{
 				id: "meta-enter",

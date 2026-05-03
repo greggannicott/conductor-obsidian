@@ -2,6 +2,7 @@ import { Notice, Plugin, TFile } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
+import { LongTextInputModal } from "src/long-text-input-modal";
 import {
 	createNewTask,
 	getTasks,
@@ -227,6 +228,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "copy-parent-project-jira-url",
 			name: "Copy Parent Project's Jira URL",
 			callback: () => this.copyParentProjectJiraURL(),
+		});
+
+		this.addCommand({
+			id: "create-quote",
+			name: "Create Quote",
+			callback: this.createQuote,
 		});
 
 		this.registerEvent(
@@ -945,6 +952,43 @@ export default class ConductorObsidian extends Plugin {
 		const jiraUrl = this.buildJiraUrl(jiraId);
 		navigator.clipboard.writeText(jiraUrl);
 	}
+
+	createQuote = async () => {
+		const { value: quote } = await LongTextInputModal.show(
+			this.app,
+			{
+				title: "Quote",
+				placeholder: "Enter the quote...",
+			},
+		);
+
+		const { value: person } = await TextInputModal.show(
+			this.app,
+			{
+				title: "Person",
+				placeholder: "Who said this quote?",
+			},
+		);
+
+		const { value: about } = await TextInputModal.show(
+			this.app,
+			{
+				title: `${person} on...`,
+				placeholder: "What is this quote about?",
+			},
+		);
+
+		const { value: source } = await TextInputModal.show(
+			this.app,
+			{
+				title: "Source",
+				placeholder: "Where did you see this quote?",
+			},
+		);
+
+		console.log("Quote created:", { quote, person, about, source });
+		new Notice("Quote logged to console");
+	};
 
 	onunload() {}
 

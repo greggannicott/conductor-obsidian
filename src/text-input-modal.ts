@@ -24,9 +24,16 @@ export class TextInputModal extends Modal {
 
 	constructor(app: App, config: TextInputModalConfiguration) {
 		super(app);
-		if (config.keybindings) {
-			this.keybindings = config.keybindings;
-		}
+
+		const defaultKeybindings: TextInputKeybinding[] = [
+			{
+				id: "enter",
+				commandText: "↵",
+				check: (e) => e.key === "Enter",
+				instruction: "submit",
+			},
+		];
+		this.keybindings = config.keybindings ?? defaultKeybindings;
 
 		const input = this.contentEl.createEl("input", {
 			cls: ["text-input", "input"],
@@ -38,7 +45,7 @@ export class TextInputModal extends Modal {
 
 		for (const kb of this.keybindings) {
 			const instructionEl = promptInstructions.createEl("div", {
-				cls: "prompt-instuction",
+				cls: "prompt-instruction",
 			});
 			instructionEl.createEl("span", {
 				cls: "prompt-instruction-command",
@@ -70,16 +77,6 @@ export class TextInputModal extends Modal {
 		app: App,
 		config: TextInputModalConfiguration,
 	): Promise<SubmitEvent> {
-		const defaultKeybindings: TextInputKeybinding[] = [
-			{
-				id: "enter",
-				commandText: "↵",
-				check: (e) => e.key === "Enter",
-				instruction: "submit",
-			},
-		];
-		const keybindings = config.keybindings ?? defaultKeybindings;
-
 		return new Promise((resolve) => {
 			const modal = new TextInputModal(app, config);
 			modal.setTitle(config.title);
