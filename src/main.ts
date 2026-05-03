@@ -1032,7 +1032,7 @@ export default class ConductorObsidian extends Plugin {
 
 		if (file) {
 			let content = await this.app.vault.read(file);
-			content = content.replace(/PERSON/g, person);
+			content = content.replace(/PERSON/g, `[[${person}]]`);
 			content = content.replace(/WHAT IS BEING DISCUSSED/g, about);
 			
 			// Format quote with > > prefix for each line (nested in callout)
