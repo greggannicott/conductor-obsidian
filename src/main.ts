@@ -238,17 +238,25 @@ export default class ConductorObsidian extends Plugin {
 						categories.includes("[[Task]]");
 
 					if (isTask) {
+						const task = getTask(this.app, file.path);
+
 						menu.addItem((item) => {
 							item.setTitle("Set Status");
 							const submenu = (item as any).setSubmenu();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("⭕ - To Do");
+								if (task && task.status === TaskStatus.ToDo) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskStatus(file, TaskStatus.ToDo);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🔄 - In Progress");
+								if (task && task.status === TaskStatus.InProgress) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskStatus(
 										file,
@@ -259,12 +267,18 @@ export default class ConductorObsidian extends Plugin {
 							submenu.addSeparator();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("✅ - Done");
+								if (task && task.status === TaskStatus.Done) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskStatus(file, TaskStatus.Done);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("❌ - Abandoned");
+								if (task && task.status === TaskStatus.Abandoned) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskStatus(
 										file,
@@ -279,6 +293,9 @@ export default class ConductorObsidian extends Plugin {
 							const submenu = (item as any).setSubmenu();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🔴 - High");
+								if (task && task.priority === TaskPriority.High) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskPriority(
 										file,
@@ -288,6 +305,9 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🟡 - Medium");
+								if (task && task.priority === TaskPriority.Medium) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskPriority(
 										file,
@@ -297,6 +317,9 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🟢 - Low");
+								if (task && task.priority === TaskPriority.Low) {
+									subItem.setChecked(true);
+								}
 								subItem.onClick(() => {
 									this.setTaskPriority(
 										file,
