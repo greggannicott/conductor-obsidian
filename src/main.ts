@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { Notice, Plugin, TFile, MarkdownView } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
@@ -998,9 +998,14 @@ export default class ConductorObsidian extends Plugin {
 	}
 
 	createQuote = async () => {
+		// Get selected text if available
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const selectedText = activeView?.editor?.getSelection() || "";
+
 		const { value: quote } = await LongTextInputModal.show(this.app, {
 			title: "Quote",
 			placeholder: "Enter the quote...",
+			initialValue: selectedText || undefined,
 		});
 
 		const { value: person } = await TextInputModal.show(this.app, {
@@ -1022,6 +1027,13 @@ export default class ConductorObsidian extends Plugin {
 		let fileName = baseFileName;
 		let counter = 1;
 
+		// Create References directory if it doesn't exist
+		const referencesFolder =
+			this.app.vault.getAbstractFileByPath("References");
+		if (!referencesFolder) {
+			await this.app.vault.createFolder("References");
+		}
+
 		while (this.app.vault.getFileByPath(`References/${fileName}.md`)) {
 			fileName = `${baseFileName} ${counter}`;
 			counter++;
@@ -1034,12 +1046,15 @@ export default class ConductorObsidian extends Plugin {
 			let content = await this.app.vault.read(file);
 			content = content.replace(/PERSON/g, `[[${person}]]`);
 			content = content.replace(/WHAT IS BEING DISCUSSED/g, about);
-			
-			// Format quote with > > prefix for each line (nested in callout)
-			const formattedQuote = quote.split('\n').map(line => `> > ${line}`).join('\n');
-			// Replace "The quote" handling both cases: with or without > > prefix in template
-			content = content.replace(/(>\s*>\s*)?The quote/g, formattedQuote);
-			
+
+			// The template has "> > The quote" - we need to replace the entire line
+			// and ensure each line of the quote has the proper > > prefix
+			const formattedQuote = quote
+				.split("\n")
+				.map((line) => `> > ${line}`)
+				.join("\n");
+			content = content.replace(/>\s*>\s*The quote/g, formattedQuote);
+
 			content = content.replace(/SOURCE/g, source);
 			await this.app.vault.modify(file, content);
 
@@ -1051,8 +1066,6 @@ export default class ConductorObsidian extends Plugin {
 			new Notice("Failed to create quote note. Template may be missing.");
 		}
 	};
-
-	onunload() {}
 
 	async loadSettings() {
 		this.settings = Object.assign(

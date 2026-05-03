@@ -11,6 +11,7 @@ export type LongTextInputModalConfiguration = {
 	title: string;
 	placeholder?: string;
 	keybindings?: LongTextInputKeybinding[];
+	initialValue?: string;
 };
 
 type SubmitEvent = {
@@ -60,6 +61,10 @@ export class LongTextInputModal extends Modal {
 
 		if (config.placeholder) {
 			textarea.placeholder = config.placeholder;
+		}
+
+		if (config.initialValue) {
+			textarea.value = config.initialValue;
 		}
 
 		textarea.addEventListener("keydown", (e) => {
