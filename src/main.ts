@@ -3,15 +3,6 @@ import { Notice, Plugin, TFile } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
 import {
-	getActiveProject,
-	getActiveProjectJiraId,
-	getProjects,
-	outstandingProjectTypes,
-	Project,
-	ProjectFilters,
-	ProjectStatus,
-} from "src/projects";
-import {
 	createNewTask,
 	getTasks,
 	getTask,
@@ -24,6 +15,17 @@ import {
 	TaskType,
 	outstandingTaskTypes,
 } from "./tasks";
+import {
+	getProjects,
+	getProjectFromFile,
+	getActiveProject,
+	getActiveProjectJiraId,
+	outstandingProjectTypes,
+	Project,
+	ProjectFilters,
+	ProjectStatus,
+	updateProject,
+} from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { addTag, removeTag, toggleTag } from "./utilities";
 
@@ -236,6 +238,10 @@ export default class ConductorObsidian extends Plugin {
 						categories &&
 						Array.isArray(categories) &&
 						categories.includes("[[Task]]");
+					const isProject =
+						categories &&
+						Array.isArray(categories) &&
+						categories.includes("[[Project]]");
 
 					if (isTask) {
 						const task = getTask(this.app, file.path);
@@ -324,6 +330,58 @@ export default class ConductorObsidian extends Plugin {
 									this.setTaskPriority(
 										file,
 										TaskPriority.Low,
+									);
+								});
+							});
+						});
+					}
+
+					if (isProject) {
+						const project = getProjectFromFile(this.app, file);
+
+						menu.addItem((item) => {
+							item.setTitle("Set Status");
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("⭕ - To Do");
+								if (project && project.status === ProjectStatus.ToDo) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(file, ProjectStatus.ToDo);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🔄 - In Progress");
+								if (project && project.status === ProjectStatus.InProgress) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.InProgress,
+									);
+								});
+							});
+							submenu.addSeparator();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("✅ - Done");
+								if (project && project.status === ProjectStatus.Done) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(file, ProjectStatus.Done);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("❌ - Abandoned");
+								if (project && project.status === ProjectStatus.Abandoned) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.Abandoned,
 									);
 								});
 							});
@@ -729,16 +787,20 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
-	getStatusDisplay = (status: TaskStatus): string => {
+	getStatusDisplay = (status: TaskStatus | ProjectStatus): string => {
 		switch (status) {
 			case TaskStatus.ToDo:
-				return "⭕ - To Do";
+			case ProjectStatus.ToDo:
+				return '⭕ - To Do';
 			case TaskStatus.InProgress:
-				return "🔄 - In Progress";
+			case ProjectStatus.InProgress:
+				return '🔄 - In Progress';
 			case TaskStatus.Done:
-				return "✅ - Done";
+			case ProjectStatus.Done:
+				return '✅ - Done';
 			case TaskStatus.Abandoned:
-				return "❌ - Abandoned";
+			case ProjectStatus.Abandoned:
+				return '❌ - Abandoned';
 			default:
 				return status;
 		}
@@ -780,6 +842,15 @@ export default class ConductorObsidian extends Plugin {
 						.openFile(activeProject.file);
 				}
 			}
+		}
+	};
+
+	setProjectStatus = (file: TFile, status: ProjectStatus) => {
+		const project = getProjectFromFile(this.app, file);
+		if (project) {
+			project.status = status;
+			updateProject(this.app, project);
+			new Notice(`Project [${project.name}] set to [${this.getStatusDisplay(status)}]...`);
 		}
 	};
 

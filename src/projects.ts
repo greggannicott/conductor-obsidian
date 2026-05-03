@@ -153,3 +153,17 @@ export function getProjectFromLink(
 	}
 	return project;
 }
+
+export async function updateProject(app: App, project: Project): Promise<void> {
+	const file = app.vault.getFileByPath(project.path);
+	if (file) {
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			fm["status"] = project.status;
+			fm["jira-id"] = project.jiraId;
+			fm["branch"] = project.branch;
+			fm["ongoing"] = project.ongoing;
+			fm["project-id"] = project.projectId;
+			fm["repo-directory-name"] = project.repoDirectoryName;
+		});
+	}
+}
