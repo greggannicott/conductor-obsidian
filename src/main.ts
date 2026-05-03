@@ -28,7 +28,12 @@ import {
 	updateProject,
 } from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
-import { addTag, removeTag, toggleTag } from "./utilities";
+import {
+	addTag,
+	removeTag,
+	toggleTag,
+	createFileFromTemplate,
+} from "./utilities";
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
@@ -267,7 +272,10 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🔄 - In Progress");
-								if (task && task.status === TaskStatus.InProgress) {
+								if (
+									task &&
+									task.status === TaskStatus.InProgress
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -289,7 +297,10 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("❌ - Abandoned");
-								if (task && task.status === TaskStatus.Abandoned) {
+								if (
+									task &&
+									task.status === TaskStatus.Abandoned
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -306,7 +317,10 @@ export default class ConductorObsidian extends Plugin {
 							const submenu = (item as any).setSubmenu();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🔴 - High");
-								if (task && task.priority === TaskPriority.High) {
+								if (
+									task &&
+									task.priority === TaskPriority.High
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -318,7 +332,10 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🟡 - Medium");
-								if (task && task.priority === TaskPriority.Medium) {
+								if (
+									task &&
+									task.priority === TaskPriority.Medium
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -330,7 +347,10 @@ export default class ConductorObsidian extends Plugin {
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🟢 - Low");
-								if (task && task.priority === TaskPriority.Low) {
+								if (
+									task &&
+									task.priority === TaskPriority.Low
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -351,16 +371,25 @@ export default class ConductorObsidian extends Plugin {
 							const submenu = (item as any).setSubmenu();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("⭕ - To Do");
-								if (project && project.status === ProjectStatus.ToDo) {
+								if (
+									project &&
+									project.status === ProjectStatus.ToDo
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
-									this.setProjectStatus(file, ProjectStatus.ToDo);
+									this.setProjectStatus(
+										file,
+										ProjectStatus.ToDo,
+									);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("🔄 - In Progress");
-								if (project && project.status === ProjectStatus.InProgress) {
+								if (
+									project &&
+									project.status === ProjectStatus.InProgress
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -373,16 +402,25 @@ export default class ConductorObsidian extends Plugin {
 							submenu.addSeparator();
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("✅ - Done");
-								if (project && project.status === ProjectStatus.Done) {
+								if (
+									project &&
+									project.status === ProjectStatus.Done
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
-									this.setProjectStatus(file, ProjectStatus.Done);
+									this.setProjectStatus(
+										file,
+										ProjectStatus.Done,
+									);
 								});
 							});
 							submenu.addItem((subItem: any) => {
 								subItem.setTitle("❌ - Abandoned");
-								if (project && project.status === ProjectStatus.Abandoned) {
+								if (
+									project &&
+									project.status === ProjectStatus.Abandoned
+								) {
 									subItem.setChecked(true);
 								}
 								subItem.onClick(() => {
@@ -798,16 +836,16 @@ export default class ConductorObsidian extends Plugin {
 		switch (status) {
 			case TaskStatus.ToDo:
 			case ProjectStatus.ToDo:
-				return '⭕ - To Do';
+				return "⭕ - To Do";
 			case TaskStatus.InProgress:
 			case ProjectStatus.InProgress:
-				return '🔄 - In Progress';
+				return "🔄 - In Progress";
 			case TaskStatus.Done:
 			case ProjectStatus.Done:
-				return '✅ - Done';
+				return "✅ - Done";
 			case TaskStatus.Abandoned:
 			case ProjectStatus.Abandoned:
-				return '❌ - Abandoned';
+				return "❌ - Abandoned";
 			default:
 				return status;
 		}
@@ -829,7 +867,9 @@ export default class ConductorObsidian extends Plugin {
 		if (task) {
 			task.priority = priority;
 			updateTask(this.app, task);
-			new Notice(`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`);
+			new Notice(
+				`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
 		}
 	};
 
@@ -838,7 +878,9 @@ export default class ConductorObsidian extends Plugin {
 		if (task) {
 			task.status = status;
 			updateTask(this.app, task);
-			new Notice(`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`);
+			new Notice(
+				`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
 
 			// Open parent project when task is marked as Done
 			if (status === TaskStatus.Done) {
@@ -857,7 +899,9 @@ export default class ConductorObsidian extends Plugin {
 		if (project) {
 			project.status = status;
 			updateProject(this.app, project);
-			new Notice(`Project [${project.name}] set to [${this.getStatusDisplay(status)}]...`);
+			new Notice(
+				`Project [${project.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
 		}
 	};
 
@@ -954,40 +998,58 @@ export default class ConductorObsidian extends Plugin {
 	}
 
 	createQuote = async () => {
-		const { value: quote } = await LongTextInputModal.show(
-			this.app,
-			{
-				title: "Quote",
-				placeholder: "Enter the quote...",
-			},
-		);
+		const { value: quote } = await LongTextInputModal.show(this.app, {
+			title: "Quote",
+			placeholder: "Enter the quote...",
+		});
 
-		const { value: person } = await TextInputModal.show(
-			this.app,
-			{
-				title: "Person",
-				placeholder: "Who said this quote?",
-			},
-		);
+		const { value: person } = await TextInputModal.show(this.app, {
+			title: "Person",
+			placeholder: "Who said this quote?",
+		});
 
-		const { value: about } = await TextInputModal.show(
-			this.app,
-			{
-				title: `${person} on...`,
-				placeholder: "What is this quote about?",
-			},
-		);
+		const { value: about } = await TextInputModal.show(this.app, {
+			title: `${person} on...`,
+			placeholder: "What is this quote about?",
+		});
 
-		const { value: source } = await TextInputModal.show(
-			this.app,
-			{
-				title: "Source",
-				placeholder: "Where did you see this quote?",
-			},
-		);
+		const { value: source } = await TextInputModal.show(this.app, {
+			title: "Source",
+			placeholder: "Where did you see this quote?",
+		});
 
-		console.log("Quote created:", { quote, person, about, source });
-		new Notice("Quote logged to console");
+		const baseFileName = `${person} on ${about}`;
+		let fileName = baseFileName;
+		let counter = 1;
+
+		while (this.app.vault.getFileByPath(`References/${fileName}.md`)) {
+			fileName = `${baseFileName} ${counter}`;
+			counter++;
+		}
+
+		const filePath = `References/${fileName}.md`;
+		const file = await createFileFromTemplate(this.app, filePath, "Quote");
+
+		if (file) {
+			let content = await this.app.vault.read(file);
+			content = content.replace(/PERSON/g, person);
+			content = content.replace(/WHAT IS BEING DISCUSSED/g, about);
+			
+			// Format quote with > > prefix for each line (nested in callout)
+			const formattedQuote = quote.split('\n').map(line => `> > ${line}`).join('\n');
+			// Replace "The quote" handling both cases: with or without > > prefix in template
+			content = content.replace(/(>\s*>\s*)?The quote/g, formattedQuote);
+			
+			content = content.replace(/SOURCE/g, source);
+			await this.app.vault.modify(file, content);
+
+			await addTag(this.app, file, "inbox");
+
+			new Notice(`Quote note created: ${fileName}`);
+			this.app.workspace.getLeaf(false).openFile(file);
+		} else {
+			new Notice("Failed to create quote note. Template may be missing.");
+		}
 	};
 
 	onunload() {}
