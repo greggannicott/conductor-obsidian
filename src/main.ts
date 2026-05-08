@@ -28,6 +28,7 @@ import {
 	updateProject,
 } from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
+import { ChooseMeetingTypeModal, MeetingType } from "./choose-meeting-type-modal";
 import {
 	addTag,
 	removeTag,
@@ -239,6 +240,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-quote",
 			name: "Create Quote",
 			callback: this.createQuote,
+		});
+
+		this.addCommand({
+			id: "create-meeting",
+			name: "Create Meeting",
+			callback: this.createMeeting,
 		});
 
 		this.registerEvent(
@@ -1066,6 +1073,83 @@ export default class ConductorObsidian extends Plugin {
 			new Notice("Failed to create quote note. Template may be missing.");
 		}
 	};
+
+	createMeeting = async () => {
+		const meetingType = await new Promise<MeetingType | null>((resolve) => {
+			const modal = new ChooseMeetingTypeModal(this.app);
+			modal.onChoose = (type: MeetingType) => resolve(type);
+			modal.open();
+		});
+
+		if (!meetingType) return;
+
+		const { value: meetingName } = await TextInputModal.show(this.app, {
+			title: "Name of Meeting",
+			placeholder: "Enter meeting name...",
+		});
+
+		const trimmedMeetingName = meetingName.trim();
+		if (!trimmedMeetingName) {
+			new Notice("Meeting name cannot be blank");
+			return;
+		}
+
+		const sanitizedMeetingName = trimmedMeetingName.replace(/[:\\/]/g, "").trim();
+		if (!sanitizedMeetingName) {
+			new Notice("Meeting name cannot be blank");
+			return;
+		}
+
+		const templateName = this.getMeetingTemplateName(meetingType);
+		const fileName = this.getUniqueMeetingFileName(sanitizedMeetingName);
+		const filePath = `Projects/Work/${fileName}.md`;
+
+		const file = await createFileFromTemplate(this.app, filePath, templateName);
+		if (!file) {
+			new Notice(
+				"Failed to create meeting note. Template may be missing.",
+			);
+			return;
+		}
+
+		// Ensure the template doesn't auto-fill date-of-event.
+		await this.app.fileManager.processFrontMatter(file, (fm) => {
+			fm["date-of-event"] = "";
+		});
+
+		this.app.workspace.getLeaf(false).openFile(file);
+	};
+
+	private getMeetingTemplateName(meetingType: MeetingType): string {
+		switch (meetingType) {
+			case "General":
+				return "Meeting";
+			case "Epic":
+				return "Meeting - Epic";
+			case "Project":
+				return "Meeting - Project";
+			default:
+				return "Meeting";
+		}
+	}
+
+	private getUniqueMeetingFileName(meetingName: string): string {
+		const sanitizedName = meetingName;
+		const basePath = `Projects/Work/${sanitizedName}.md`;
+		if (!this.app.vault.getFileByPath(basePath)) {
+			return sanitizedName;
+		}
+
+		let counter = 2;
+		while (true) {
+			const proposedName = `${sanitizedName} (${counter})`;
+			const proposedPath = `Projects/Work/${proposedName}.md`;
+			if (!this.app.vault.getFileByPath(proposedPath)) {
+				return proposedName;
+			}
+			counter++;
+		}
+	}
 
 	async loadSettings() {
 		this.settings = Object.assign(
