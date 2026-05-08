@@ -1,19 +1,12 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile, MarkdownView } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
-import {
-	getActiveProject,
-	getActiveProjectJiraId,
-	getProjects,
-	outstandingProjectTypes,
-	Project,
-	ProjectFilters,
-	ProjectStatus,
-} from "src/projects";
+import { LongTextInputModal } from "src/long-text-input-modal";
 import {
 	createNewTask,
 	getTasks,
+	getTask,
 	Task,
 	TaskStatus,
 	getActiveTask,
@@ -23,8 +16,24 @@ import {
 	TaskType,
 	outstandingTaskTypes,
 } from "./tasks";
+import {
+	getProjects,
+	getProjectFromFile,
+	getActiveProject,
+	getActiveProjectJiraId,
+	outstandingProjectTypes,
+	Project,
+	ProjectFilters,
+	ProjectStatus,
+	updateProject,
+} from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
-import { addTag, removeTag, toggleTag } from "./utilities";
+import {
+	addTag,
+	removeTag,
+	toggleTag,
+	createFileFromTemplate,
+} from "./utilities";
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
@@ -225,6 +234,207 @@ export default class ConductorObsidian extends Plugin {
 			name: "Copy Parent Project's Jira URL",
 			callback: () => this.copyParentProjectJiraURL(),
 		});
+
+		this.addCommand({
+			id: "create-quote",
+			name: "Create Quote",
+			callback: this.createQuote,
+		});
+
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (file instanceof TFile) {
+					const metadata = this.app.metadataCache.getFileCache(file);
+					const categories = metadata?.frontmatter?.categories;
+					const isTask =
+						categories &&
+						Array.isArray(categories) &&
+						categories.includes("[[Task]]");
+					const isProject =
+						categories &&
+						Array.isArray(categories) &&
+						categories.includes("[[Project]]");
+
+					if (isTask) {
+						const task = getTask(this.app, file.path);
+
+						menu.addItem((item) => {
+							item.setTitle("Set Status");
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("⭕ - To Do");
+								if (task && task.status === TaskStatus.ToDo) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskStatus(file, TaskStatus.ToDo);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🔄 - In Progress");
+								if (
+									task &&
+									task.status === TaskStatus.InProgress
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskStatus(
+										file,
+										TaskStatus.InProgress,
+									);
+								});
+							});
+							submenu.addSeparator();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("✅ - Done");
+								if (task && task.status === TaskStatus.Done) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskStatus(file, TaskStatus.Done);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("❌ - Abandoned");
+								if (
+									task &&
+									task.status === TaskStatus.Abandoned
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskStatus(
+										file,
+										TaskStatus.Abandoned,
+									);
+								});
+							});
+						});
+
+						menu.addItem((item) => {
+							item.setTitle("Set Priority");
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🔴 - High");
+								if (
+									task &&
+									task.priority === TaskPriority.High
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.High,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🟡 - Medium");
+								if (
+									task &&
+									task.priority === TaskPriority.Medium
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.Medium,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🟢 - Low");
+								if (
+									task &&
+									task.priority === TaskPriority.Low
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskPriority(
+										file,
+										TaskPriority.Low,
+									);
+								});
+							});
+						});
+					}
+
+					if (isProject) {
+						const project = getProjectFromFile(this.app, file);
+
+						menu.addItem((item) => {
+							item.setTitle("Set Status");
+							const submenu = (item as any).setSubmenu();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("⭕ - To Do");
+								if (
+									project &&
+									project.status === ProjectStatus.ToDo
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.ToDo,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🔄 - In Progress");
+								if (
+									project &&
+									project.status === ProjectStatus.InProgress
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.InProgress,
+									);
+								});
+							});
+							submenu.addSeparator();
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("✅ - Done");
+								if (
+									project &&
+									project.status === ProjectStatus.Done
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.Done,
+									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("❌ - Abandoned");
+								if (
+									project &&
+									project.status === ProjectStatus.Abandoned
+								) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setProjectStatus(
+										file,
+										ProjectStatus.Abandoned,
+									);
+								});
+							});
+						});
+					}
+				}
+			}),
+		);
 	}
 
 	openProject = () => {
@@ -593,7 +803,9 @@ export default class ConductorObsidian extends Plugin {
 		if (activeTask) {
 			activeTask.status = status;
 			updateTask(this.app, activeTask);
-			new Notice(`Task [${activeTask.name}] set to [${status}]...`);
+			new Notice(
+				`Task [${activeTask.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
 
 			// Open parent project when task is marked as Done
 			if (status === TaskStatus.Done) {
@@ -607,12 +819,89 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
+	getPriorityDisplay = (priority: TaskPriority): string => {
+		switch (priority) {
+			case TaskPriority.High:
+				return "🔴 - High";
+			case TaskPriority.Medium:
+				return "🟡 - Medium";
+			case TaskPriority.Low:
+				return "🟢 - Low";
+			default:
+				return priority;
+		}
+	};
+
+	getStatusDisplay = (status: TaskStatus | ProjectStatus): string => {
+		switch (status) {
+			case TaskStatus.ToDo:
+			case ProjectStatus.ToDo:
+				return "⭕ - To Do";
+			case TaskStatus.InProgress:
+			case ProjectStatus.InProgress:
+				return "🔄 - In Progress";
+			case TaskStatus.Done:
+			case ProjectStatus.Done:
+				return "✅ - Done";
+			case TaskStatus.Abandoned:
+			case ProjectStatus.Abandoned:
+				return "❌ - Abandoned";
+			default:
+				return status;
+		}
+	};
+
 	setActiveTaskPriority = (priority: TaskPriority) => {
 		const activeTask = getActiveTask(this.app);
 		if (activeTask) {
 			activeTask.priority = priority;
 			updateTask(this.app, activeTask);
-			new Notice(`Task [${activeTask.name}] set to [${priority}]...`);
+			new Notice(
+				`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
+		}
+	};
+
+	setTaskPriority = (file: TFile, priority: TaskPriority) => {
+		const task = getTask(this.app, file.path);
+		if (task) {
+			task.priority = priority;
+			updateTask(this.app, task);
+			new Notice(
+				`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
+		}
+	};
+
+	setTaskStatus = (file: TFile, status: TaskStatus) => {
+		const task = getTask(this.app, file.path);
+		if (task) {
+			task.status = status;
+			updateTask(this.app, task);
+			new Notice(
+				`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
+
+			// Open parent project when task is marked as Done
+			if (status === TaskStatus.Done) {
+				const activeProject = getActiveProject(this.app);
+				if (activeProject) {
+					this.app.workspace
+						.getLeaf(false)
+						.openFile(activeProject.file);
+				}
+			}
+		}
+	};
+
+	setProjectStatus = (file: TFile, status: ProjectStatus) => {
+		const project = getProjectFromFile(this.app, file);
+		if (project) {
+			project.status = status;
+			updateProject(this.app, project);
+			new Notice(
+				`Project [${project.name}] set to [${this.getStatusDisplay(status)}]...`,
+			);
 		}
 	};
 
@@ -708,7 +997,75 @@ export default class ConductorObsidian extends Plugin {
 		navigator.clipboard.writeText(jiraUrl);
 	}
 
-	onunload() {}
+	createQuote = async () => {
+		// Get selected text if available
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const selectedText = activeView?.editor?.getSelection() || "";
+
+		const { value: quote } = await LongTextInputModal.show(this.app, {
+			title: "Quote",
+			placeholder: "Enter the quote...",
+			initialValue: selectedText || undefined,
+		});
+
+		const { value: person } = await TextInputModal.show(this.app, {
+			title: "Person",
+			placeholder: "Who said this quote?",
+		});
+
+		const { value: about } = await TextInputModal.show(this.app, {
+			title: `${person} on...`,
+			placeholder: "What is this quote about?",
+		});
+
+		const { value: source } = await TextInputModal.show(this.app, {
+			title: "Source",
+			placeholder: "Where did you see this quote?",
+		});
+
+		const baseFileName = `${person} on ${about}`;
+		let fileName = baseFileName;
+		let counter = 1;
+
+		// Create References directory if it doesn't exist
+		const referencesFolder =
+			this.app.vault.getAbstractFileByPath("References");
+		if (!referencesFolder) {
+			await this.app.vault.createFolder("References");
+		}
+
+		while (this.app.vault.getFileByPath(`References/${fileName}.md`)) {
+			fileName = `${baseFileName} ${counter}`;
+			counter++;
+		}
+
+		const filePath = `References/${fileName}.md`;
+		const file = await createFileFromTemplate(this.app, filePath, "Quote");
+
+		if (file) {
+			let content = await this.app.vault.read(file);
+			content = content.replace(/PERSON/g, `[[${person}]]`);
+			content = content.replace(/WHAT IS BEING DISCUSSED/g, about);
+
+			// The template has "> > The quote" - we need to replace the entire line
+			// and ensure each line of the quote has the proper > > prefix
+			const formattedQuote = quote
+				.split("\n")
+				.map((line) => `> > ${line}`)
+				.join("\n");
+			content = content.replace(/>\s*>\s*The quote/g, formattedQuote);
+
+			content = content.replace(/SOURCE/g, source);
+			await this.app.vault.modify(file, content);
+
+			await addTag(this.app, file, "inbox");
+
+			new Notice(`Quote note created: ${fileName}`);
+			this.app.workspace.getLeaf(false).openFile(file);
+		} else {
+			new Notice("Failed to create quote note. Template may be missing.");
+		}
+	};
 
 	async loadSettings() {
 		this.settings = Object.assign(

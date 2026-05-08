@@ -1,16 +1,17 @@
 import { App, Modal } from "obsidian";
 
-export type TextInputKeybinding = {
+export type LongTextInputKeybinding = {
 	id: string;
 	commandText: string;
 	check: (e: KeyboardEvent) => boolean;
 	instruction: string;
 };
 
-export type TextInputModalConfiguration = {
+export type LongTextInputModalConfiguration = {
 	title: string;
 	placeholder?: string;
-	keybindings?: TextInputKeybinding[];
+	keybindings?: LongTextInputKeybinding[];
+	initialValue?: string;
 };
 
 type SubmitEvent = {
@@ -18,26 +19,30 @@ type SubmitEvent = {
 	submitKeybinding: string;
 };
 
-export class TextInputModal extends Modal {
+export class LongTextInputModal extends Modal {
 	private resolve: (value: SubmitEvent) => void;
-	private keybindings: TextInputKeybinding[];
+	private keybindings: LongTextInputKeybinding[];
 
-	constructor(app: App, config: TextInputModalConfiguration) {
+	constructor(app: App, config: LongTextInputModalConfiguration) {
 		super(app);
 
-		const defaultKeybindings: TextInputKeybinding[] = [
+		const defaultKeybindings: LongTextInputKeybinding[] = [
 			{
-				id: "enter",
-				commandText: "↵",
-				check: (e) => e.key === "Enter",
+				id: "meta-enter",
+				commandText: "⌘+↵",
+				check: (e) => e.metaKey && e.key === "Enter",
 				instruction: "submit",
 			},
 		];
 		this.keybindings = config.keybindings ?? defaultKeybindings;
 
-		const input = this.contentEl.createEl("input", {
+		const textarea = this.contentEl.createEl("textarea", {
 			cls: ["text-input", "input"],
 		});
+
+		textarea.style.width = "100%";
+		textarea.style.minHeight = "200px";
+		textarea.style.resize = "vertical";
 
 		const promptInstructions = this.contentEl.createEl("div", {
 			cls: "prompt-instructions",
@@ -55,15 +60,19 @@ export class TextInputModal extends Modal {
 		}
 
 		if (config.placeholder) {
-			input.placeholder = config.placeholder;
+			textarea.placeholder = config.placeholder;
 		}
 
-		input.addEventListener("keydown", (e) => {
+		if (config.initialValue) {
+			textarea.value = config.initialValue;
+		}
+
+		textarea.addEventListener("keydown", (e) => {
 			for (const kb of this.keybindings) {
 				if (kb.check(e)) {
 					e.preventDefault();
 					this.resolve({
-						value: input.value,
+						value: textarea.value,
 						submitKeybinding: kb.id,
 					});
 					this.close();
@@ -75,10 +84,10 @@ export class TextInputModal extends Modal {
 
 	static show(
 		app: App,
-		config: TextInputModalConfiguration,
+		config: LongTextInputModalConfiguration,
 	): Promise<SubmitEvent> {
 		return new Promise((resolve) => {
-			const modal = new TextInputModal(app, config);
+			const modal = new LongTextInputModal(app, config);
 			modal.setTitle(config.title);
 			modal.resolve = resolve;
 			modal.open();
