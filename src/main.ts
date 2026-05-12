@@ -243,6 +243,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "create-quote-using-current-note-as-source",
+			name: "Create Quote Using Current Note as Source",
+			callback: this.createQuoteUsingCurrentNoteAsSource,
+		});
+
+		this.addCommand({
 			id: "create-meeting",
 			name: "Create Meeting",
 			callback: this.createMeeting,
@@ -1056,6 +1062,75 @@ export default class ConductorObsidian extends Plugin {
 
 			// The template has "> > The quote" - we need to replace the entire line
 			// and ensure each line of the quote has the proper > > prefix
+			const formattedQuote = quote
+				.split("\n")
+				.map((line) => `> > ${line}`)
+				.join("\n");
+			content = content.replace(/>\s*>\s*The quote/g, formattedQuote);
+
+			content = content.replace(/SOURCE/g, source);
+			await this.app.vault.modify(file, content);
+
+			await addTag(this.app, file, "inbox");
+
+			new Notice(`Quote note created: ${fileName}`);
+			this.app.workspace.getLeaf(false).openFile(file);
+		} else {
+			new Notice("Failed to create quote note. Template may be missing.");
+		}
+	};
+
+	createQuoteUsingCurrentNoteAsSource = async () => {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeView?.file) {
+			new Notice("No active note to use as source.");
+			return;
+		}
+
+		const currentNoteName = activeView.file.basename;
+		const selectedText = activeView?.editor?.getSelection() || "";
+
+		const { value: quote } = await LongTextInputModal.show(this.app, {
+			title: "Quote",
+			placeholder: "Enter the quote...",
+			initialValue: selectedText || undefined,
+		});
+
+		const { value: person } = await TextInputModal.show(this.app, {
+			title: "Person",
+			placeholder: "Who said this quote?",
+		});
+
+		const { value: about } = await TextInputModal.show(this.app, {
+			title: `${person} on...`,
+			placeholder: "What is this quote about?",
+		});
+
+		const source = `[[${currentNoteName}]]`;
+
+		const baseFileName = `${person} on ${about}`;
+		let fileName = baseFileName;
+		let counter = 1;
+
+		const referencesFolder =
+			this.app.vault.getAbstractFileByPath("References");
+		if (!referencesFolder) {
+			await this.app.vault.createFolder("References");
+		}
+
+		while (this.app.vault.getFileByPath(`References/${fileName}.md`)) {
+			fileName = `${baseFileName} ${counter}`;
+			counter++;
+		}
+
+		const filePath = `References/${fileName}.md`;
+		const file = await createFileFromTemplate(this.app, filePath, "Quote");
+
+		if (file) {
+			let content = await this.app.vault.read(file);
+			content = content.replace(/PERSON/g, `[[${person}]]`);
+			content = content.replace(/WHAT IS BEING DISCUSSED/g, about);
+
 			const formattedQuote = quote
 				.split("\n")
 				.map((line) => `> > ${line}`)
