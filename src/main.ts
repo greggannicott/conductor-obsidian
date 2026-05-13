@@ -448,6 +448,77 @@ export default class ConductorObsidian extends Plugin {
 				}
 			}),
 		);
+
+		this.registerEvent(
+			this.app.workspace.on(
+				"files-menu" as any,
+				(menu: any, files: any[]) => {
+					const selectedFiles = (files ?? []).filter(
+						(f): f is TFile => f instanceof TFile,
+					);
+					if (selectedFiles.length === 0) return;
+
+					const selectedTaskFiles = selectedFiles.filter((file) => {
+						const metadata = this.app.metadataCache.getFileCache(file);
+						const categories = metadata?.frontmatter?.categories;
+						return (
+							categories &&
+							Array.isArray(categories) &&
+							categories.includes("[[Task]]")
+						);
+					});
+
+					// Only show bulk priority for Tasks.
+					if (selectedTaskFiles.length === 0) return;
+
+					menu.addItem((item: any) => {
+						item.setTitle("Set Priority");
+						const submenu = (item as any).setSubmenu();
+
+						submenu.addItem((subItem: any) => {
+							subItem.setTitle("🔴 - High");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.High,
+								);
+							});
+						});
+
+						submenu.addItem((subItem: any) => {
+							subItem.setTitle("🟡 - Medium");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.Medium,
+								);
+							});
+						});
+
+						submenu.addItem((subItem: any) => {
+							subItem.setTitle("🟢 - Low");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.Low,
+								);
+							});
+						});
+					});
+				},
+			),
+		);
+	}
+
+	private async setTaskPriorityForFiles(
+		files: TFile[],
+		priority: TaskPriority,
+	): Promise<void> {
+		for (const file of files) {
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				fm["priority"] = priority;
+			});
+		}
 	}
 
 	openProject = () => {
