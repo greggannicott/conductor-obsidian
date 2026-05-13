@@ -28,7 +28,10 @@ import {
 	updateProject,
 } from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
-import { ChooseMeetingTypeModal, MeetingType } from "./choose-meeting-type-modal";
+import {
+	ChooseMeetingTypeModal,
+	MeetingType,
+} from "./choose-meeting-type-modal";
 import {
 	addTag,
 	removeTag,
@@ -459,7 +462,8 @@ export default class ConductorObsidian extends Plugin {
 					if (selectedFiles.length === 0) return;
 
 					const selectedTaskFiles = selectedFiles.filter((file) => {
-						const metadata = this.app.metadataCache.getFileCache(file);
+						const metadata =
+							this.app.metadataCache.getFileCache(file);
 						const categories = metadata?.frontmatter?.categories;
 						return (
 							categories &&
@@ -481,6 +485,7 @@ export default class ConductorObsidian extends Plugin {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.High,
+									{ notice: false },
 								);
 							});
 						});
@@ -491,6 +496,7 @@ export default class ConductorObsidian extends Plugin {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.Medium,
+									{ notice: false },
 								);
 							});
 						});
@@ -501,6 +507,7 @@ export default class ConductorObsidian extends Plugin {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.Low,
+									{ notice: false },
 								);
 							});
 						});
@@ -513,11 +520,20 @@ export default class ConductorObsidian extends Plugin {
 	private async setTaskPriorityForFiles(
 		files: TFile[],
 		priority: TaskPriority,
+		options?: { notice?: boolean },
 	): Promise<void> {
+		const shouldNotice = options?.notice ?? true;
 		for (const file of files) {
-			await this.app.fileManager.processFrontMatter(file, (fm) => {
-				fm["priority"] = priority;
-			});
+			const task = getTask(this.app, file.path);
+			if (!task) continue;
+
+			task.priority = priority;
+			await updateTask(this.app, task);
+			if (shouldNotice) {
+				new Notice(
+					`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
+				);
+			}
 		}
 	}
 
@@ -937,24 +953,12 @@ export default class ConductorObsidian extends Plugin {
 
 	setActiveTaskPriority = (priority: TaskPriority) => {
 		const activeTask = getActiveTask(this.app);
-		if (activeTask) {
-			activeTask.priority = priority;
-			updateTask(this.app, activeTask);
-			new Notice(
-				`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`,
-			);
-		}
+		if (!activeTask) return;
+		void this.setTaskPriorityForFiles([activeTask.file], priority);
 	};
 
 	setTaskPriority = (file: TFile, priority: TaskPriority) => {
-		const task = getTask(this.app, file.path);
-		if (task) {
-			task.priority = priority;
-			updateTask(this.app, task);
-			new Notice(
-				`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
-			);
-		}
+		void this.setTaskPriorityForFiles([file], priority);
 	};
 
 	setTaskStatus = (file: TFile, status: TaskStatus) => {
@@ -1240,7 +1244,9 @@ export default class ConductorObsidian extends Plugin {
 			return;
 		}
 
-		const sanitizedMeetingName = trimmedMeetingName.replace(/[:\\/]/g, "").trim();
+		const sanitizedMeetingName = trimmedMeetingName
+			.replace(/[:\\/]/g, "")
+			.trim();
 		if (!sanitizedMeetingName) {
 			new Notice("Meeting name cannot be blank");
 			return;
@@ -1250,7 +1256,11 @@ export default class ConductorObsidian extends Plugin {
 		const fileName = this.getUniqueMeetingFileName(sanitizedMeetingName);
 		const filePath = `Projects/Work/${fileName}.md`;
 
-		const file = await createFileFromTemplate(this.app, filePath, templateName);
+		const file = await createFileFromTemplate(
+			this.app,
+			filePath,
+			templateName,
+		);
 		if (!file) {
 			new Notice(
 				"Failed to create meeting note. Template may be missing.",
