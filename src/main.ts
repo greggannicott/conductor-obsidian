@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, MarkdownView } from "obsidian";
+import { Notice, Plugin, TFile, MarkdownView, moment } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
@@ -966,6 +966,7 @@ export default class ConductorObsidian extends Plugin {
 		status: TaskStatus,
 		options?: { openParentProjectOnDone?: boolean },
 	): Promise<void> {
+		const statusChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
 		let updatedCount = 0;
 		let lastUpdatedTaskName: string | null = null;
 
@@ -973,8 +974,16 @@ export default class ConductorObsidian extends Plugin {
 			const task = getTask(this.app, file.path);
 			if (!task) continue;
 
-			task.status = status;
-			await updateTask(this.app, task);
+			let didChange = false;
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				if (fm["status"] !== status) {
+					fm["status"] = status;
+					fm["meta-last-status-change-dt"] = statusChangeDt;
+					didChange = true;
+				}
+			});
+
+			if (!didChange) continue;
 			updatedCount++;
 			lastUpdatedTaskName = task.name;
 		}
@@ -991,7 +1000,11 @@ export default class ConductorObsidian extends Plugin {
 			);
 		}
 
-		if (options?.openParentProjectOnDone && status === TaskStatus.Done) {
+		if (
+			options?.openParentProjectOnDone &&
+			status === TaskStatus.Done &&
+			updatedCount > 0
+		) {
 			const activeProject = getActiveProject(this.app);
 			if (activeProject) {
 				await this.app.workspace
