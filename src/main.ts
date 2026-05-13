@@ -518,15 +518,23 @@ export default class ConductorObsidian extends Plugin {
 		files: TFile[],
 		priority: TaskPriority,
 	): Promise<void> {
+		const priorityChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
 		let updatedCount = 0;
 		let lastUpdatedTaskName: string | null = null;
 
 		for (const file of files) {
 			const task = getTask(this.app, file.path);
 			if (!task) continue;
+			let didChange = false;
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				if (fm["priority"] !== priority) {
+					fm["priority"] = priority;
+					fm["meta-last-priority-change-dt"] = priorityChangeDt;
+					didChange = true;
+				}
+			});
+			if (!didChange) continue;
 
-			task.priority = priority;
-			await updateTask(this.app, task);
 			updatedCount++;
 			lastUpdatedTaskName = task.name;
 		}
