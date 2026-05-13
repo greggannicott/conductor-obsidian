@@ -907,23 +907,10 @@ export default class ConductorObsidian extends Plugin {
 
 	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
-		if (activeTask) {
-			activeTask.status = status;
-			updateTask(this.app, activeTask);
-			new Notice(
-				`Task [${activeTask.name}] set to [${this.getStatusDisplay(status)}]...`,
-			);
-
-			// Open parent project when task is marked as Done
-			if (status === TaskStatus.Done) {
-				const activeProject = getActiveProject(this.app);
-				if (activeProject) {
-					this.app.workspace
-						.getLeaf(false)
-						.openFile(activeProject.file);
-				}
-			}
-		}
+		if (!activeTask) return;
+		void this.setTaskStatusForFiles([activeTask.file], status, {
+			openParentProjectOnDone: true,
+		});
 	};
 
 	getPriorityDisplay = (priority: TaskPriority): string => {
@@ -969,25 +956,50 @@ export default class ConductorObsidian extends Plugin {
 	};
 
 	setTaskStatus = (file: TFile, status: TaskStatus) => {
-		const task = getTask(this.app, file.path);
-		if (task) {
-			task.status = status;
-			updateTask(this.app, task);
-			new Notice(
-				`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`,
-			);
+		void this.setTaskStatusForFiles([file], status, {
+			openParentProjectOnDone: status === TaskStatus.Done,
+		});
+	};
 
-			// Open parent project when task is marked as Done
-			if (status === TaskStatus.Done) {
-				const activeProject = getActiveProject(this.app);
-				if (activeProject) {
-					this.app.workspace
-						.getLeaf(false)
-						.openFile(activeProject.file);
-				}
+	private async setTaskStatusForFiles(
+		files: TFile[],
+		status: TaskStatus,
+		options?: { openParentProjectOnDone?: boolean },
+	): Promise<void> {
+		let updatedCount = 0;
+		let lastUpdatedTaskName: string | null = null;
+
+		for (const file of files) {
+			const task = getTask(this.app, file.path);
+			if (!task) continue;
+
+			task.status = status;
+			await updateTask(this.app, task);
+			updatedCount++;
+			lastUpdatedTaskName = task.name;
+		}
+
+		if (updatedCount === 0) return;
+
+		if (updatedCount === 1 && lastUpdatedTaskName) {
+			new Notice(
+				`Task [${lastUpdatedTaskName}] set to [${this.getStatusDisplay(status)}]...`,
+			);
+		} else {
+			new Notice(
+				`Status set to ${this.getStatusDisplay(status)} for ${updatedCount} tasks`,
+			);
+		}
+
+		if (options?.openParentProjectOnDone && status === TaskStatus.Done) {
+			const activeProject = getActiveProject(this.app);
+			if (activeProject) {
+				await this.app.workspace
+					.getLeaf(false)
+					.openFile(activeProject.file);
 			}
 		}
-	};
+	}
 
 	setProjectStatus = (file: TFile, status: ProjectStatus) => {
 		const project = getProjectFromFile(this.app, file);
