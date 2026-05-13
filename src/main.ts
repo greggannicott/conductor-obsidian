@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, MarkdownView } from "obsidian";
+import { Notice, Plugin, TFile, MarkdownView, moment } from "obsidian";
 
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
@@ -28,7 +28,10 @@ import {
 	updateProject,
 } from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
-import { ChooseMeetingTypeModal, MeetingType } from "./choose-meeting-type-modal";
+import {
+	ChooseMeetingTypeModal,
+	MeetingType,
+} from "./choose-meeting-type-modal";
 import {
 	addTag,
 	removeTag,
@@ -448,6 +451,105 @@ export default class ConductorObsidian extends Plugin {
 				}
 			}),
 		);
+
+		this.registerEvent(
+			this.app.workspace.on(
+				"files-menu" as any,
+				(menu: any, files: any[]) => {
+					const selectedFiles = (files ?? []).filter(
+						(f): f is TFile => f instanceof TFile,
+					);
+					if (selectedFiles.length === 0) return;
+
+					const selectedTaskFiles = selectedFiles.filter((file) => {
+						const metadata =
+							this.app.metadataCache.getFileCache(file);
+						const categories = metadata?.frontmatter?.categories;
+						return (
+							categories &&
+							Array.isArray(categories) &&
+							categories.includes("[[Task]]")
+						);
+					});
+
+					// Only show bulk priority for Tasks.
+					if (selectedTaskFiles.length === 0) return;
+
+					menu.addItem((item: any) => {
+						item.setTitle("Set Priority");
+						const submenu = (item as any).setSubmenu();
+
+						submenu.addItem((subItem: any) => {
+						subItem.setTitle("🔴 - High");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.High,
+								);
+							});
+						});
+
+						submenu.addItem((subItem: any) => {
+							subItem.setTitle("🟡 - Medium");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.Medium,
+								);
+							});
+						});
+
+						submenu.addItem((subItem: any) => {
+							subItem.setTitle("🟢 - Low");
+							subItem.onClick(() => {
+								void this.setTaskPriorityForFiles(
+									selectedTaskFiles,
+									TaskPriority.Low,
+								);
+							});
+						});
+					});
+				},
+			),
+		);
+	}
+
+	private async setTaskPriorityForFiles(
+		files: TFile[],
+		priority: TaskPriority,
+	): Promise<void> {
+		const priorityChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+		let updatedCount = 0;
+		let lastUpdatedTaskName: string | null = null;
+
+		for (const file of files) {
+			const task = getTask(this.app, file.path);
+			if (!task) continue;
+			let didChange = false;
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				if (fm["priority"] !== priority) {
+					fm["priority"] = priority;
+					fm["meta-last-priority-change-dt"] = priorityChangeDt;
+					didChange = true;
+				}
+			});
+			if (!didChange) continue;
+
+			updatedCount++;
+			lastUpdatedTaskName = task.name;
+		}
+
+		if (updatedCount === 0) return;
+
+		if (updatedCount === 1 && lastUpdatedTaskName) {
+			new Notice(
+				`Task [${lastUpdatedTaskName}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
+		} else {
+			new Notice(
+				`Priority set to ${this.getPriorityDisplay(priority)} for ${updatedCount} tasks`,
+			);
+		}
 	}
 
 	openProject = () => {
@@ -813,23 +915,10 @@ export default class ConductorObsidian extends Plugin {
 
 	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
-		if (activeTask) {
-			activeTask.status = status;
-			updateTask(this.app, activeTask);
-			new Notice(
-				`Task [${activeTask.name}] set to [${this.getStatusDisplay(status)}]...`,
-			);
-
-			// Open parent project when task is marked as Done
-			if (status === TaskStatus.Done) {
-				const activeProject = getActiveProject(this.app);
-				if (activeProject) {
-					this.app.workspace
-						.getLeaf(false)
-						.openFile(activeProject.file);
-				}
-			}
-		}
+		if (!activeTask) return;
+		void this.setTaskStatusForFiles([activeTask.file], status, {
+			openParentProjectOnDone: true,
+		});
 	};
 
 	getPriorityDisplay = (priority: TaskPriority): string => {
@@ -866,46 +955,72 @@ export default class ConductorObsidian extends Plugin {
 
 	setActiveTaskPriority = (priority: TaskPriority) => {
 		const activeTask = getActiveTask(this.app);
-		if (activeTask) {
-			activeTask.priority = priority;
-			updateTask(this.app, activeTask);
-			new Notice(
-				`Task [${activeTask.name}] set to [${this.getPriorityDisplay(priority)}]...`,
-			);
-		}
+		if (!activeTask) return;
+		void this.setTaskPriorityForFiles([activeTask.file], priority);
 	};
 
 	setTaskPriority = (file: TFile, priority: TaskPriority) => {
-		const task = getTask(this.app, file.path);
-		if (task) {
-			task.priority = priority;
-			updateTask(this.app, task);
-			new Notice(
-				`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
-			);
-		}
+		void this.setTaskPriorityForFiles([file], priority);
 	};
 
 	setTaskStatus = (file: TFile, status: TaskStatus) => {
-		const task = getTask(this.app, file.path);
-		if (task) {
-			task.status = status;
-			updateTask(this.app, task);
-			new Notice(
-				`Task [${task.name}] set to [${this.getStatusDisplay(status)}]...`,
-			);
+		void this.setTaskStatusForFiles([file], status, {
+			openParentProjectOnDone: status === TaskStatus.Done,
+		});
+	};
 
-			// Open parent project when task is marked as Done
-			if (status === TaskStatus.Done) {
-				const activeProject = getActiveProject(this.app);
-				if (activeProject) {
-					this.app.workspace
-						.getLeaf(false)
-						.openFile(activeProject.file);
+	private async setTaskStatusForFiles(
+		files: TFile[],
+		status: TaskStatus,
+		options?: { openParentProjectOnDone?: boolean },
+	): Promise<void> {
+		const statusChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+		let updatedCount = 0;
+		let lastUpdatedTaskName: string | null = null;
+
+		for (const file of files) {
+			const task = getTask(this.app, file.path);
+			if (!task) continue;
+
+			let didChange = false;
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				if (fm["status"] !== status) {
+					fm["status"] = status;
+					fm["meta-last-status-change-dt"] = statusChangeDt;
+					didChange = true;
 				}
+			});
+
+			if (!didChange) continue;
+			updatedCount++;
+			lastUpdatedTaskName = task.name;
+		}
+
+		if (updatedCount === 0) return;
+
+		if (updatedCount === 1 && lastUpdatedTaskName) {
+			new Notice(
+				`Task [${lastUpdatedTaskName}] set to [${this.getStatusDisplay(status)}]...`,
+			);
+		} else {
+			new Notice(
+				`Status set to ${this.getStatusDisplay(status)} for ${updatedCount} tasks`,
+			);
+		}
+
+		if (
+			options?.openParentProjectOnDone &&
+			status === TaskStatus.Done &&
+			updatedCount > 0
+		) {
+			const activeProject = getActiveProject(this.app);
+			if (activeProject) {
+				await this.app.workspace
+					.getLeaf(false)
+					.openFile(activeProject.file);
 			}
 		}
-	};
+	}
 
 	setProjectStatus = (file: TFile, status: ProjectStatus) => {
 		const project = getProjectFromFile(this.app, file);
@@ -1169,7 +1284,9 @@ export default class ConductorObsidian extends Plugin {
 			return;
 		}
 
-		const sanitizedMeetingName = trimmedMeetingName.replace(/[:\\/]/g, "").trim();
+		const sanitizedMeetingName = trimmedMeetingName
+			.replace(/[:\\/]/g, "")
+			.trim();
 		if (!sanitizedMeetingName) {
 			new Notice("Meeting name cannot be blank");
 			return;
@@ -1179,7 +1296,11 @@ export default class ConductorObsidian extends Plugin {
 		const fileName = this.getUniqueMeetingFileName(sanitizedMeetingName);
 		const filePath = `Projects/Work/${fileName}.md`;
 
-		const file = await createFileFromTemplate(this.app, filePath, templateName);
+		const file = await createFileFromTemplate(
+			this.app,
+			filePath,
+			templateName,
+		);
 		if (!file) {
 			new Notice(
 				"Failed to create meeting note. Template may be missing.",
