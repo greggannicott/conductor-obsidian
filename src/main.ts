@@ -480,12 +480,11 @@ export default class ConductorObsidian extends Plugin {
 						const submenu = (item as any).setSubmenu();
 
 						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🔴 - High");
+						subItem.setTitle("🔴 - High");
 							subItem.onClick(() => {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.High,
-									{ notice: false },
 								);
 							});
 						});
@@ -496,7 +495,6 @@ export default class ConductorObsidian extends Plugin {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.Medium,
-									{ notice: false },
 								);
 							});
 						});
@@ -507,7 +505,6 @@ export default class ConductorObsidian extends Plugin {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
 									TaskPriority.Low,
-									{ notice: false },
 								);
 							});
 						});
@@ -520,20 +517,30 @@ export default class ConductorObsidian extends Plugin {
 	private async setTaskPriorityForFiles(
 		files: TFile[],
 		priority: TaskPriority,
-		options?: { notice?: boolean },
 	): Promise<void> {
-		const shouldNotice = options?.notice ?? true;
+		let updatedCount = 0;
+		let lastUpdatedTaskName: string | null = null;
+
 		for (const file of files) {
 			const task = getTask(this.app, file.path);
 			if (!task) continue;
 
 			task.priority = priority;
 			await updateTask(this.app, task);
-			if (shouldNotice) {
-				new Notice(
-					`Task [${task.name}] set to [${this.getPriorityDisplay(priority)}]...`,
-				);
-			}
+			updatedCount++;
+			lastUpdatedTaskName = task.name;
+		}
+
+		if (updatedCount === 0) return;
+
+		if (updatedCount === 1 && lastUpdatedTaskName) {
+			new Notice(
+				`Task [${lastUpdatedTaskName}] set to [${this.getPriorityDisplay(priority)}]...`,
+			);
+		} else {
+			new Notice(
+				`Priority set to ${this.getPriorityDisplay(priority)} for ${updatedCount} tasks`,
+			);
 		}
 	}
 
