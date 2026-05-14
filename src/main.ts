@@ -126,6 +126,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "set-task-to-doing",
+			name: "Set Task Status to '02 - Doing'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.InProgress),
+		});
+
+		this.addCommand({
 			id: "set-task-to-done",
 			name: "Set Task Status to '03 - Done'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Done),
