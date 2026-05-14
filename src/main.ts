@@ -115,31 +115,31 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "set-task-to-todo",
-			name: "Set Task Status to '01 - To Do'",
+			name: "Set Task Status to '⭕ 01 - To Do'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.ToDo),
 		});
 
 		this.addCommand({
 			id: "set-task-to-in-progress",
-			name: "Set Task Status to '02 - In Progress'",
+			name: "Set Task Status to '🔄 02 - In Progress'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.InProgress),
 		});
 
 		this.addCommand({
 			id: "set-task-to-doing",
-			name: "Set Task Status to '02 - Doing'",
+			name: "Set Task Status to '🔄 02 - Doing'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.InProgress),
 		});
 
 		this.addCommand({
 			id: "set-task-to-done",
-			name: "Set Task Status to '03 - Done'",
+			name: "Set Task Status to '✅ 03 - Done'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Done),
 		});
 
 		this.addCommand({
 			id: "set-task-to-abandoned",
-			name: "Set Task Status to '04 - Abandoned'",
+			name: "Set Task Status to '❌ 04 - Abandoned'",
 			callback: () => this.setActiveTaskStatus(TaskStatus.Abandoned),
 		});
 
@@ -151,19 +151,19 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "set-task-to-high-priority",
-			name: "Set Task Priority to '01 - High'",
+			name: "Set Task Priority to '🔴 01 - High'",
 			callback: () => this.setActiveTaskPriority(TaskPriority.High),
 		});
 
 		this.addCommand({
 			id: "set-task-to-medium-priority",
-			name: "Set Task Priority to '02 - Medium'",
+			name: "Set Task Priority to '🟡 02 - Medium'",
 			callback: () => this.setActiveTaskPriority(TaskPriority.Medium),
 		});
 
 		this.addCommand({
 			id: "set-task-to-low-priority",
-			name: "Set Task Priority to '03 - Low'",
+			name: "Set Task Priority to '🟢 03 - Low'",
 			callback: () => this.setActiveTaskPriority(TaskPriority.Low),
 		});
 
