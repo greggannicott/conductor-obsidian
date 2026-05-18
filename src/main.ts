@@ -389,6 +389,13 @@ export default class ConductorObsidian extends Plugin {
 								});
 							});
 						});
+
+						menu.addItem((item) => {
+							item.setTitle("Touch Task");
+							item.onClick(() => {
+								void this.touchTaskFiles([file]);
+							});
+						});
 					}
 
 					if (isProject) {
@@ -535,9 +542,41 @@ export default class ConductorObsidian extends Plugin {
 							});
 						});
 					});
+
+					menu.addItem((item: any) => {
+						item.setTitle("Touch Task");
+						item.onClick(() => {
+							void this.touchTaskFiles(selectedTaskFiles);
+						});
+					});
 				},
 			),
 		);
+	}
+
+	private async touchTaskFiles(files: TFile[]): Promise<void> {
+		const touchedDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+		let updatedCount = 0;
+		let lastUpdatedTaskName: string | null = null;
+
+		for (const file of files) {
+			const task = getTask(this.app, file.path);
+			if (!task) continue;
+
+			await this.app.fileManager.processFrontMatter(file, (fm) => {
+				fm["meta-last-priority-change-dt"] = touchedDt;
+				fm["meta-last-status-change-dt"] = touchedDt;
+			});
+			updatedCount++;
+			lastUpdatedTaskName = task.name;
+		}
+
+		if (updatedCount === 0) return;
+		if (updatedCount === 1 && lastUpdatedTaskName) {
+			new Notice(`Task [${lastUpdatedTaskName}] touched...`);
+		} else {
+			new Notice(`Touched ${updatedCount} tasks`);
+		}
 	}
 
 	private async setTaskPriorityForFiles(
@@ -1348,14 +1387,7 @@ export default class ConductorObsidian extends Plugin {
 			new Notice("No active task found");
 			return;
 		}
-
-		const touchedDt = moment().format("YYYY-MM-DDTHH:mm:ss");
-		await this.app.fileManager.processFrontMatter(activeTask.file, (fm) => {
-			fm["meta-last-priority-change-dt"] = touchedDt;
-			fm["meta-last-status-change-dt"] = touchedDt;
-		});
-
-		new Notice(`Task [${activeTask.name}] touched...`);
+		await this.touchTaskFiles([activeTask.file]);
 	};
 
 	private getMeetingTemplateName(meetingType: MeetingType): string {
