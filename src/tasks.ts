@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, moment } from "obsidian";
 import { Context, getProjectFromLink, Project } from "./projects";
 import {
 	Category,
@@ -82,10 +82,12 @@ export async function createNewTask(
 
 	const file = await createFileFromTemplate(app, filePath, "Task");
 
-	// Update the frontmatter value to set a parent project.
 	if (file) {
+		const createdDt = moment().format("YYYY-MM-DDTHH:mm:ss");
 		await app.fileManager.processFrontMatter(file, (fm) => {
 			fm["parents"] = [`[[${selectedProject.name}]]`];
+			fm["meta-last-priority-change-dt"] = createdDt;
+			fm["meta-last-status-change-dt"] = createdDt;
 		});
 		const newTask = getTask(app, filePath);
 		return newTask;
