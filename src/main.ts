@@ -263,6 +263,12 @@ export default class ConductorObsidian extends Plugin {
 			callback: this.createMeeting,
 		});
 
+		this.addCommand({
+			id: "touch-task",
+			name: "Touch Task",
+			callback: this.touchTask,
+		});
+
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (file instanceof TFile) {
@@ -1334,6 +1340,22 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.app.workspace.getLeaf(false).openFile(file);
+	};
+
+	touchTask = async () => {
+		const activeTask = getActiveTask(this.app);
+		if (!activeTask) {
+			new Notice("No active task found");
+			return;
+		}
+
+		const touchedDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+		await this.app.fileManager.processFrontMatter(activeTask.file, (fm) => {
+			fm["meta-last-priority-change-dt"] = touchedDt;
+			fm["meta-last-status-change-dt"] = touchedDt;
+		});
+
+		new Notice(`Task [${activeTask.name}] touched...`);
 	};
 
 	private getMeetingTemplateName(meetingType: MeetingType): string {
