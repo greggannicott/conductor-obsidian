@@ -454,6 +454,20 @@ export default class ConductorObsidian extends Plugin {
 							});
 						});
 					}
+
+					const isJournal =
+						categories &&
+						Array.isArray(categories) &&
+						categories.includes("[[Journal]]");
+
+					if (isJournal) {
+						menu.addItem((item) => {
+							item.setTitle("Add '#reflected' Tag");
+							item.onClick(() => {
+								addTag(this.app, file, "reflected");
+							});
+						});
+					}
 				}
 			}),
 		);
@@ -486,7 +500,7 @@ export default class ConductorObsidian extends Plugin {
 						const submenu = (item as any).setSubmenu();
 
 						submenu.addItem((subItem: any) => {
-						subItem.setTitle("🔴 - High");
+							subItem.setTitle("🔴 - High");
 							subItem.onClick(() => {
 								void this.setTaskPriorityForFiles(
 									selectedTaskFiles,
