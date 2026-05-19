@@ -15,3 +15,11 @@ If your plugin does not need CSS, delete this file.
 	font-weight: var(--input-font-weight);
 	border-width: var(--input-border-width);
 }
+
+/* Task picker section headers */
+.conductor-suggest-header {
+	background-color: var(--background-secondary);
+	border-radius: var(--radius-s);
+	padding: 6px 10px;
+	font-weight: 600;
+}
