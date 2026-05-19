@@ -201,16 +201,16 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 		abandoned.sort(byName);
 
 		const items: TaskModalItem[] = [];
-		if (todo.length > 0) {
-			items.push({ kind: "header", title: "⭕ 01 - To Do" });
-			items.push(
-				...todo.map((task) => ({ kind: "task" as const, task })),
-			);
-		}
 		if (inProgress.length > 0) {
 			items.push({ kind: "header", title: "🔄 02 - In Progress" });
 			items.push(
 				...inProgress.map((task) => ({ kind: "task" as const, task })),
+			);
+		}
+		if (todo.length > 0) {
+			items.push({ kind: "header", title: "⭕ 01 - To Do" });
+			items.push(
+				...todo.map((task) => ({ kind: "task" as const, task })),
 			);
 		}
 		if (done.length > 0) {
