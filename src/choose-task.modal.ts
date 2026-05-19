@@ -172,6 +172,7 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 		const inProgress: Task[] = [];
 		const done: Task[] = [];
 		const abandoned: Task[] = [];
+		const wontDo: Task[] = [];
 
 		for (const task of tasks) {
 			switch (task.status) {
@@ -187,6 +188,9 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 				case "04 - Abandoned":
 					abandoned.push(task);
 					break;
+				case "05 - Won't Do":
+					wontDo.push(task);
+					break;
 				default:
 					todo.push(task);
 					break;
@@ -199,18 +203,13 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 		inProgress.sort(byName);
 		done.sort(byName);
 		abandoned.sort(byName);
+		wontDo.sort(byName);
 
 		const items: TaskModalItem[] = [];
 		if (inProgress.length > 0) {
 			items.push({ kind: "header", title: "🔄 02 - In Progress" });
 			items.push(
 				...inProgress.map((task) => ({ kind: "task" as const, task })),
-			);
-		}
-		if (todo.length > 0) {
-			items.push({ kind: "header", title: "⭕ 01 - To Do" });
-			items.push(
-				...todo.map((task) => ({ kind: "task" as const, task })),
 			);
 		}
 		if (done.length > 0) {
@@ -223,6 +222,19 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 			items.push({ kind: "header", title: "❌ 04 - Abandoned" });
 			items.push(
 				...abandoned.map((task) => ({ kind: "task" as const, task })),
+			);
+		}
+		if (wontDo.length > 0) {
+			items.push({ kind: "header", title: "🙅🏼‍♂️ 05 - Won't Do" });
+			items.push(
+				...wontDo.map((task) => ({ kind: "task" as const, task })),
+			);
+		}
+		// Keep To Do at the bottom so In Progress is quick to reach.
+		if (todo.length > 0) {
+			items.push({ kind: "header", title: "⭕ 01 - To Do" });
+			items.push(
+				...todo.map((task) => ({ kind: "task" as const, task })),
 			);
 		}
 		return items;

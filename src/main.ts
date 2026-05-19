@@ -144,6 +144,12 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "set-task-to-wont-do",
+			name: "Set Task Status to '🙅🏼‍♂️ 05 - Won't Do'",
+			callback: () => this.setActiveTaskStatus(TaskStatus.WontDo),
+		});
+
+		this.addCommand({
 			id: "create-tasks-from-checkboxes",
 			name: "Create Tasks from Checkboxes",
 			callback: () => this.createNewTasksFromCheckboxes(),
@@ -336,6 +342,15 @@ export default class ConductorObsidian extends Plugin {
 										file,
 										TaskStatus.Abandoned,
 									);
+								});
+							});
+							submenu.addItem((subItem: any) => {
+								subItem.setTitle("🙅🏼‍♂️ - Won't Do");
+								if (task && task.status === TaskStatus.WontDo) {
+									subItem.setChecked(true);
+								}
+								subItem.onClick(() => {
+									this.setTaskStatus(file, TaskStatus.WontDo);
 								});
 							});
 						});
@@ -1013,6 +1028,8 @@ export default class ConductorObsidian extends Plugin {
 			case TaskStatus.Abandoned:
 			case ProjectStatus.Abandoned:
 				return "❌ - Abandoned";
+			case TaskStatus.WontDo:
+				return "🙅🏼‍♂️ - Won't Do";
 			default:
 				return status;
 		}
