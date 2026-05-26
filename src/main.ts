@@ -150,6 +150,19 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "impede-task",
+			name: "Impede Task",
+			checkCallback: (checking: boolean) => {
+				const activeTask = getActiveTask(this.app);
+				if (!activeTask) return false;
+				if (!checking) {
+					void this.impedeActiveTask();
+				}
+				return true;
+			},
+		});
+
+		this.addCommand({
 			id: "create-tasks-from-checkboxes",
 			name: "Create Tasks from Checkboxes",
 			callback: () => this.createNewTasksFromCheckboxes(),
@@ -1406,6 +1419,17 @@ export default class ConductorObsidian extends Plugin {
 		}
 		await this.touchTaskFiles([activeTask.file]);
 	};
+
+	private async impedeActiveTask(): Promise<void> {
+		const activeTask = getActiveTask(this.app);
+		if (!activeTask) return;
+
+		await this.app.fileManager.processFrontMatter(activeTask.file, (fm) => {
+			fm["impeded"] = true;
+		});
+
+		new Notice(`Task [${activeTask.name}] impeded...`);
+	}
 
 	private getMeetingTemplateName(meetingType: MeetingType): string {
 		switch (meetingType) {
