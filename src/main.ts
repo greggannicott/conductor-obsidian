@@ -153,8 +153,17 @@ export default class ConductorObsidian extends Plugin {
 			id: "impede-task",
 			name: "Impede Task",
 			checkCallback: (checking: boolean) => {
-				const activeTask = getActiveTask(this.app);
-				if (!activeTask) return false;
+				const activeFile = this.app.workspace.activeEditor?.file;
+				if (!activeFile) return false;
+				const metadata = this.app.metadataCache.getFileCache(activeFile);
+				const categories = metadata?.frontmatter?.categories;
+				const isTask =
+					categories &&
+					Array.isArray(categories) &&
+					categories.includes("[[Task]]");
+				if (!isTask) return false;
+				const isImpeded = metadata?.frontmatter?.impeded === true;
+				if (isImpeded) return false;
 				if (!checking) {
 					void this.impedeActiveTask();
 				}
@@ -166,8 +175,17 @@ export default class ConductorObsidian extends Plugin {
 			id: "unimpede-task",
 			name: "Unimpede Task",
 			checkCallback: (checking: boolean) => {
-				const activeTask = getActiveTask(this.app);
-				if (!activeTask) return false;
+				const activeFile = this.app.workspace.activeEditor?.file;
+				if (!activeFile) return false;
+				const metadata = this.app.metadataCache.getFileCache(activeFile);
+				const categories = metadata?.frontmatter?.categories;
+				const isTask =
+					categories &&
+					Array.isArray(categories) &&
+					categories.includes("[[Task]]");
+				if (!isTask) return false;
+				const isImpeded = metadata?.frontmatter?.impeded === true;
+				if (!isImpeded) return false;
 				if (!checking) {
 					void this.unimpedeActiveTask();
 				}
