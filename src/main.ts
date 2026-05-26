@@ -1455,8 +1455,14 @@ export default class ConductorObsidian extends Plugin {
 		const activeTask = getActiveTask(this.app);
 		if (!activeTask) return;
 
+		const { value: reason } = await TextInputModal.show(this.app, {
+			title: "Impeded Reason",
+			placeholder: "Why is this task impeded?",
+		});
+
 		await this.app.fileManager.processFrontMatter(activeTask.file, (fm) => {
 			fm["impeded"] = true;
+			fm["impeded-reason"] = reason?.trim() ?? "";
 		});
 
 		new Notice(`Task [${activeTask.name}] impeded...`);
@@ -1468,6 +1474,7 @@ export default class ConductorObsidian extends Plugin {
 
 		await this.app.fileManager.processFrontMatter(activeTask.file, (fm) => {
 			fm["impeded"] = false;
+			fm["impeded-reason"] = "";
 		});
 
 		new Notice(`Task [${activeTask.name}] unimpeded...`);
