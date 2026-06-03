@@ -73,6 +73,7 @@ export async function createNewTask(
 	app: App,
 	taskName: string,
 	selectedProject: Project,
+	templateName = "Task",
 ): Promise<Task | null> {
 	const uniqueFileName = getUniqueTaskFileName(
 		app,
@@ -81,7 +82,7 @@ export async function createNewTask(
 	);
 	const filePath = `Projects/${selectedProject.context}/${uniqueFileName}.md`;
 
-	const file = await createFileFromTemplate(app, filePath, "Task");
+	const file = await createFileFromTemplate(app, filePath, templateName);
 
 	if (file) {
 		const createdDt = moment().format("YYYY-MM-DDTHH:mm:ss");

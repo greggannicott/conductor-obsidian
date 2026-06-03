@@ -972,10 +972,14 @@ export default class ConductorObsidian extends Plugin {
 		const replacements: { lineIndex: number; newLine: string }[] = [];
 
 		for (const checkboxLine of checkboxLines) {
+			const templateName = checkboxLine.text.endsWith("?")
+				? "Question Task"
+				: "Task";
 			const task = await createNewTask(
 				this.app,
 				checkboxLine.text,
 				selectedProject,
+				templateName,
 			);
 			if (task) {
 				createdCount++;
