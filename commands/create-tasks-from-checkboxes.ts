@@ -1,7 +1,11 @@
-import { App, Notice } from "obsidian";
+import { App, Editor, Notice } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
 import { createNewTask } from "src/tasks";
+
+type EditorLike = Editor;
+type EditorPosition = { line: number; ch: number };
+type SelectionRange = { from: EditorPosition; to: EditorPosition };
 
 interface CheckboxLine {
 	lineIndex: number;
@@ -10,158 +14,234 @@ interface CheckboxLine {
 	nestedBullets: string[];
 }
 
-export const createNewTasksFromCheckboxes = async (app: App) => {
-	// Get the active editor
+interface SelectedEditorContent {
+	lines: string[];
+	range: SelectionRange;
+}
+
+interface LineReplacement {
+	lineIndex: number;
+	newLine: string;
+}
+
+const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
+const linkPattern = /\[\[.+\]\]/;
+const bulletPattern = /^(\s*)[-*] (.+)$/;
+
+export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
+	const editor = getActiveEditorOrNotify(app);
+	if (!editor) return;
+
+	const selectedEditorContent = getSelectedEditorContent(editor);
+	const checkboxLines = collectCheckboxLines(selectedEditorContent.lines);
+	if (!hasCheckboxLinesOrNotify(checkboxLines)) return;
+
+	const selectedProject = await getSelectedProjectOrNotify(app);
+	if (!selectedProject) return;
+
+	const { createdCount, replacements } = await createTasksAndReplacements(
+		app,
+		checkboxLines,
+		selectedProject,
+	);
+	replaceCheckboxesWithTaskLinks(editor, selectedEditorContent, replacements);
+	showTaskCreationNotice(createdCount, selectedProject);
+};
+
+const getActiveEditorOrNotify = (app: App): EditorLike | null => {
 	const editor = app.workspace.activeEditor?.editor;
 	if (!editor) {
 		new Notice("No active editor found");
-		return;
+		return null;
 	}
+	return editor;
+};
 
-	// Get selected text or current line
-	let selectedText = editor.getSelection();
-	let selectionRange: {
-		from: { line: number; ch: number };
-		to: { line: number; ch: number };
-	} | null = null;
-
+const getSelectedEditorContent = (editor: EditorLike): SelectedEditorContent => {
+	const selectedText = editor.getSelection();
 	if (!selectedText) {
-		const cursor = editor.getCursor();
-		selectedText = editor.getLine(cursor.line);
-		selectionRange = {
-			from: { line: cursor.line, ch: 0 },
-			to: { line: cursor.line, ch: selectedText.length },
-		};
-	} else {
-		selectionRange = {
-			from: editor.getCursor("from"),
-			to: editor.getCursor("to"),
-		};
+		return getCurrentLineContent(editor);
 	}
 
-	// Find all lines with unchecked checkboxes (excluding those that already contain links)
-	const lines = selectedText.split("\n");
-	const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
-	const linkPattern = /\[\[.+\]\]/;
-	const bulletPattern = /^(\s*)[-*] (.+)$/;
+	const range = {
+		from: editor.getCursor("from"),
+		to: editor.getCursor("to"),
+	};
+	return { lines: selectedText.split("\n"), range };
+};
+
+const getCurrentLineContent = (editor: EditorLike): SelectedEditorContent => {
+	const cursor = editor.getCursor();
+	const line = editor.getLine(cursor.line);
+	const range = {
+		from: { line: cursor.line, ch: 0 },
+		to: { line: cursor.line, ch: line.length },
+	};
+	return { lines: [line], range };
+};
+
+const collectCheckboxLines = (lines: string[]): CheckboxLine[] => {
 	const checkboxLines: CheckboxLine[] = [];
-
 	lines.forEach((line, index) => {
-		const match = line.match(checkboxPattern);
-		if (match) {
-			const checkboxText = match[2];
-			// Skip checkboxes that already contain a link
-			if (!linkPattern.test(checkboxText)) {
-				checkboxLines.push({
-					lineIndex: index,
-					indent: match[1],
-					text: checkboxText.trim(),
-					nestedBullets: [],
-				});
-			}
-		} else if (checkboxLines.length > 0) {
-			// Check if this is a nested bullet point
-			const bulletMatch = line.match(bulletPattern);
-			if (bulletMatch) {
-				const lastCheckbox = checkboxLines[checkboxLines.length - 1];
-				const bulletIndent = bulletMatch[1];
-				// If this bullet is indented more than the last checkbox, it's nested
-				if (bulletIndent.length > lastCheckbox.indent.length) {
-					lastCheckbox.nestedBullets.push(line);
-				}
-			}
-		}
+		addCheckboxLineIfPresent(checkboxLines, line, index);
+		addNestedBulletIfPresent(checkboxLines, line);
 	});
+	return checkboxLines;
+};
 
-	// Check if any unchecked checkboxes were found
-	if (checkboxLines.length === 0) {
-		new Notice("No unchecked checkboxes found");
-		return;
-	}
+const addCheckboxLineIfPresent = (
+	checkboxLines: CheckboxLine[],
+	line: string,
+	index: number,
+) => {
+	const match = line.match(checkboxPattern);
+	if (!match) return;
 
-	// Get or prompt for active project
-	let selectedProject = getActiveProject(app);
+	const checkboxText = match[2];
+	if (linkPattern.test(checkboxText)) return;
 
-	if (!selectedProject) {
-		// Prompt user to select a project
-		const projects = getProjects(app);
-		selectedProject = await new Promise<Project | null>((resolve) => {
-			const selectProjectModal = new ChooseProjectModal(app);
-			selectProjectModal.projects = projects;
-			selectProjectModal.onChoose = (project: Project) => {
-				resolve(project);
-			};
-			selectProjectModal.open();
-		});
+	checkboxLines.push({
+		lineIndex: index,
+		indent: match[1],
+		text: checkboxText.trim(),
+		nestedBullets: [],
+	});
+};
 
-		if (!selectedProject) {
-			new Notice("No project selected");
-			return;
-		}
-	}
+const addNestedBulletIfPresent = (checkboxLines: CheckboxLine[], line: string) => {
+	if (checkboxLines.length === 0) return;
 
-	// Create tasks for each checkbox
+	const bulletMatch = line.match(bulletPattern);
+	if (!bulletMatch) return;
+
+	const lastCheckbox = checkboxLines[checkboxLines.length - 1];
+	const bulletIndent = bulletMatch[1];
+	if (bulletIndent.length <= lastCheckbox.indent.length) return;
+
+	lastCheckbox.nestedBullets.push(line);
+};
+
+const hasCheckboxLinesOrNotify = (checkboxLines: CheckboxLine[]): boolean => {
+	if (checkboxLines.length > 0) return true;
+
+	new Notice("No unchecked checkboxes found");
+	return false;
+};
+
+const getSelectedProjectOrNotify = async (app: App): Promise<Project | null> => {
+	const activeProject = getActiveProject(app);
+	if (activeProject) return activeProject;
+
+	const selectedProject = await promptForProjectSelection(app);
+	if (selectedProject) return selectedProject;
+
+	new Notice("No project selected");
+	return null;
+};
+
+const promptForProjectSelection = (app: App): Promise<Project | null> => {
+	const projects = getProjects(app);
+	return new Promise<Project | null>((resolve) => {
+		const selectProjectModal = new ChooseProjectModal(app);
+		selectProjectModal.projects = projects;
+		selectProjectModal.onChoose = (project: Project) => {
+			resolve(project);
+		};
+		selectProjectModal.open();
+	});
+};
+
+const createTasksAndReplacements = async (
+	app: App,
+	checkboxLines: CheckboxLine[],
+	selectedProject: Project,
+): Promise<{ createdCount: number; replacements: LineReplacement[] }> => {
 	let createdCount = 0;
-	const replacements: { lineIndex: number; newLine: string }[] = [];
+	const replacements: LineReplacement[] = [];
 
 	for (const checkboxLine of checkboxLines) {
-		const templateName = checkboxLine.text.endsWith("?")
-			? "Question Task"
-			: "Task";
-		const task = await createNewTask(
-			app,
-			checkboxLine.text,
-			selectedProject,
-			templateName,
-		);
-		if (task) {
-			createdCount++;
+		const task = await createTaskForCheckbox(app, checkboxLine, selectedProject);
+		if (!task) continue;
 
-			// If there are nested bullets, append them to the task file
-			if (checkboxLine.nestedBullets.length > 0) {
-				const taskFile = task.file;
-				const currentContent = await app.vault.read(taskFile);
+		createdCount++;
+		await appendNestedBulletsToTaskNotes(app, task.file, checkboxLine.nestedBullets);
+		replacements.push(buildLineReplacement(checkboxLine, task.name));
+	}
 
-				// Find the minimum indentation level among nested bullets
-				let minIndent = Infinity;
-				checkboxLine.nestedBullets.forEach((bullet) => {
-					const match = bullet.match(/^(\s*)/);
-					if (match) {
-						minIndent = Math.min(minIndent, match[1].length);
-					}
-				});
+	return { createdCount, replacements };
+};
 
-				// Remove the minimum indentation from all bullets
-				const normalizedBullets = checkboxLine.nestedBullets.map(
-					(bullet) => {
-						return bullet.substring(minIndent);
-					},
-				);
+const createTaskForCheckbox = (
+	app: App,
+	checkboxLine: CheckboxLine,
+	selectedProject: Project,
+) => {
+	const templateName = checkboxLine.text.endsWith("?")
+		? "Question Task"
+		: "Task";
+	return createNewTask(app, checkboxLine.text, selectedProject, templateName);
+};
 
-				const notesSection = `\n# Notes\n\n${normalizedBullets.join("\n")}\n`;
-				await app.vault.modify(taskFile, currentContent + notesSection);
-			}
+const appendNestedBulletsToTaskNotes = async (
+	app: App,
+	taskFile: Parameters<App["vault"]["read"]>[0],
+	nestedBullets: string[],
+) => {
+	if (nestedBullets.length === 0) return;
 
-			const newLine = `${checkboxLine.indent}- [ ] [[${task.name}]]`;
-			replacements.push({
-				lineIndex: checkboxLine.lineIndex,
-				newLine,
-			});
+	const currentContent = await app.vault.read(taskFile);
+	const normalizedBullets = normalizeBullets(nestedBullets);
+	const notesSection = `\n# Notes\n\n${normalizedBullets.join("\n")}\n`;
+	await app.vault.modify(taskFile, currentContent + notesSection);
+};
+
+const normalizeBullets = (nestedBullets: string[]): string[] => {
+	const minIndent = getMinimumIndentation(nestedBullets);
+	return nestedBullets.map((bullet) => bullet.substring(minIndent));
+};
+
+const getMinimumIndentation = (nestedBullets: string[]): number => {
+	let minIndent = Infinity;
+	nestedBullets.forEach((bullet) => {
+		const match = bullet.match(/^(\s*)/);
+		if (match) {
+			minIndent = Math.min(minIndent, match[1].length);
 		}
-	}
+	});
+	return minIndent;
+};
 
-	// Replace the checkbox lines with links to the created tasks
-	if (replacements.length > 0 && selectionRange) {
-		const updatedLines = [...lines];
-		replacements.forEach(({ lineIndex, newLine }) => {
-			updatedLines[lineIndex] = newLine;
-		});
+const buildLineReplacement = (
+	checkboxLine: CheckboxLine,
+	taskName: string,
+): LineReplacement => {
+	return {
+		lineIndex: checkboxLine.lineIndex,
+		newLine: `${checkboxLine.indent}- [ ] [[${taskName}]]`,
+	};
+};
 
-		const newText = updatedLines.join("\n");
-		editor.replaceRange(newText, selectionRange.from, selectionRange.to);
-	}
+const replaceCheckboxesWithTaskLinks = (
+	editor: EditorLike,
+	selectedEditorContent: SelectedEditorContent,
+	replacements: LineReplacement[],
+) => {
+	if (replacements.length === 0) return;
 
-	// Display success message
+	const updatedLines = [...selectedEditorContent.lines];
+	replacements.forEach(({ lineIndex, newLine }) => {
+		updatedLines[lineIndex] = newLine;
+	});
+
+	const newText = updatedLines.join("\n");
+	editor.replaceRange(
+		newText,
+		selectedEditorContent.range.from,
+		selectedEditorContent.range.to,
+	);
+};
+
+const showTaskCreationNotice = (createdCount: number, selectedProject: Project) => {
 	new Notice(
 		`Created ${createdCount} task${createdCount !== 1 ? "s" : ""} for project [${selectedProject.name}]`,
 	);
