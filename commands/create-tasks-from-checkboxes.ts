@@ -29,6 +29,7 @@ const linkPattern = /\[\[.+\]\]/;
 const bulletPattern = /^(\s*)[-*] (.+)$/;
 const answerPrefixPattern = /^answer:/i;
 const priorityPrefixPattern = /^priority:/i;
+const statusPrefixPattern = /^status:/i;
 
 export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
 	const editor = getActiveEditorOrNotify(app);
@@ -179,6 +180,7 @@ const createTasksAndReplacements = async (
 		createdCount++;
 		await applyPriorityIfPresent(app, task.file, checkboxLine);
 		await applyQuestionAnswerIfPresent(app, task.file, checkboxLine);
+		await applyStatusIfPresent(app, task.file, checkboxLine);
 		await appendNestedBulletsToTaskNotes(
 			app,
 			task.file,
@@ -221,6 +223,21 @@ const applyQuestionAnswerIfPresent = async (
 	});
 };
 
+const applyStatusIfPresent = async (
+	app: App,
+	taskFile: Parameters<App["vault"]["read"]>[0],
+	checkboxLine: CheckboxLine,
+) => {
+	const status = findFirstStatus(checkboxLine.nestedBullets);
+	if (!status) return;
+	const statusChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+
+	await app.fileManager.processFrontMatter(taskFile, (fm) => {
+		fm["status"] = status;
+		fm["meta-last-status-change-dt"] = statusChangeDt;
+	});
+};
+
 const findFirstAnswer = (nestedBullets: string[]): string | null => {
 	for (const bullet of nestedBullets) {
 		const answer = extractAnswerFromBullet(bullet);
@@ -237,6 +254,66 @@ const extractAnswerFromBullet = (bullet: string): string | null => {
 	if (!answerPrefixPattern.test(bulletText)) return null;
 
 	return bulletText.replace(answerPrefixPattern, "").trim();
+};
+
+const findFirstStatus = (nestedBullets: string[]): TaskStatus | null => {
+	for (const bullet of nestedBullets) {
+		const status = extractStatusFromBullet(bullet);
+		if (status !== null) return status;
+	}
+	return null;
+};
+
+const extractStatusFromBullet = (bullet: string): TaskStatus | null => {
+	const bulletMatch = bullet.match(bulletPattern);
+	if (!bulletMatch) return null;
+
+	const bulletText = bulletMatch[2].trim();
+	if (!statusPrefixPattern.test(bulletText)) return null;
+
+	const statusValue = bulletText.replace(statusPrefixPattern, "").trim();
+	return parseStatusValue(statusValue);
+};
+
+const parseStatusValue = (value: string): TaskStatus | null => {
+	const normalizedValue = value.toLowerCase();
+	if (
+		normalizedValue === "01 - to do" ||
+		normalizedValue === "01" ||
+		normalizedValue === "to do"
+	) {
+		return TaskStatus.ToDo;
+	}
+	if (
+		normalizedValue === "02 - in progress" ||
+		normalizedValue === "02" ||
+		normalizedValue === "in progress"
+	) {
+		return TaskStatus.InProgress;
+	}
+	if (
+		normalizedValue === "03 - done" ||
+		normalizedValue === "03" ||
+		normalizedValue === "done"
+	) {
+		return TaskStatus.Done;
+	}
+	if (
+		normalizedValue === "04 - abandoned" ||
+		normalizedValue === "04" ||
+		normalizedValue === "abandoned" ||
+		normalizedValue === "abandonded"
+	) {
+		return TaskStatus.Abandoned;
+	}
+	if (
+		normalizedValue === "05 - won't do" ||
+		normalizedValue === "05" ||
+		normalizedValue === "won't do"
+	) {
+		return TaskStatus.WontDo;
+	}
+	return null;
 };
 
 const applyPriorityIfPresent = async (
@@ -317,7 +394,11 @@ const filterNestedBulletsForNotes = (nestedBullets: string[]): string[] => {
 		const bulletMatch = bullet.match(bulletPattern);
 		if (!bulletMatch) return true;
 
-		return !priorityPrefixPattern.test(bulletMatch[2].trim());
+		const bulletText = bulletMatch[2].trim();
+		return (
+			!priorityPrefixPattern.test(bulletText) &&
+			!statusPrefixPattern.test(bulletText)
+		);
 	});
 };
 
