@@ -992,7 +992,7 @@ export default class ConductorObsidian extends Plugin {
 		}
 	};
 
-	async displayTaskNameInput(selectedProject: Project) {
+	displayTaskNameInput = async (selectedProject: Project) => {
 		const keybindings: TextInputKeybinding[] = [
 			{
 				id: "shift-enter",
@@ -1015,8 +1015,15 @@ export default class ConductorObsidian extends Plugin {
 				keybindings,
 			},
 		);
-		const task = await createNewTask(this.app, name, selectedProject);
+		const { templateName, answer } = await this.getTaskCreationDetails(name);
+		const task = await createNewTask(
+			this.app,
+			name,
+			selectedProject,
+			templateName,
+		);
 		if (task) {
+			await this.applyQuestionAnswerToTaskIfProvided(task.file, answer);
 			new Notice(`New task [${task.name}] created...`);
 			switch (submitKeybinding) {
 				case "enter":
@@ -1030,8 +1037,47 @@ export default class ConductorObsidian extends Plugin {
 						`Unknown ConfirmationKeybinding type [${submitKeybinding}]`,
 					);
 					break;
-			}
+			};
 		}
+	}
+
+	private async getTaskCreationDetails(taskName: string): Promise<{
+		templateName: string;
+		answer: string | null;
+	}> {
+		if (!this.isQuestionTaskName(taskName)) {
+			return { templateName: "Task", answer: null };
+		}
+
+		const answer = await this.promptForOptionalQuestionAnswer(taskName);
+		return { templateName: "Question Task", answer };
+	}
+
+	private isQuestionTaskName(taskName: string): boolean {
+		return taskName.trim().endsWith("?");
+	}
+
+	private async promptForOptionalQuestionAnswer(
+		taskName: string,
+	): Promise<string | null> {
+		const { value } = await TextInputModal.show(this.app, {
+			title: "Answer (Optional)",
+			placeholder: `Provide an answer for '${taskName.trim()}'...`,
+		});
+		const answer = value.trim();
+		return answer.length > 0 ? answer : null;
+	}
+
+	private async applyQuestionAnswerToTaskIfProvided(
+		taskFile: TFile,
+		answer: string | null,
+	): Promise<void> {
+		if (!answer) return;
+
+		await this.app.fileManager.processFrontMatter(taskFile, (fm) => {
+			fm["answer"] = answer;
+			fm["status"] = TaskStatus.Done;
+		});
 	}
 
 	addTagToActiveFile(tag: string) {
