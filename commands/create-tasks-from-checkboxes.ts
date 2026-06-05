@@ -1,7 +1,7 @@
 import { App, Editor, Notice } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
-import { createNewTask } from "src/tasks";
+import { createNewTask, TaskStatus } from "src/tasks";
 
 type EditorLike = Editor;
 type EditorPosition = { line: number; ch: number };
@@ -27,6 +27,7 @@ interface LineReplacement {
 const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
 const linkPattern = /\[\[.+\]\]/;
 const bulletPattern = /^(\s*)[-*] (.+)$/;
+const answerPrefixPattern = /^answer:/i;
 
 export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
 	const editor = getActiveEditorOrNotify(app);
@@ -164,6 +165,7 @@ const createTasksAndReplacements = async (
 		if (!task) continue;
 
 		createdCount++;
+		await applyQuestionAnswerIfPresent(app, task.file, checkboxLine);
 		await appendNestedBulletsToTaskNotes(app, task.file, checkboxLine.nestedBullets);
 		replacements.push(buildLineReplacement(checkboxLine, task.name));
 	}
@@ -176,10 +178,48 @@ const createTaskForCheckbox = (
 	checkboxLine: CheckboxLine,
 	selectedProject: Project,
 ) => {
-	const templateName = checkboxLine.text.endsWith("?")
+	const templateName = isQuestionCheckbox(checkboxLine.text)
 		? "Question Task"
 		: "Task";
 	return createNewTask(app, checkboxLine.text, selectedProject, templateName);
+};
+
+const isQuestionCheckbox = (checkboxText: string): boolean => {
+	return checkboxText.endsWith("?");
+};
+
+const applyQuestionAnswerIfPresent = async (
+	app: App,
+	taskFile: Parameters<App["vault"]["read"]>[0],
+	checkboxLine: CheckboxLine,
+) => {
+	if (!isQuestionCheckbox(checkboxLine.text)) return;
+
+	const answer = findFirstAnswer(checkboxLine.nestedBullets);
+	if (!answer) return;
+
+	await app.fileManager.processFrontMatter(taskFile, (fm) => {
+		fm["answer"] = answer;
+		fm["status"] = TaskStatus.Done;
+	});
+};
+
+const findFirstAnswer = (nestedBullets: string[]): string | null => {
+	for (const bullet of nestedBullets) {
+		const answer = extractAnswerFromBullet(bullet);
+		if (answer !== null) return answer;
+	}
+	return null;
+};
+
+const extractAnswerFromBullet = (bullet: string): string | null => {
+	const bulletMatch = bullet.match(bulletPattern);
+	if (!bulletMatch) return null;
+
+	const bulletText = bulletMatch[2].trim();
+	if (!answerPrefixPattern.test(bulletText)) return null;
+
+	return bulletText.replace(answerPrefixPattern, "").trim();
 };
 
 const appendNestedBulletsToTaskNotes = async (
