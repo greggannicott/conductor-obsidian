@@ -286,8 +286,10 @@ const parseStatusValue = (value: string): TaskStatus | null => {
 	}
 	if (
 		normalizedValue === "02 - in progress" ||
+		normalizedValue === "02 - doing" ||
 		normalizedValue === "02" ||
-		normalizedValue === "in progress"
+		normalizedValue === "in progress" ||
+		normalizedValue === "doing"
 	) {
 		return TaskStatus.InProgress;
 	}
