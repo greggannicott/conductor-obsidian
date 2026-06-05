@@ -1,7 +1,7 @@
-import { App, Editor, Notice } from "obsidian";
+import { App, Editor, Notice, moment } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
-import { createNewTask, TaskStatus } from "src/tasks";
+import { createNewTask, TaskPriority, TaskStatus } from "src/tasks";
 
 type EditorLike = Editor;
 type EditorPosition = { line: number; ch: number };
@@ -28,6 +28,7 @@ const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
 const linkPattern = /\[\[.+\]\]/;
 const bulletPattern = /^(\s*)[-*] (.+)$/;
 const answerPrefixPattern = /^answer:/i;
+const priorityPrefixPattern = /^priority:/i;
 
 export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
 	const editor = getActiveEditorOrNotify(app);
@@ -58,7 +59,9 @@ const getActiveEditorOrNotify = (app: App): EditorLike | null => {
 	return editor;
 };
 
-const getSelectedEditorContent = (editor: EditorLike): SelectedEditorContent => {
+const getSelectedEditorContent = (
+	editor: EditorLike,
+): SelectedEditorContent => {
 	const selectedText = editor.getSelection();
 	if (!selectedText) {
 		return getCurrentLineContent(editor);
@@ -109,7 +112,10 @@ const addCheckboxLineIfPresent = (
 	});
 };
 
-const addNestedBulletIfPresent = (checkboxLines: CheckboxLine[], line: string) => {
+const addNestedBulletIfPresent = (
+	checkboxLines: CheckboxLine[],
+	line: string,
+) => {
 	if (checkboxLines.length === 0) return;
 
 	const bulletMatch = line.match(bulletPattern);
@@ -129,7 +135,9 @@ const hasCheckboxLinesOrNotify = (checkboxLines: CheckboxLine[]): boolean => {
 	return false;
 };
 
-const getSelectedProjectOrNotify = async (app: App): Promise<Project | null> => {
+const getSelectedProjectOrNotify = async (
+	app: App,
+): Promise<Project | null> => {
 	const activeProject = getActiveProject(app);
 	if (activeProject) return activeProject;
 
@@ -161,12 +169,21 @@ const createTasksAndReplacements = async (
 	const replacements: LineReplacement[] = [];
 
 	for (const checkboxLine of checkboxLines) {
-		const task = await createTaskForCheckbox(app, checkboxLine, selectedProject);
+		const task = await createTaskForCheckbox(
+			app,
+			checkboxLine,
+			selectedProject,
+		);
 		if (!task) continue;
 
 		createdCount++;
+		await applyPriorityIfPresent(app, task.file, checkboxLine);
 		await applyQuestionAnswerIfPresent(app, task.file, checkboxLine);
-		await appendNestedBulletsToTaskNotes(app, task.file, checkboxLine.nestedBullets);
+		await appendNestedBulletsToTaskNotes(
+			app,
+			task.file,
+			filterNestedBulletsForNotes(checkboxLine.nestedBullets),
+		);
 		replacements.push(buildLineReplacement(checkboxLine, task.name));
 	}
 
@@ -222,6 +239,66 @@ const extractAnswerFromBullet = (bullet: string): string | null => {
 	return bulletText.replace(answerPrefixPattern, "").trim();
 };
 
+const applyPriorityIfPresent = async (
+	app: App,
+	taskFile: Parameters<App["vault"]["read"]>[0],
+	checkboxLine: CheckboxLine,
+) => {
+	const priority = findFirstPriority(checkboxLine.nestedBullets);
+	if (!priority) return;
+	const priorityChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
+
+	await app.fileManager.processFrontMatter(taskFile, (fm) => {
+		fm["priority"] = priority;
+		fm["meta-last-priority-change-dt"] = priorityChangeDt;
+	});
+};
+
+const findFirstPriority = (nestedBullets: string[]): TaskPriority | null => {
+	for (const bullet of nestedBullets) {
+		const priority = extractPriorityFromBullet(bullet);
+		if (priority !== null) return priority;
+	}
+	return null;
+};
+
+const extractPriorityFromBullet = (bullet: string): TaskPriority | null => {
+	const bulletMatch = bullet.match(bulletPattern);
+	if (!bulletMatch) return null;
+
+	const bulletText = bulletMatch[2].trim();
+	if (!priorityPrefixPattern.test(bulletText)) return null;
+
+	const priorityValue = bulletText.replace(priorityPrefixPattern, "").trim();
+	return parsePriorityValue(priorityValue);
+};
+
+const parsePriorityValue = (value: string): TaskPriority | null => {
+	const normalizedValue = value.toLowerCase();
+	if (
+		normalizedValue === "01 - high" ||
+		normalizedValue === "01" ||
+		normalizedValue === "high"
+	) {
+		return TaskPriority.High;
+	}
+	if (
+		normalizedValue === "02 - medium" ||
+		normalizedValue === "02" ||
+		normalizedValue === "medium"
+	) {
+		return TaskPriority.Medium;
+	}
+	if (
+		normalizedValue === "03 - low" ||
+		normalizedValue === "03" ||
+		normalizedValue === "low"
+	) {
+		return TaskPriority.Low;
+	}
+	return null;
+};
+
 const appendNestedBulletsToTaskNotes = async (
 	app: App,
 	taskFile: Parameters<App["vault"]["read"]>[0],
@@ -233,6 +310,15 @@ const appendNestedBulletsToTaskNotes = async (
 	const normalizedBullets = normalizeBullets(nestedBullets);
 	const notesSection = `\n# Notes\n\n${normalizedBullets.join("\n")}\n`;
 	await app.vault.modify(taskFile, currentContent + notesSection);
+};
+
+const filterNestedBulletsForNotes = (nestedBullets: string[]): string[] => {
+	return nestedBullets.filter((bullet) => {
+		const bulletMatch = bullet.match(bulletPattern);
+		if (!bulletMatch) return true;
+
+		return !priorityPrefixPattern.test(bulletMatch[2].trim());
+	});
 };
 
 const normalizeBullets = (nestedBullets: string[]): string[] => {
@@ -281,7 +367,10 @@ const replaceCheckboxesWithTaskLinks = (
 	);
 };
 
-const showTaskCreationNotice = (createdCount: number, selectedProject: Project) => {
+const showTaskCreationNotice = (
+	createdCount: number,
+	selectedProject: Project,
+) => {
 	new Notice(
 		`Created ${createdCount} task${createdCount !== 1 ? "s" : ""} for project [${selectedProject.name}]`,
 	);
