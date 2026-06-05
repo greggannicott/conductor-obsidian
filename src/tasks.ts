@@ -34,6 +34,12 @@ export const outstandingTaskTypes: TaskStatus[] = [
 	TaskStatus.InProgress,
 ];
 
+export const closedTaskTypes: TaskStatus[] = [
+	TaskStatus.Done,
+	TaskStatus.Abandoned,
+	TaskStatus.WontDo,
+];
+
 export enum TaskPriority {
 	High = "01 - High",
 	Medium = "02 - Medium",

@@ -15,6 +15,7 @@ import {
 	TaskFilters,
 	TaskType,
 	outstandingTaskTypes,
+	closedTaskTypes,
 } from "./tasks";
 import {
 	getProjects,
@@ -930,11 +931,7 @@ export default class ConductorObsidian extends Plugin {
 	};
 
 	private shouldOpenParentProjectForTaskStatus(status: TaskStatus): boolean {
-		return (
-			status === TaskStatus.Done ||
-			status === TaskStatus.Abandoned ||
-			status === TaskStatus.WontDo
-		);
+		return closedTaskTypes.includes(status);
 	}
 
 	private async setTaskStatusForFiles(
