@@ -874,7 +874,7 @@ export default class ConductorObsidian extends Plugin {
 		const activeTask = getActiveTask(this.app);
 		if (!activeTask) return;
 		void this.setTaskStatusForFiles([activeTask.file], status, {
-			openParentProjectOnDone: true,
+			openParentProjectIfTaskClosed: true,
 		});
 	};
 
@@ -924,14 +924,23 @@ export default class ConductorObsidian extends Plugin {
 
 	setTaskStatus = (file: TFile, status: TaskStatus) => {
 		void this.setTaskStatusForFiles([file], status, {
-			openParentProjectOnDone: status === TaskStatus.Done,
+			openParentProjectIfTaskClosed:
+				this.shouldOpenParentProjectForTaskStatus(status),
 		});
 	};
+
+	private shouldOpenParentProjectForTaskStatus(status: TaskStatus): boolean {
+		return (
+			status === TaskStatus.Done ||
+			status === TaskStatus.Abandoned ||
+			status === TaskStatus.WontDo
+		);
+	}
 
 	private async setTaskStatusForFiles(
 		files: TFile[],
 		status: TaskStatus,
-		options?: { openParentProjectOnDone?: boolean },
+		options?: { openParentProjectIfTaskClosed?: boolean },
 	): Promise<void> {
 		const statusChangeDt = moment().format("YYYY-MM-DDTHH:mm:ss");
 		let updatedCount = 0;
@@ -968,8 +977,8 @@ export default class ConductorObsidian extends Plugin {
 		}
 
 		if (
-			options?.openParentProjectOnDone &&
-			status === TaskStatus.Done &&
+			options?.openParentProjectIfTaskClosed &&
+			this.shouldOpenParentProjectForTaskStatus(status) &&
 			updatedCount > 0
 		) {
 			const activeProject = getActiveProject(this.app);
