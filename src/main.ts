@@ -952,12 +952,23 @@ export default class ConductorObsidian extends Plugin {
 		for (const file of files) {
 			const task = getTask(this.app, file.path);
 			if (!task) continue;
+			const answerToSave =
+				status === TaskStatus.Done &&
+				task.status !== TaskStatus.Done &&
+				this.isQuestionTask(task) &&
+				!this.taskHasAnswer(file)
+					? await this.promptForOptionalQuestionAnswer(task.name)
+					: null;
 
 			let didChange = false;
 			await this.app.fileManager.processFrontMatter(file, (fm) => {
 				if (fm["status"] !== status) {
 					fm["status"] = status;
 					fm["meta-last-status-change-dt"] = statusChangeDt;
+					didChange = true;
+				}
+				if (answerToSave) {
+					fm["answer"] = answerToSave;
 					didChange = true;
 				}
 			});
@@ -1070,12 +1081,25 @@ export default class ConductorObsidian extends Plugin {
 		return taskName.trim().endsWith("?");
 	}
 
+	private isQuestionTask(task: Task): boolean {
+		return (
+			(task.type ?? []).includes(TaskType.QuestionTask) ||
+			this.isQuestionTaskName(task.name)
+		);
+	}
+
+	private taskHasAnswer(taskFile: TFile): boolean {
+		const answer =
+			this.app.metadataCache.getFileCache(taskFile)?.frontmatter?.["answer"];
+		return typeof answer === "string" && answer.trim().length > 0;
+	}
+
 	private async promptForOptionalQuestionAnswer(
 		taskName: string,
 	): Promise<string | null> {
 		const { value } = await TextInputModal.show(this.app, {
 			title: "Answer (Optional)",
-			placeholder: `Provide an answer for '${taskName.trim()}'...`,
+			placeholder: `Provide an answer for '${taskName.trim()}' (or leave blank)...`,
 		});
 		const answer = value.trim();
 		return answer.length > 0 ? answer : null;
