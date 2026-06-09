@@ -707,7 +707,9 @@ export default class ConductorObsidian extends Plugin {
 	};
 
 	openTask = () => {
-		const selectTaskModal = new ChooseTaskModal(this.app);
+		const selectTaskModal = new ChooseTaskModal(this.app, {
+			initialGroupMode: "status",
+		});
 		const activeProject = getActiveProject(this.app);
 		let filters: TaskFilters = {
 			projectFilter: undefined,
@@ -810,7 +812,7 @@ export default class ConductorObsidian extends Plugin {
 
 		// Obtain a list of tasks that belong to those projects. The status should be In Progress
 		const selectTaskModal = new ChooseTaskModal(this.app, {
-			initialGroupMode: "status",
+			initialGroupMode: "priority",
 		});
 		const taskFilters: TaskFilters = {
 			projectFilter: {
