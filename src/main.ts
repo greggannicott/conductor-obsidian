@@ -157,7 +157,8 @@ export default class ConductorObsidian extends Plugin {
 			checkCallback: (checking: boolean) => {
 				const activeFile = this.app.workspace.activeEditor?.file;
 				if (!activeFile) return false;
-				const metadata = this.app.metadataCache.getFileCache(activeFile);
+				const metadata =
+					this.app.metadataCache.getFileCache(activeFile);
 				const categories = metadata?.frontmatter?.categories;
 				const isTask =
 					categories &&
@@ -179,7 +180,8 @@ export default class ConductorObsidian extends Plugin {
 			checkCallback: (checking: boolean) => {
 				const activeFile = this.app.workspace.activeEditor?.file;
 				if (!activeFile) return false;
-				const metadata = this.app.metadataCache.getFileCache(activeFile);
+				const metadata =
+					this.app.metadataCache.getFileCache(activeFile);
 				const categories = metadata?.frontmatter?.categories;
 				const isTask =
 					categories &&
@@ -807,7 +809,9 @@ export default class ConductorObsidian extends Plugin {
 		const inProgressProjects = getProjects(this.app, projectFilter);
 
 		// Obtain a list of tasks that belong to those projects. The status should be In Progress
-		const selectTaskModal = new ChooseTaskModal(this.app);
+		const selectTaskModal = new ChooseTaskModal(this.app, {
+			initialGroupMode: "status",
+		});
 		const taskFilters: TaskFilters = {
 			projectFilter: {
 				projectIs: inProgressProjects.map((p) => p.name),
@@ -1021,7 +1025,8 @@ export default class ConductorObsidian extends Plugin {
 				keybindings,
 			},
 		);
-		const { templateName, answer } = await this.getTaskCreationDetails(name);
+		const { templateName, answer } =
+			await this.getTaskCreationDetails(name);
 		const task = await createNewTask(
 			this.app,
 			name,
@@ -1043,9 +1048,9 @@ export default class ConductorObsidian extends Plugin {
 						`Unknown ConfirmationKeybinding type [${submitKeybinding}]`,
 					);
 					break;
-			};
+			}
 		}
-	}
+	};
 
 	private async getTaskCreationDetails(taskName: string): Promise<{
 		templateName: string;

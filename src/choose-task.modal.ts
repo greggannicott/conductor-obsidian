@@ -4,6 +4,9 @@ import { Task } from "./tasks";
 type onChooseCallback = (task: Task) => void;
 
 type GroupMode = "priority" | "status";
+type ChooseTaskModalOptions = {
+	initialGroupMode?: GroupMode;
+};
 
 type TaskModalItem =
 	| {
@@ -21,8 +24,9 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 	private groupMode: GroupMode = "priority";
 	private handleToggleKeydown: ((e: KeyboardEvent) => void) | null = null;
 
-	constructor(app: App) {
+	constructor(app: App, options?: ChooseTaskModalOptions) {
 		super(app);
+		this.groupMode = options?.initialGroupMode ?? "priority";
 		this.setPlaceholder("Select a task...");
 		this.updateInstructions();
 	}
