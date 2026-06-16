@@ -931,8 +931,7 @@ export default class ConductorObsidian extends Plugin {
 
 	setTaskStatus = (file: TFile, status: TaskStatus) => {
 		void this.setTaskStatusForFiles([file], status, {
-			openParentProjectIfTaskClosed:
-				this.shouldOpenParentProjectForTaskStatus(status),
+			openParentProjectIfTaskClosed: false,
 		});
 	};
 
