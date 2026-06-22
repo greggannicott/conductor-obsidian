@@ -39,6 +39,7 @@ export enum ProjectStatus {
 	InProgress = "02 - In Progress",
 	Done = "03 - Done",
 	Abandoned = "04 - Abandoned",
+	WontDo = "05 - Won't Do",
 }
 
 export const outstandingProjectTypes: ProjectStatus[] = [

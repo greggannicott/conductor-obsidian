@@ -152,6 +152,66 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "set-project-to-todo",
+			name: "Set Project Status to '⭕ 01 - To Do'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.ToDo);
+				});
+			},
+		});
+
+		this.addCommand({
+			id: "set-project-to-in-progress",
+			name: "Set Project Status to '🔄 02 - In Progress'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.InProgress);
+				});
+			},
+		});
+
+		this.addCommand({
+			id: "set-project-to-doing",
+			name: "Set Project Status to '🔄 02 - Doing'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.InProgress);
+				});
+			},
+		});
+
+		this.addCommand({
+			id: "set-project-to-done",
+			name: "Set Project Status to '✅ 03 - Done'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.Done);
+				});
+			},
+		});
+
+		this.addCommand({
+			id: "set-project-to-abandoned",
+			name: "Set Project Status to '❌ 04 - Abandoned'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.Abandoned);
+				});
+			},
+		});
+
+		this.addCommand({
+			id: "set-project-to-wont-do",
+			name: "Set Project Status to '🙅🏼‍♂️ 05 - Won't Do'",
+			checkCallback: (checking: boolean) => {
+				return this.isActiveFileProject(checking, () => {
+					this.setActiveProjectStatus(ProjectStatus.WontDo);
+				});
+			},
+		});
+
+		this.addCommand({
 			id: "impede-task",
 			name: "Impede Task",
 			checkCallback: (checking: boolean) => {
@@ -877,6 +937,7 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
+
 	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
 		if (!activeTask) return;
@@ -884,6 +945,31 @@ export default class ConductorObsidian extends Plugin {
 			openParentProjectIfTaskClosed: true,
 		});
 	};
+
+	setActiveProjectStatus = (status: ProjectStatus) => {
+		const activeFile = this.app.workspace.activeEditor?.file;
+		if (!activeFile) return;
+		this.setProjectStatus(activeFile, status);
+	};
+
+	private isActiveFileProject(
+		checking: boolean,
+		onExecute: () => void,
+	): boolean {
+		const activeFile = this.app.workspace.activeEditor?.file;
+		if (!activeFile) return false;
+		const metadata = this.app.metadataCache.getFileCache(activeFile);
+		const categories = metadata?.frontmatter?.categories;
+		const isProject =
+			categories &&
+			Array.isArray(categories) &&
+			categories.includes("[[Project]]");
+		if (!isProject) return false;
+		if (!checking) {
+			onExecute();
+		}
+		return true;
+	}
 
 	getPriorityDisplay = (priority: TaskPriority): string => {
 		switch (priority) {
@@ -913,6 +999,7 @@ export default class ConductorObsidian extends Plugin {
 			case ProjectStatus.Abandoned:
 				return "❌ - Abandoned";
 			case TaskStatus.WontDo:
+			case ProjectStatus.WontDo:
 				return "🙅🏼‍♂️ - Won't Do";
 			default:
 				return status;
