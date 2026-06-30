@@ -1,4 +1,4 @@
-import { App, prepareFuzzySearch, SearchResult, SuggestModal } from "obsidian";
+import { App, prepareFuzzySearch, SuggestModal } from "obsidian";
 import { Task } from "./tasks";
 
 type onChooseCallback = (task: Task) => void;
@@ -73,18 +73,11 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 
 		const q = query.trim();
 		if (q.length > 0) {
-			// Flat list while searching.
 			const search = prepareFuzzySearch(q);
-			const matches: { task: Task; match: SearchResult }[] = [];
-			for (const task of normalizedTasks) {
-				const text = this.getTaskText(task);
-				const result = search(text);
-				if (result) {
-					matches.push({ task, match: result });
-				}
-			}
-			matches.sort((a, b) => b.match.score - a.match.score);
-			return matches.map(({ task }) => ({ kind: "task" as const, task }));
+			const matches = normalizedTasks.filter((task) => search(this.getTaskText(task)));
+			return this.groupMode === "priority"
+				? this.getPriorityGroupedItems(matches)
+				: this.getStatusGroupedItems(matches);
 		}
 
 		return this.groupMode === "priority"
