@@ -604,6 +604,39 @@ export default class ConductorObsidian extends Plugin {
 							});
 						});
 					}
+
+					if (!file.path.startsWith("References/")) {
+						menu.addItem((item) => {
+							item.setTitle("Move to References");
+						item.onClick(async () => {
+							const refFolder =
+								this.app.vault.getAbstractFileByPath(
+									"References",
+								);
+							if (!refFolder) {
+								await this.app.vault.createFolder(
+									"References",
+								);
+							}
+
+							let newPath = `References/${file.name}`;
+							let counter = 1;
+							while (
+								this.app.vault.getFileByPath(newPath)
+							) {
+								const ext = file.extension
+									? `.${file.extension}`
+									: "";
+								const baseName = file.basename;
+								newPath = `References/${baseName} ${counter}${ext}`;
+								counter++;
+							}
+
+							await this.app.vault.rename(file, newPath);
+							new Notice(`Moved to ${newPath}`);
+						});
+					});
+					}
 				}
 			}),
 		);
