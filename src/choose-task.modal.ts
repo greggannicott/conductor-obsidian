@@ -246,8 +246,8 @@ export class ChooseTaskModal extends SuggestModal<TaskModalItem> {
 
 	private updateInstructions(): void {
 		this.setInstructions([
-			{ command: "P", purpose: "Group by Priority" },
-			{ command: "S", purpose: "Group by Status" },
+			{ command: "⌘-P", purpose: "Group by Priority" },
+			{ command: "⌘-S", purpose: "Group by Status" },
 		]);
 	}
 }
