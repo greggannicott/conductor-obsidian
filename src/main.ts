@@ -1090,6 +1090,13 @@ export default class ConductorObsidian extends Plugin {
 					fm["answer"] = answerToSave;
 					didChange = true;
 				}
+				if (status === TaskStatus.Done && Array.isArray(fm["tags"])) {
+					const idx = fm["tags"].indexOf("inbox");
+					if (idx !== -1) {
+						fm["tags"].splice(idx, 1);
+						didChange = true;
+					}
+				}
 			});
 
 			if (!didChange) continue;
