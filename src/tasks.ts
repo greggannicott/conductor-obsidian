@@ -1,5 +1,6 @@
 import { App, TFile, moment } from "obsidian";
 import { Context, getProjectFromLink, Project } from "./projects";
+import { TextInputModal } from "./text-input-modal";
 import {
 	Category,
 	createFileFromTemplate,
@@ -283,4 +284,48 @@ export function getActiveTask(app: App): Task | null {
 		}
 	}
 	return activeTask;
+}
+
+export function isQuestionTaskName(taskName: string): boolean {
+	return taskName.trim().endsWith("?");
+}
+
+export function isQuestionTask(task: Task): boolean {
+	return (
+		(task.type ?? []).includes(TaskType.QuestionTask) ||
+		isQuestionTaskName(task.name)
+	);
+}
+
+export function taskHasAnswer(app: App, taskFile: TFile): boolean {
+	const answer =
+		app.metadataCache.getFileCache(taskFile)?.frontmatter?.["answer"];
+	return typeof answer === "string" && answer.trim().length > 0;
+}
+
+export async function promptForOptionalQuestionAnswer(
+	app: App,
+	taskName: string,
+): Promise<string | null> {
+	const { value } = await TextInputModal.show(app, {
+		title: "Answer (Optional)",
+		placeholder: `Provide an answer for '${taskName.trim()}' (or leave blank)...`,
+	});
+	const answer = value.trim();
+	return answer.length > 0 ? answer : null;
+}
+
+export async function getTaskCreationDetails(
+	app: App,
+	taskName: string,
+): Promise<{
+	templateName: string;
+	answer: string | null;
+}> {
+	if (!isQuestionTaskName(taskName)) {
+		return { templateName: "Task", answer: null };
+	}
+
+	const answer = await promptForOptionalQuestionAnswer(app, taskName);
+	return { templateName: "Question Task", answer };
 }
