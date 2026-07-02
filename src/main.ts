@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { Plugin } from "obsidian";
 
 import {
 	createNewTasksFromCheckboxes,
@@ -9,12 +9,10 @@ import { createMeeting } from "./commands/create-meeting";
 import { showCreateTaskFlow, showCreateTaskForAnyProjectFlow } from "./commands/create-task";
 import {
 	setActiveTaskStatus,
-	setTaskStatus,
 	setActiveProjectStatus,
-	setProjectStatus,
 } from "./commands/set-status";
-import { setActiveTaskPriority, setTaskPriority, setTaskPriorityForFiles } from "./commands/set-priority";
-import { touchTask, touchTaskFiles } from "./commands/touch-task";
+import { setActiveTaskPriority } from "./commands/set-priority";
+import { touchTask } from "./commands/touch-task";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -38,10 +36,12 @@ import {
 	copyParentProjectJiraId,
 	copyParentProjectJiraURL,
 } from "./commands/jira";
-import { getTask, Task, TaskStatus, TaskPriority } from "./tasks";
-import { getProjectFromFile, ProjectStatus } from "./projects";
+import { TaskStatus, TaskPriority } from "./tasks";
+import { ProjectStatus } from "./projects";
 import { addTag, removeTag, toggleTag } from "./utilities";
 import { isActiveFileProject } from "./utilities";
+import { createFileMenuHandler } from "./events/file-menu";
+import { createFilesMenuHandler } from "./events/files-menu";
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
@@ -409,373 +409,13 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on("file-menu", (menu, file) => {
-				if (file instanceof TFile) {
-					const metadata =
-						this.app.metadataCache.getFileCache(file);
-					const categories = metadata?.frontmatter?.categories;
-					const isTask =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Task]]");
-					const isProject =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Project]]");
-
-					if (isTask) {
-						const task = getTask(this.app, file.path);
-
-						menu.addItem((item) => {
-							item.setTitle("Set Status");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("⭕ - To Do");
-								if (task && task.status === TaskStatus.ToDo) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskStatus(
-										this.app,
-										file,
-										TaskStatus.ToDo,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔄 - In Progress");
-								if (
-									task &&
-									task.status === TaskStatus.InProgress
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskStatus(
-										this.app,
-										file,
-										TaskStatus.InProgress,
-									);
-								});
-							});
-							submenu.addSeparator();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("✅ - Done");
-								if (
-									task &&
-									task.status === TaskStatus.Done
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskStatus(
-										this.app,
-										file,
-										TaskStatus.Done,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("❌ - Abandoned");
-								if (
-									task &&
-									task.status === TaskStatus.Abandoned
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskStatus(
-										this.app,
-										file,
-										TaskStatus.Abandoned,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🙅🏼‍♂️ - Won't Do");
-								if (
-									task &&
-									task.status === TaskStatus.WontDo
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskStatus(
-										this.app,
-										file,
-										TaskStatus.WontDo,
-									);
-								});
-							});
-						});
-
-						menu.addItem((item) => {
-							item.setTitle("Set Priority");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔴 - High");
-								if (
-									task &&
-									task.priority === TaskPriority.High
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskPriority(
-										this.app,
-										file,
-										TaskPriority.High,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🟡 - Medium");
-								if (
-									task &&
-									task.priority === TaskPriority.Medium
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskPriority(
-										this.app,
-										file,
-										TaskPriority.Medium,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🟢 - Low");
-								if (
-									task &&
-									task.priority === TaskPriority.Low
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setTaskPriority(
-										this.app,
-										file,
-										TaskPriority.Low,
-									);
-								});
-							});
-						});
-
-						menu.addItem((item) => {
-							item.setTitle("Touch Task");
-							item.onClick(() => {
-								void touchTaskFiles(this.app, [file]);
-							});
-						});
-					}
-
-					if (isProject) {
-						const project = getProjectFromFile(
-							this.app,
-							file,
-						);
-
-						menu.addItem((item) => {
-							item.setTitle("Set Status");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("⭕ - To Do");
-								if (
-									project &&
-									project.status === ProjectStatus.ToDo
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setProjectStatus(
-										this.app,
-										file,
-										ProjectStatus.ToDo,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔄 - In Progress");
-								if (
-									project &&
-									project.status ===
-										ProjectStatus.InProgress
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setProjectStatus(
-										this.app,
-										file,
-										ProjectStatus.InProgress,
-									);
-								});
-							});
-							submenu.addSeparator();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("✅ - Done");
-								if (
-									project &&
-									project.status === ProjectStatus.Done
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setProjectStatus(
-										this.app,
-										file,
-										ProjectStatus.Done,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("❌ - Abandoned");
-								if (
-									project &&
-									project.status ===
-										ProjectStatus.Abandoned
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									setProjectStatus(
-										this.app,
-										file,
-										ProjectStatus.Abandoned,
-									);
-								});
-							});
-						});
-					}
-
-					const isJournal =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Journal]]");
-
-					if (isJournal) {
-						menu.addItem((item) => {
-							item.setTitle("Add '#reflected' Tag");
-							item.onClick(() => {
-								addTag(this.app, file, "reflected");
-							});
-						});
-					}
-
-					if (!file.path.startsWith("References/")) {
-						menu.addItem((item) => {
-							item.setTitle("Move to References");
-							item.onClick(async () => {
-								const refFolder =
-									this.app.vault.getAbstractFileByPath(
-										"References",
-									);
-								if (!refFolder) {
-									await this.app.vault.createFolder(
-										"References",
-									);
-								}
-
-								let newPath = `References/${file.name}`;
-								let counter = 1;
-								while (
-									this.app.vault.getFileByPath(newPath)
-								) {
-									const ext = file.extension
-										? `.${file.extension}`
-										: "";
-									const baseName = file.basename;
-									newPath = `References/${baseName} ${counter}${ext}`;
-									counter++;
-								}
-
-								await this.app.vault.rename(
-									file,
-									newPath,
-								);
-								new Notice(`Moved to ${newPath}`);
-							});
-						});
-					}
-				}
-			}),
+			this.app.workspace.on("file-menu", createFileMenuHandler(this.app)),
 		);
 
 		this.registerEvent(
 			this.app.workspace.on(
 				"files-menu" as any,
-				(menu: any, files: any[]) => {
-					const selectedFiles = (files ?? []).filter(
-						(f): f is TFile => f instanceof TFile,
-					);
-					if (selectedFiles.length === 0) return;
-
-					const selectedTaskFiles = selectedFiles.filter(
-						(file) => {
-							const metadata =
-								this.app.metadataCache.getFileCache(file);
-							const categories =
-								metadata?.frontmatter?.categories;
-							return (
-								categories &&
-								Array.isArray(categories) &&
-								categories.includes("[[Task]]")
-							);
-						},
-					);
-
-					// Only show bulk priority for Tasks.
-					if (selectedTaskFiles.length === 0) return;
-
-					menu.addItem((item: any) => {
-						item.setTitle("Set Priority");
-						const submenu = (item as any).setSubmenu();
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🔴 - High");
-							subItem.onClick(() => {
-								void setTaskPriorityForFiles(
-									this.app,
-									selectedTaskFiles,
-									TaskPriority.High,
-								);
-							});
-						});
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🟡 - Medium");
-							subItem.onClick(() => {
-								void setTaskPriorityForFiles(
-									this.app,
-									selectedTaskFiles,
-									TaskPriority.Medium,
-								);
-							});
-						});
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🟢 - Low");
-							subItem.onClick(() => {
-								void setTaskPriorityForFiles(
-									this.app,
-									selectedTaskFiles,
-									TaskPriority.Low,
-								);
-							});
-						});
-					});
-
-					menu.addItem((item: any) => {
-						item.setTitle("Touch Task");
-						item.onClick(() => {
-							void touchTaskFiles(
-								this.app,
-								selectedTaskFiles,
-							);
-						});
-					});
-				},
+				createFilesMenuHandler(this.app) as any,
 			),
 		);
 	}
