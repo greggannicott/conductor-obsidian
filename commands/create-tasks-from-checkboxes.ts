@@ -1,27 +1,19 @@
-import { App, Editor, Notice, moment } from "obsidian";
+import { App, Notice, moment } from "obsidian";
 import { ChooseProjectModal } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
 import { createNewTask, TaskPriority, TaskStatus } from "src/tasks";
-
-type EditorLike = Editor;
-type EditorPosition = { line: number; ch: number };
-type SelectionRange = { from: EditorPosition; to: EditorPosition };
+import {
+	getActiveEditorOrNotify,
+	getSelectedEditorContent,
+	replaceLinesInEditor,
+	LineReplacement,
+} from "src/editor-utils";
 
 interface CheckboxLine {
 	lineIndex: number;
 	indent: string;
 	text: string;
 	nestedBullets: string[];
-}
-
-interface SelectedEditorContent {
-	lines: string[];
-	range: SelectionRange;
-}
-
-interface LineReplacement {
-	lineIndex: number;
-	newLine: string;
 }
 
 const checkboxPattern = /^(\s*)- \[ \] (.+)$/;
@@ -47,42 +39,8 @@ export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
 		checkboxLines,
 		selectedProject,
 	);
-	replaceCheckboxesWithTaskLinks(editor, selectedEditorContent, replacements);
+	replaceLinesInEditor(editor, selectedEditorContent, replacements);
 	showTaskCreationNotice(createdCount, selectedProject);
-};
-
-const getActiveEditorOrNotify = (app: App): EditorLike | null => {
-	const editor = app.workspace.activeEditor?.editor;
-	if (!editor) {
-		new Notice("No active editor found");
-		return null;
-	}
-	return editor;
-};
-
-const getSelectedEditorContent = (
-	editor: EditorLike,
-): SelectedEditorContent => {
-	const selectedText = editor.getSelection();
-	if (!selectedText) {
-		return getCurrentLineContent(editor);
-	}
-
-	const range = {
-		from: editor.getCursor("from"),
-		to: editor.getCursor("to"),
-	};
-	return { lines: selectedText.split("\n"), range };
-};
-
-const getCurrentLineContent = (editor: EditorLike): SelectedEditorContent => {
-	const cursor = editor.getCursor();
-	const line = editor.getLine(cursor.line);
-	const range = {
-		from: { line: cursor.line, ch: 0 },
-		to: { line: cursor.line, ch: line.length },
-	};
-	return { lines: [line], range };
 };
 
 const collectCheckboxLines = (lines: string[]): CheckboxLine[] => {
@@ -428,26 +386,6 @@ const buildLineReplacement = (
 		lineIndex: checkboxLine.lineIndex,
 		newLine: `${checkboxLine.indent}- [ ] [[${taskName}]]`,
 	};
-};
-
-const replaceCheckboxesWithTaskLinks = (
-	editor: EditorLike,
-	selectedEditorContent: SelectedEditorContent,
-	replacements: LineReplacement[],
-) => {
-	if (replacements.length === 0) return;
-
-	const updatedLines = [...selectedEditorContent.lines];
-	replacements.forEach(({ lineIndex, newLine }) => {
-		updatedLines[lineIndex] = newLine;
-	});
-
-	const newText = updatedLines.join("\n");
-	editor.replaceRange(
-		newText,
-		selectedEditorContent.range.from,
-		selectedEditorContent.range.to,
-	);
 };
 
 const showTaskCreationNotice = (
