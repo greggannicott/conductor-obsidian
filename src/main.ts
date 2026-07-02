@@ -34,6 +34,7 @@ import {
 	MeetingType,
 } from "./choose-meeting-type-modal";
 import { createNewTasksFromCheckboxes } from "../commands/create-tasks-from-checkboxes";
+import { createNewNotesFromBullets } from "../commands/create-notes-from-bullets";
 import {
 	addTag,
 	removeTag,
@@ -261,6 +262,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-tasks-from-checkboxes",
 			name: "Create Tasks from Checkboxes",
 			callback: () => void createNewTasksFromCheckboxes(this.app),
+		});
+
+		this.addCommand({
+			id: "create-notes-from-bullets",
+			name: "Create Notes from Bullets",
+			callback: () => void createNewNotesFromBullets(this.app),
 		});
 
 		this.addCommand({
