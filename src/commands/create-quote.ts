@@ -63,6 +63,10 @@ export const createQuote = async (app: App): Promise<void> => {
 		content = content.replace(/SOURCE/g, source);
 		await app.vault.modify(file, content);
 
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			fm["attributed-to"] = `[[${person}]]`;
+		});
+
 		await addTag(app, file, "inbox");
 
 		new Notice(`Quote note created: ${fileName}`);
@@ -135,6 +139,10 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 
 		content = content.replace(/SOURCE/g, source);
 		await app.vault.modify(file, content);
+
+		await app.fileManager.processFrontMatter(file, (fm) => {
+			fm["attributed-to"] = `[[${person}]]`;
+		});
 
 		await addTag(app, file, "inbox");
 
