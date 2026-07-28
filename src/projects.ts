@@ -1,6 +1,6 @@
 import { App, TFile } from "obsidian";
 import { getTask } from "./tasks";
-import { Category, getCategory, getFilesWithCategory } from "./utilities";
+import { Category, getCategory, getFilesFromProjectsFolderWithCategory } from "./utilities";
 
 export type Project = {
 	name: string;
@@ -83,7 +83,7 @@ export function getActiveProjectJiraId(app: App): string | null {
 // Get a list of projects.
 // A project is a file that includes a `categories` value of "[[Project]]"
 export function getProjects(app: App, filter?: ProjectFilters): Project[] {
-	let projects: Project[] = getFilesWithCategory(app, "Project").map((f) => {
+	let projects: Project[] = getFilesFromProjectsFolderWithCategory(app, "Project").map((f) => {
 		return getProjectFromFile(app, f);
 	});
 	if (filter) {

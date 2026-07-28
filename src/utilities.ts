@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, parseFrontMatterStringArray } from "obsidian";
 import { TaskStatus, TaskPriority } from "./tasks";
 import { ProjectStatus } from "./projects";
 
@@ -34,7 +34,7 @@ export function vaultFileExists(app: App, path: string): boolean {
 	return file !== null;
 }
 
-export function getFilesWithCategory(app: App, category: string): TFile[] {
+export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {
 	const files = app.vault.getMarkdownFiles();
 	const filesInProjectFolder = files.filter(
 		(f) =>
@@ -43,7 +43,16 @@ export function getFilesWithCategory(app: App, category: string): TFile[] {
 	);
 	return filesInProjectFolder.filter((f) => {
 		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
-		return frontmatter?.categories?.contains(`[[${category}]]`);
+		const categories = parseFrontMatterStringArray(frontmatter, "categories");
+		return categories?.includes(`[[${category}]]`) ?? false;
+	});
+}
+
+export function getFilesWithCategory(app: App, category: string): TFile[] {
+	return app.vault.getMarkdownFiles().filter((f) => {
+		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
+		const categories = parseFrontMatterStringArray(frontmatter, "categories");
+		return categories?.includes(`[[${category}]]`) ?? false;
 	});
 }
 

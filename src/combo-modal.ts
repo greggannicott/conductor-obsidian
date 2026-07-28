@@ -147,6 +147,7 @@ export class ComboModal extends Modal {
 			const li = this.listEl.createEl("li", {
 				cls: "conductor-combo-item",
 			});
+			li.createSpan({ text: this.filteredItems[i] });
 
 			if (i === this.selectedIndex) {
 				li.addClass("is-selected");

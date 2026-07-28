@@ -5,7 +5,7 @@ import {
 	Category,
 	createFileFromTemplate,
 	getCategory,
-	getFilesWithCategory,
+	getFilesFromProjectsFolderWithCategory,
 	vaultFileExists,
 } from "./utilities";
 
@@ -188,7 +188,7 @@ export function getTasks(
 			...overideFilters,
 		};
 	}
-	const tasks = getFilesWithCategory(app, "Task")
+	const tasks = getFilesFromProjectsFolderWithCategory(app, "Task")
 		.map((t: TFile): Task | null => {
 			return getTask(app, t.path);
 		})

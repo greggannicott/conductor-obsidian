@@ -1,7 +1,8 @@
 import { App, MarkdownView, Notice } from "obsidian";
 import { LongTextInputModal } from "src/long-text-input-modal";
 import { TextInputModal } from "src/text-input-modal";
-import { createFileFromTemplate, addTag } from "src/utilities";
+import { ComboModal } from "src/combo-modal";
+import { createFileFromTemplate, addTag, getFilesWithCategory } from "src/utilities";
 
 export const createQuote = async (app: App): Promise<void> => {
 	const activeView = app.workspace.getActiveViewOfType(MarkdownView);
@@ -13,10 +14,13 @@ export const createQuote = async (app: App): Promise<void> => {
 		initialValue: selectedText || undefined,
 	});
 
-	const { value: person } = await TextInputModal.show(app, {
-		title: "Person",
+	const personItems = getFilesWithCategory(app, "Person").map((f) => f.basename);
+	const person = await ComboModal.show(app, {
+		title: "Attribution",
 		placeholder: "Who said this quote?",
+		items: personItems,
 	});
+	if (!person) return;
 
 	const { value: about } = await TextInputModal.show(app, {
 		title: `${person} on...`,
@@ -86,10 +90,13 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 		initialValue: selectedText || undefined,
 	});
 
-	const { value: person } = await TextInputModal.show(app, {
-		title: "Person",
+	const personItems = getFilesWithCategory(app, "Person").map((f) => f.basename);
+	const person = await ComboModal.show(app, {
+		title: "Attribution",
 		placeholder: "Who said this quote?",
+		items: personItems,
 	});
+	if (!person) return;
 
 	const { value: about } = await TextInputModal.show(app, {
 		title: `${person} on...`,
