@@ -15,6 +15,7 @@ export class ComboModal extends Modal {
 	private selectedIndex: number = -1;
 	private filteredItems: string[] = [];
 	private allowClose: boolean = false;
+	private mouseUsed: boolean = false;
 
 	constructor(app: App, config: ComboModalConfig) {
 		super(app);
@@ -74,14 +75,16 @@ export class ComboModal extends Modal {
 
 			if (isDown) {
 				e.preventDefault();
+				this.mouseUsed = false;
 				this.selectedIndex = Math.min(
 					this.selectedIndex + 1,
 					this.filteredItems.length - 1,
 				);
 				this.inputEl!.value = this.filteredItems[this.selectedIndex];
-				this.renderSuggestions();
+				this.updateHighlight();
 			} else if (isUp) {
 				e.preventDefault();
+				this.mouseUsed = false;
 				if (this.selectedIndex > 0) {
 					this.selectedIndex--;
 					this.inputEl!.value =
@@ -90,7 +93,7 @@ export class ComboModal extends Modal {
 					this.selectedIndex = -1;
 					this.inputEl!.value = this.originalQuery;
 				}
-				this.renderSuggestions();
+				this.updateHighlight();
 			} else
 				switch (e.key) {
 					case "Enter":
@@ -139,6 +142,14 @@ export class ComboModal extends Modal {
 		);
 	}
 
+	private updateHighlight(): void {
+		if (!this.listEl) return;
+		const items = this.listEl.querySelectorAll(".conductor-combo-item");
+		items.forEach((li, i) => {
+			li.toggleClass("is-selected", i === this.selectedIndex);
+		});
+	}
+
 	private renderSuggestions(): void {
 		if (!this.listEl) return;
 		this.listEl.empty();
@@ -163,10 +174,11 @@ export class ComboModal extends Modal {
 			});
 
 			li.addEventListener("mouseenter", () => {
-				if (this.inputEl && this.selectedIndex !== i) {
+				if (this.inputEl) {
+					this.mouseUsed = true;
 					this.selectedIndex = i;
 					this.inputEl.value = this.filteredItems[i];
-					this.renderSuggestions();
+					this.updateHighlight();
 				}
 			});
 		}
