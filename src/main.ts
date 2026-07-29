@@ -1,22 +1,12 @@
 import { Notice, Plugin, TFile, MarkdownView, moment } from "obsidian";
 
-import { ChooseProjectModal } from "src/choose-project-modal";
-import { TextInputKeybinding, TextInputModal } from "src/text-input-modal";
-import { LongTextInputModal } from "src/long-text-input-modal";
+import { ChooseProjectModal } from "./choose-project-modal";
+import { TextInputKeybinding, TextInputModal } from "./text-input-modal";
+import { LongTextInputModal } from "./long-text-input-modal";
 import {
-	createNewTask,
-	getTasks,
-	getTask,
-	Task,
-	TaskStatus,
-	getActiveTask,
-	updateTask,
-	TaskPriority,
-	TaskFilters,
-	TaskType,
-	outstandingTaskTypes,
-	closedTaskTypes,
-} from "./tasks";
+	ChooseMeetingTypeModal,
+	MeetingType,
+} from "./choose-meeting-type-modal";
 import {
 	getProjects,
 	getProjectFromFile,
@@ -28,19 +18,32 @@ import {
 	ProjectStatus,
 	updateProject,
 } from "./projects";
+import {
+	createNewTask,
+	getTasks,
+	getTask,
+	Task,
+	TaskStatus,
+	getActiveTask,
+	TaskPriority,
+	TaskFilters,
+	TaskType,
+	outstandingTaskTypes,
+	closedTaskTypes,
+} from "./tasks";
 import { ChooseTaskModal } from "./choose-task.modal";
 import { InsertTaskLinksModal } from "./insert-task-links-modal";
+import { addTag, removeTag, toggleTag, createFileFromTemplate, isActiveFileProject } from "./utilities";
 import {
-	ChooseMeetingTypeModal,
-	MeetingType,
-} from "./choose-meeting-type-modal";
-import { createNewTasksFromCheckboxes } from "../commands/create-tasks-from-checkboxes";
-import {
-	addTag,
-	removeTag,
-	toggleTag,
-	createFileFromTemplate,
-} from "./utilities";
+	isTaskImpedeable,
+	isTaskUnimpedeable,
+	impedeActiveTask,
+	unimpeadeActiveTask,
+} from "./commands/impede-task";
+import { createNewTasksFromCheckboxes } from "./commands/create-tasks-from-checkboxes";
+import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
+import { createFileMenuHandler } from "./events/file-menu";
+import { createFilesMenuHandler } from "./events/files-menu";
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
@@ -156,9 +159,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-todo",
 			name: "Set Project Status to '⭕ 01 - To Do'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.ToDo);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -166,9 +171,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-in-progress",
 			name: "Set Project Status to '🔄 02 - In Progress'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.InProgress);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -176,9 +183,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-doing",
 			name: "Set Project Status to '🔄 02 - Doing'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.InProgress);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -186,9 +195,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-done",
 			name: "Set Project Status to '✅ 03 - Done'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.Done);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -196,9 +207,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-abandoned",
 			name: "Set Project Status to '❌ 04 - Abandoned'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.Abandoned);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -206,9 +219,11 @@ export default class ConductorObsidian extends Plugin {
 			id: "set-project-to-wont-do",
 			name: "Set Project Status to '🙅🏼‍♂️ 05 - Won't Do'",
 			checkCallback: (checking: boolean) => {
-				return this.isActiveFileProject(checking, () => {
+				if (!isActiveFileProject(this.app)) return false;
+				if (!checking) {
 					this.setActiveProjectStatus(ProjectStatus.WontDo);
-				});
+				}
+				return true;
 			},
 		});
 
@@ -216,20 +231,9 @@ export default class ConductorObsidian extends Plugin {
 			id: "impede-task",
 			name: "Impede Task",
 			checkCallback: (checking: boolean) => {
-				const activeFile = this.app.workspace.activeEditor?.file;
-				if (!activeFile) return false;
-				const metadata =
-					this.app.metadataCache.getFileCache(activeFile);
-				const categories = metadata?.frontmatter?.categories;
-				const isTask =
-					categories &&
-					Array.isArray(categories) &&
-					categories.includes("[[Task]]");
-				if (!isTask) return false;
-				const isImpeded = metadata?.frontmatter?.impeded === true;
-				if (isImpeded) return false;
+				if (!isTaskImpedeable(this.app)) return false;
 				if (!checking) {
-					void this.impedeActiveTask();
+					void impedeActiveTask(this.app);
 				}
 				return true;
 			},
@@ -239,20 +243,9 @@ export default class ConductorObsidian extends Plugin {
 			id: "unimpede-task",
 			name: "Unimpede Task",
 			checkCallback: (checking: boolean) => {
-				const activeFile = this.app.workspace.activeEditor?.file;
-				if (!activeFile) return false;
-				const metadata =
-					this.app.metadataCache.getFileCache(activeFile);
-				const categories = metadata?.frontmatter?.categories;
-				const isTask =
-					categories &&
-					Array.isArray(categories) &&
-					categories.includes("[[Task]]");
-				if (!isTask) return false;
-				const isImpeded = metadata?.frontmatter?.impeded === true;
-				if (!isImpeded) return false;
+				if (!isTaskUnimpedeable(this.app)) return false;
 				if (!checking) {
-					void this.unimpedeActiveTask();
+					void unimpeadeActiveTask(this.app);
 				}
 				return true;
 			},
@@ -268,6 +261,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "insert-task-links",
 			name: "Insert Task Links",
 			callback: this.insertTaskLinks,
+		});
+
+		this.addCommand({
+			id: "create-notes-from-bullets",
+			name: "Create Notes from Bullets",
+			callback: () => void createNewNotesFromBullets(this.app),
 		});
 
 		this.addCommand({
@@ -291,37 +290,55 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "add-inbox-tag",
 			name: "Add #inbox Tag",
-			callback: () => this.addTagToActiveFile("inbox"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) addTag(this.app, file, "inbox");
+			},
 		});
 
 		this.addCommand({
 			id: "remove-inbox-tag",
 			name: "Remove #inbox Tag",
-			callback: () => this.removeTagFromActiveFile("inbox"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) removeTag(this.app, file, "inbox");
+			},
 		});
 
 		this.addCommand({
 			id: "toggle-inbox-tag",
 			name: "Toggle #inbox Tag",
-			callback: () => this.toggleTagOnActiveFile("inbox"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) toggleTag(this.app, file, "inbox");
+			},
 		});
 
 		this.addCommand({
 			id: "add-reflected-tag",
 			name: "Add #reflected Tag",
-			callback: () => this.addTagToActiveFile("reflected"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) addTag(this.app, file, "reflected");
+			},
 		});
 
 		this.addCommand({
 			id: "remove-reflected-tag",
 			name: "Remove #reflected Tag",
-			callback: () => this.removeTagFromActiveFile("reflected"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) removeTag(this.app, file, "reflected");
+			},
 		});
 
 		this.addCommand({
 			id: "toggle-reflected-tag",
 			name: "Toggle #reflected Tag",
-			callback: () => this.toggleTagOnActiveFile("reflected"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) toggleTag(this.app, file, "reflected");
+			},
 		});
 
 		this.addCommand({
@@ -333,25 +350,28 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "add-review-tag",
 			name: "Add #review Tag",
-			callback: () => this.addTagToActiveFile("review"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) addTag(this.app, file, "review");
+			},
 		});
 
 		this.addCommand({
 			id: "remove-review-tag",
 			name: "Remove #review Tag",
-			callback: () => this.removeTagFromActiveFile("review"),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) removeTag(this.app, file, "review");
+			},
 		});
 
 		this.addCommand({
 			id: "toggle-review-tag",
 			name: "Toggle #review Tag",
-			callback: () => this.toggleTagOnActiveFile("review"),
-		});
-
-		this.addCommand({
-			id: "open-parent-project-jira-ticket",
-			name: "Open Parent Project's Jira Ticket",
-			callback: () => this.openParentProjectJiraTicket(),
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) toggleTag(this.app, file, "review");
+			},
 		});
 
 		this.addCommand({
@@ -369,350 +389,35 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "create-quote",
 			name: "Create Quote",
-			callback: this.createQuote,
+			callback: () => void this.createQuote(),
 		});
 
 		this.addCommand({
 			id: "create-quote-using-current-note-as-source",
 			name: "Create Quote Using Current Note as Source",
-			callback: this.createQuoteUsingCurrentNoteAsSource,
+			callback: () => void this.createQuoteUsingCurrentNoteAsSource(),
 		});
 
 		this.addCommand({
 			id: "create-meeting",
 			name: "Create Meeting",
-			callback: this.createMeeting,
+			callback: () => void this.createMeeting(),
 		});
 
 		this.addCommand({
 			id: "touch-task",
 			name: "Touch Task",
-			callback: this.touchTask,
+			callback: () => void this.touchTask(),
 		});
 
 		this.registerEvent(
-			this.app.workspace.on("file-menu", (menu, file) => {
-				if (file instanceof TFile) {
-					const metadata = this.app.metadataCache.getFileCache(file);
-					const categories = metadata?.frontmatter?.categories;
-					const isTask =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Task]]");
-					const isProject =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Project]]");
-
-					if (isTask) {
-						const task = getTask(this.app, file.path);
-
-						menu.addItem((item) => {
-							item.setTitle("Set Status");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("⭕ - To Do");
-								if (task && task.status === TaskStatus.ToDo) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskStatus(file, TaskStatus.ToDo);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔄 - In Progress");
-								if (
-									task &&
-									task.status === TaskStatus.InProgress
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskStatus(
-										file,
-										TaskStatus.InProgress,
-									);
-								});
-							});
-							submenu.addSeparator();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("✅ - Done");
-								if (task && task.status === TaskStatus.Done) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskStatus(file, TaskStatus.Done);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("❌ - Abandoned");
-								if (
-									task &&
-									task.status === TaskStatus.Abandoned
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskStatus(
-										file,
-										TaskStatus.Abandoned,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🙅🏼‍♂️ - Won't Do");
-								if (task && task.status === TaskStatus.WontDo) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskStatus(file, TaskStatus.WontDo);
-								});
-							});
-						});
-
-						menu.addItem((item) => {
-							item.setTitle("Set Priority");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔴 - High");
-								if (
-									task &&
-									task.priority === TaskPriority.High
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskPriority(
-										file,
-										TaskPriority.High,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🟡 - Medium");
-								if (
-									task &&
-									task.priority === TaskPriority.Medium
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskPriority(
-										file,
-										TaskPriority.Medium,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🟢 - Low");
-								if (
-									task &&
-									task.priority === TaskPriority.Low
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setTaskPriority(
-										file,
-										TaskPriority.Low,
-									);
-								});
-							});
-						});
-
-						menu.addItem((item) => {
-							item.setTitle("Touch Task");
-							item.onClick(() => {
-								void this.touchTaskFiles([file]);
-							});
-						});
-					}
-
-					if (isProject) {
-						const project = getProjectFromFile(this.app, file);
-
-						menu.addItem((item) => {
-							item.setTitle("Set Status");
-							const submenu = (item as any).setSubmenu();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("⭕ - To Do");
-								if (
-									project &&
-									project.status === ProjectStatus.ToDo
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setProjectStatus(
-										file,
-										ProjectStatus.ToDo,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("🔄 - In Progress");
-								if (
-									project &&
-									project.status === ProjectStatus.InProgress
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setProjectStatus(
-										file,
-										ProjectStatus.InProgress,
-									);
-								});
-							});
-							submenu.addSeparator();
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("✅ - Done");
-								if (
-									project &&
-									project.status === ProjectStatus.Done
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setProjectStatus(
-										file,
-										ProjectStatus.Done,
-									);
-								});
-							});
-							submenu.addItem((subItem: any) => {
-								subItem.setTitle("❌ - Abandoned");
-								if (
-									project &&
-									project.status === ProjectStatus.Abandoned
-								) {
-									subItem.setChecked(true);
-								}
-								subItem.onClick(() => {
-									this.setProjectStatus(
-										file,
-										ProjectStatus.Abandoned,
-									);
-								});
-							});
-						});
-					}
-
-					const isJournal =
-						categories &&
-						Array.isArray(categories) &&
-						categories.includes("[[Journal]]");
-
-					if (isJournal) {
-						menu.addItem((item) => {
-							item.setTitle("Add '#reflected' Tag");
-							item.onClick(() => {
-								addTag(this.app, file, "reflected");
-							});
-						});
-					}
-
-					if (!file.path.startsWith("References/")) {
-						menu.addItem((item) => {
-							item.setTitle("Move to References");
-						item.onClick(async () => {
-							const refFolder =
-								this.app.vault.getAbstractFileByPath(
-									"References",
-								);
-							if (!refFolder) {
-								await this.app.vault.createFolder(
-									"References",
-								);
-							}
-
-							let newPath = `References/${file.name}`;
-							let counter = 1;
-							while (
-								this.app.vault.getFileByPath(newPath)
-							) {
-								const ext = file.extension
-									? `.${file.extension}`
-									: "";
-								const baseName = file.basename;
-								newPath = `References/${baseName} ${counter}${ext}`;
-								counter++;
-							}
-
-							await this.app.vault.rename(file, newPath);
-							new Notice(`Moved to ${newPath}`);
-						});
-					});
-					}
-				}
-			}),
+			this.app.workspace.on("file-menu", createFileMenuHandler(this.app)),
 		);
 
 		this.registerEvent(
 			this.app.workspace.on(
 				"files-menu" as any,
-				(menu: any, files: any[]) => {
-					const selectedFiles = (files ?? []).filter(
-						(f): f is TFile => f instanceof TFile,
-					);
-					if (selectedFiles.length === 0) return;
-
-					const selectedTaskFiles = selectedFiles.filter((file) => {
-						const metadata =
-							this.app.metadataCache.getFileCache(file);
-						const categories = metadata?.frontmatter?.categories;
-						return (
-							categories &&
-							Array.isArray(categories) &&
-							categories.includes("[[Task]]")
-						);
-					});
-
-					// Only show bulk priority for Tasks.
-					if (selectedTaskFiles.length === 0) return;
-
-					menu.addItem((item: any) => {
-						item.setTitle("Set Priority");
-						const submenu = (item as any).setSubmenu();
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🔴 - High");
-							subItem.onClick(() => {
-								void this.setTaskPriorityForFiles(
-									selectedTaskFiles,
-									TaskPriority.High,
-								);
-							});
-						});
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🟡 - Medium");
-							subItem.onClick(() => {
-								void this.setTaskPriorityForFiles(
-									selectedTaskFiles,
-									TaskPriority.Medium,
-								);
-							});
-						});
-
-						submenu.addItem((subItem: any) => {
-							subItem.setTitle("🟢 - Low");
-							subItem.onClick(() => {
-								void this.setTaskPriorityForFiles(
-									selectedTaskFiles,
-									TaskPriority.Low,
-								);
-							});
-						});
-					});
-
-					menu.addItem((item: any) => {
-						item.setTitle("Touch Task");
-						item.onClick(() => {
-							void this.touchTaskFiles(selectedTaskFiles);
-						});
-					});
-				},
+				createFilesMenuHandler(this.app) as any,
 			),
 		);
 	}

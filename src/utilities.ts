@@ -1,4 +1,6 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, parseFrontMatterStringArray } from "obsidian";
+import { TaskStatus, TaskPriority } from "./tasks";
+import { ProjectStatus } from "./projects";
 
 export const enum Category {
 	Unknown,
@@ -32,7 +34,7 @@ export function vaultFileExists(app: App, path: string): boolean {
 	return file !== null;
 }
 
-export function getFilesWithCategory(app: App, category: string): TFile[] {
+export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {
 	const files = app.vault.getMarkdownFiles();
 	const filesInProjectFolder = files.filter(
 		(f) =>
@@ -41,7 +43,16 @@ export function getFilesWithCategory(app: App, category: string): TFile[] {
 	);
 	return filesInProjectFolder.filter((f) => {
 		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
-		return frontmatter?.categories?.contains(`[[${category}]]`);
+		const categories = parseFrontMatterStringArray(frontmatter, "categories");
+		return categories?.includes(`[[${category}]]`) ?? false;
+	});
+}
+
+export function getFilesWithCategory(app: App, category: string): TFile[] {
+	return app.vault.getMarkdownFiles().filter((f) => {
+		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
+		const categories = parseFrontMatterStringArray(frontmatter, "categories");
+		return categories?.includes(`[[${category}]]`) ?? false;
 	});
 }
 
@@ -148,4 +159,51 @@ export async function removeTag(
 			tags.splice(tagIndex, 1);
 		}
 	});
+}
+
+export function getPriorityDisplay(priority: TaskPriority): string {
+	switch (priority) {
+		case TaskPriority.High:
+			return "🔴 - High";
+		case TaskPriority.Medium:
+			return "🟡 - Medium";
+		case TaskPriority.Low:
+			return "🟢 - Low";
+		default:
+			return priority;
+	}
+}
+
+export function getStatusDisplay(status: TaskStatus | ProjectStatus): string {
+	switch (status) {
+		case TaskStatus.ToDo:
+		case ProjectStatus.ToDo:
+			return "⭕ - To Do";
+		case TaskStatus.InProgress:
+		case ProjectStatus.InProgress:
+			return "🔄 - In Progress";
+		case TaskStatus.Done:
+		case ProjectStatus.Done:
+			return "✅ - Done";
+		case TaskStatus.Abandoned:
+		case ProjectStatus.Abandoned:
+			return "❌ - Abandoned";
+		case TaskStatus.WontDo:
+		case ProjectStatus.WontDo:
+			return "🙅🏼‍♂️ - Won't Do";
+		default:
+			return status;
+	}
+}
+
+export function isActiveFileProject(app: App): boolean {
+	const activeFile = app.workspace.activeEditor?.file;
+	if (!activeFile) return false;
+	const metadata = app.metadataCache.getFileCache(activeFile);
+	const categories = metadata?.frontmatter?.categories;
+	return (
+		categories &&
+		Array.isArray(categories) &&
+		categories.includes("[[Project]]")
+	);
 }
