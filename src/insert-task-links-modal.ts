@@ -1,5 +1,6 @@
 import { App, Modal, prepareFuzzySearch } from "obsidian";
 import { Task, getTasks, TaskStatus } from "./tasks";
+import { getProjects, outstandingProjectTypes } from "./projects";
 
 export type onChooseCallback = (tasks: Task[]) => void;
 
@@ -74,12 +75,32 @@ export class InsertTaskLinksModal extends Modal {
 			t.path.startsWith("Projects/Work"),
 		);
 
+		const allProjects = getProjects(this.app);
+		const workProjects = allProjects.filter((p) =>
+			p.path.startsWith("Projects/Work"),
+		);
+		const outstandingProjectNames = new Set(
+			workProjects
+				.filter((p) => {
+					const isOutstandingNonOngoing =
+						outstandingProjectTypes.includes(p.status) && !p.ongoing;
+					const isOngoing = p.ongoing;
+					return isOutstandingNonOngoing || isOngoing;
+				})
+				.map((p) => p.name),
+		);
+
+		const tasksWithOutstandingProjects = workTasks.filter((t) => {
+			const parentName = t.parents?.[0]?.name;
+			return parentName && outstandingProjectNames.has(parentName);
+		});
+
 		this.taskPathMap = new Map(
-			workTasks.map((t) => [t.path, t]),
+			tasksWithOutstandingProjects.map((t) => [t.path, t]),
 		);
 
 		const groupMap = new Map<string, Task[]>();
-		for (const task of workTasks) {
+		for (const task of tasksWithOutstandingProjects) {
 			const projectName = task.parents?.[0]?.name || "Uncategorized";
 			if (!groupMap.has(projectName)) {
 				groupMap.set(projectName, []);
