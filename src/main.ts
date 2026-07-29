@@ -29,6 +29,7 @@ import {
 	updateProject,
 } from "./projects";
 import { ChooseTaskModal } from "./choose-task.modal";
+import { InsertTaskLinksModal } from "./insert-task-links-modal";
 import {
 	ChooseMeetingTypeModal,
 	MeetingType,
@@ -261,6 +262,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-tasks-from-checkboxes",
 			name: "Create Tasks from Checkboxes",
 			callback: () => void createNewTasksFromCheckboxes(this.app),
+		});
+
+		this.addCommand({
+			id: "insert-task-links",
+			name: "Insert Task Links",
+			callback: this.insertTaskLinks,
 		});
 
 		this.addCommand({
@@ -970,6 +977,33 @@ export default class ConductorObsidian extends Plugin {
 		selectProjectModal.open();
 	};
 
+
+	insertTaskLinks = () => {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeView) {
+			new Notice("No active editor to insert into");
+			return;
+		}
+
+		const modal = new InsertTaskLinksModal(this.app);
+		modal.onChoose = (tasks: Task[]) => {
+			if (tasks.length === 0) return;
+			const lines = tasks
+				.map((t) => {
+					const projectName = t.parents?.[0]?.name;
+					if (projectName) {
+						return `- [ ] [[${projectName}]] > [[${t.name}]]`;
+					}
+					return `- [ ] [[${t.name}]]`;
+				})
+				.join("\n");
+			activeView.editor.replaceSelection(lines + "\n");
+			new Notice(
+				`Inserted ${tasks.length} task link${tasks.length > 1 ? "s" : ""}`,
+			);
+		};
+		modal.open();
+	};
 
 	setActiveTaskStatus = (status: TaskStatus) => {
 		const activeTask = getActiveTask(this.app);
