@@ -13,6 +13,7 @@ import {
 } from "./commands/set-status";
 import { setActiveTaskPriority } from "./commands/set-priority";
 import { touchTask } from "./commands/touch-task";
+import { insertTaskLinks } from "./commands/insert-task-links";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -406,6 +407,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "touch-task",
 			name: "Touch Task",
 			callback: () => void touchTask(this.app),
+		});
+
+		this.addCommand({
+			id: "insert-task-links",
+			name: "Insert Task Links",
+			callback: () => void insertTaskLinks(this.app),
 		});
 
 		this.registerEvent(
