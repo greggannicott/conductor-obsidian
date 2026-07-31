@@ -56,10 +56,15 @@ export function getFilesFromProjectsFolderWithCategory(app: App, category: strin
 
 export function getFilesWithCategory(app: App, category: string): TFile[] {
 	return app.vault.getMarkdownFiles().filter((f) => {
+		if (f.path.startsWith("_templates/")) return false;
 		const frontmatter = app.metadataCache.getFileCache(f)?.frontmatter;
 		const categories = parseFrontMatterStringArray(frontmatter, "categories");
 		return categories?.includes(`[[${category}]]`) ?? false;
 	});
+}
+
+export function getPeople(app: App): TFile[] {
+	return getFilesWithCategory(app, "Person");
 }
 
 export function getCategory(app: App, file: TFile): Category {
