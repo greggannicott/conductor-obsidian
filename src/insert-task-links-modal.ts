@@ -293,6 +293,13 @@ export class InsertTaskLinksModal extends Modal {
 			}
 		}
 
+		if (selectedTasks.length === 0) {
+			const highlightedTask = this.getHighlightedTask();
+			if (highlightedTask) {
+				selectedTasks.push(highlightedTask);
+			}
+		}
+
 		if (selectedTasks.length === 0) return;
 
 		this.onChoose(selectedTasks);
