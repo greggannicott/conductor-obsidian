@@ -12,16 +12,33 @@ export const insertTaskLinks = (app: App): void => {
 	const modal = new InsertTaskLinksModal(app);
 	modal.onChoose = (tasks: Task[]) => {
 		if (tasks.length === 0) return;
-		const lines = tasks
-			.map((t) => {
-				const projectName = t.parents?.[0]?.name;
-				if (projectName) {
-					return `- [ ] [[${projectName}]] > [[${t.name}]]`;
-				}
-				return `- [ ] [[${t.name}]]`;
-			})
-			.join("\n");
-		activeView.editor.replaceSelection(lines + "\n");
+		const taskLinkLines = tasks.map((t) => {
+			const projectName = t.parents?.[0]?.name;
+			if (projectName) {
+				return `- [ ] [[${projectName}]] > [[${t.name}]]`;
+			}
+			return `- [ ] [[${t.name}]]`;
+		});
+
+		const editor = activeView.editor;
+		const cursorLine = editor.getCursor().line;
+		const line = editor.getLine(cursorLine);
+		const checkboxMatch = line.match(/^(\s*)- \[ \]/);
+
+		if (checkboxMatch) {
+			const indent = checkboxMatch[1];
+			const replacement = taskLinkLines
+				.map((l) => `${indent}${l}`)
+				.join("\n");
+			editor.replaceRange(
+				replacement,
+				{ line: cursorLine, ch: 0 },
+				{ line: cursorLine, ch: line.length },
+			);
+		} else {
+			editor.replaceSelection(taskLinkLines.join("\n") + "\n");
+		}
+
 		new Notice(
 			`Inserted ${tasks.length} task link${tasks.length > 1 ? "s" : ""}`,
 		);
