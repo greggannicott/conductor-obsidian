@@ -1,5 +1,5 @@
 import { App, Modal, prepareFuzzySearch } from "obsidian";
-import { Task, getTasks, TaskStatus } from "./tasks";
+import { Task, getTasks, TaskPriority, TaskStatus } from "./tasks";
 import { getProjects, outstandingProjectTypes } from "./projects";
 
 export type onChooseCallback = (tasks: Task[]) => void;
@@ -70,7 +70,11 @@ export class InsertTaskLinksModal extends Modal {
 			},
 		});
 
-		const validTasks = allTasks.filter((t): t is Task => t !== null);
+		const validTasks = allTasks
+			.filter((t): t is Task => t !== null)
+			.filter((t) =>
+				[TaskPriority.High, TaskPriority.Medium].includes(t.priority),
+			);
 
 		const allProjects = getProjects(this.app);
 		const outstandingProjectNames = new Set(
