@@ -71,16 +71,10 @@ export class InsertTaskLinksModal extends Modal {
 		});
 
 		const validTasks = allTasks.filter((t): t is Task => t !== null);
-		const workTasks = validTasks.filter((t) =>
-			t.path.startsWith("Projects/Work"),
-		);
 
 		const allProjects = getProjects(this.app);
-		const workProjects = allProjects.filter((p) =>
-			p.path.startsWith("Projects/Work"),
-		);
 		const outstandingProjectNames = new Set(
-			workProjects
+			allProjects
 				.filter((p) => {
 					const isOutstandingNonOngoing =
 						outstandingProjectTypes.includes(p.status) && !p.ongoing;
@@ -90,7 +84,7 @@ export class InsertTaskLinksModal extends Modal {
 				.map((p) => p.name),
 		);
 
-		const tasksWithOutstandingProjects = workTasks.filter((t) => {
+		const tasksWithOutstandingProjects = validTasks.filter((t) => {
 			const parentName = t.parents?.[0]?.name;
 			return parentName && outstandingProjectNames.has(parentName);
 		});
@@ -217,7 +211,7 @@ export class InsertTaskLinksModal extends Modal {
 		if (!foundAny) {
 			const message = this.searchInput.value.trim()
 				? "No tasks match your search"
-				: "No outstanding work tasks";
+				: "No outstanding tasks";
 			this.resultsEl.createDiv({
 				cls: "insert-task-links-empty",
 				text: message,
