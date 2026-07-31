@@ -5,6 +5,7 @@ import { getProjects, getActiveProject, Project } from "src/projects";
 import {
 	createNewTask,
 	getTaskCreationDetails,
+	Task,
 	TaskStatus,
 } from "src/tasks";
 
@@ -60,12 +61,19 @@ async function displayTaskNameInput(
 		keybindings,
 	});
 	const { templateName, answer } = await getTaskCreationDetails(app, name);
-	const task = await createNewTask(
-		app,
-		name,
-		selectedProject,
-		templateName,
-	);
+	let task: Task | null = null;
+	try {
+		task = await createNewTask(
+			app,
+			name,
+			selectedProject,
+			templateName,
+		);
+	} catch (error) {
+		console.error(error);
+		new Notice(`Failed to create task [${name}]: ${error?.message ?? error}`);
+		return;
+	}
 	if (task) {
 		await applyQuestionAnswerToTaskIfProvided(app, task.file, answer);
 		new Notice(`New task [${task.name}] created...`);

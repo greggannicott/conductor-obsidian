@@ -31,7 +31,13 @@ export async function createFileFromTemplate(
 
 export function vaultFileExists(app: App, path: string): boolean {
 	const file = app.vault.getFileByPath(path);
-	return file !== null;
+	if (file) {
+		return true;
+	}
+	const normalizedPath = path.toLowerCase();
+	return app.vault
+		.getFiles()
+		.some((f) => f.path.toLowerCase() === normalizedPath);
 }
 
 export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {
