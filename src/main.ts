@@ -15,6 +15,7 @@ import { setActiveTaskPriority } from "./commands/set-priority";
 import { touchTask } from "./commands/touch-task";
 import { insertTaskLinks } from "./commands/insert-task-links";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
+import { openNoteByTopic } from "./commands/open-note-by-topic";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -421,6 +422,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "insert-link-by-topic",
 			name: "Insert Link by Topic",
 			callback: () => insertLinkByTopic(this.app),
+		});
+
+		this.addCommand({
+			id: "open-note-by-topic",
+			name: "Open Note by Topic",
+			callback: () => openNoteByTopic(this.app),
 		});
 
 		this.registerEvent(
