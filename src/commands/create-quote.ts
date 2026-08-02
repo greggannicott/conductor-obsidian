@@ -2,7 +2,7 @@ import { App, MarkdownView, Notice } from "obsidian";
 import { LongTextInputModal } from "src/long-text-input-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { ComboModal } from "src/combo-modal";
-import { createFileFromTemplate, addTag, getPeople } from "src/utilities";
+import { createFileFromTemplate, addTag, getPeople, sanitizeFileName } from "src/utilities";
 
 export const createQuote = async (app: App): Promise<void> => {
 	const activeView = app.workspace.getActiveViewOfType(MarkdownView);
@@ -32,7 +32,8 @@ export const createQuote = async (app: App): Promise<void> => {
 		placeholder: "Where did you see this quote?",
 	});
 
-	const baseFileName = `${person} on ${about}`;
+	const sanitizedAbout = sanitizeFileName(about);
+	const baseFileName = `${person} on ${sanitizedAbout}`;
 	let fileName = baseFileName;
 	let counter = 1;
 
@@ -109,7 +110,8 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 
 	const source = `[[${currentNoteName}]]`;
 
-	const baseFileName = `${person} on ${about}`;
+	const sanitizedAbout = sanitizeFileName(about);
+	const baseFileName = `${person} on ${sanitizedAbout}`;
 	let fileName = baseFileName;
 	let counter = 1;
 
