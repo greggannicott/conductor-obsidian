@@ -40,6 +40,10 @@ export function vaultFileExists(app: App, path: string): boolean {
 		.some((f) => f.path.toLowerCase() === normalizedPath);
 }
 
+export function sanitizeFileName(name: string): string {
+	return name.replace(/[:\\/*?"<>|]/g, "").trim();
+}
+
 export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {
 	const files = app.vault.getMarkdownFiles();
 	const filesInProjectFolder = files.filter(

@@ -16,6 +16,13 @@ If your plugin does not need CSS, delete this file.
 	border-width: var(--input-border-width);
 }
 
+/* Links to closed tasks (Done / Abandoned / Won't Do) render with a strikethrough */
+.conductor-task-closed {
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+	text-decoration-color: var(--text-muted);
+}
+
 /* Task picker section headers */
 .conductor-suggest-header {
 	background-color: var(--background-secondary);

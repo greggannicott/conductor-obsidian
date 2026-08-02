@@ -44,6 +44,7 @@ import { addTag, removeTag, toggleTag } from "./utilities";
 import { isActiveFileProject } from "./utilities";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
+import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links";
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
@@ -432,6 +433,8 @@ export default class ConductorObsidian extends Plugin {
 				createFilesMenuHandler(this.app) as any,
 			),
 		);
+
+		registerTaskLinkStrikethrough(this);
 	}
 
 	async loadSettings() {
