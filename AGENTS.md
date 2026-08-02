@@ -30,6 +30,7 @@
 - Project/task detection is driven by frontmatter `categories` containing `[[Project]]` / `[[Task]]` (see `src/utilities.ts`). If you change category strings, filtering breaks.
 - New tasks are created from `_templates/Task.md` (and any other template names used by code) via `createFileFromTemplate`; this template must exist in the vault.
 - Tasks/projects are expected under `Projects/Personal/...` and `Projects/Work/...`.
+- Topic notes are detected via frontmatter `tags` containing `topic`; notes are linked to topics via a frontmatter `topics` property containing wikilinks to topic notes (see `src/topics.ts`). A note can have zero or more topics.
 
 ## Local artifacts
 
