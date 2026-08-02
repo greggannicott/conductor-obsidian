@@ -15,9 +15,9 @@ export const insertTaskLinks = (app: App): void => {
 		const taskLinkLines = tasks.map((t) => {
 			const projectName = t.parents?.[0]?.name;
 			if (projectName) {
-				return `- [ ] [[${projectName}]] > [[${t.name}]]`;
+				return `- [[${projectName}]] > [[${t.name}]]`;
 			}
-			return `- [ ] [[${t.name}]]`;
+			return `- [[${t.name}]]`;
 		});
 
 		const editor = activeView.editor;
