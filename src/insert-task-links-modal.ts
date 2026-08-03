@@ -1,5 +1,5 @@
 import { App, Modal, prepareFuzzySearch } from "obsidian";
-import { Task, getTasks, TaskPriority, TaskStatus } from "./tasks";
+import { Task, getTasks, TaskPriority, TaskStatus, TaskType } from "./tasks";
 import { Context, getProjects, outstandingProjectTypes } from "./projects";
 
 export type onChooseCallback = (tasks: Task[]) => void;
@@ -72,6 +72,9 @@ export class InsertTaskLinksModal extends Modal {
 		const allTasks = getTasks(this.app, {
 			statusFilter: {
 				statusIs: [TaskStatus.ToDo, TaskStatus.InProgress],
+			},
+			typeFilter: {
+				typeExcludes: [TaskType.BlogPost],
 			},
 		});
 
