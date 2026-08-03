@@ -198,14 +198,13 @@ export class InsertTaskLinksModal extends Modal {
 					text: statusEmoji[task.status] ?? "",
 				});
 
-				itemEl.addEventListener("click", () => {
-					this.highlightedIndex = itemIndex;
-					this.render();
-				});
+				const currentItemIndex = itemIndex;
 
-				itemEl.addEventListener("dblclick", () => {
+				itemEl.addEventListener("click", () => {
+					this.highlightedIndex = currentItemIndex;
 					this.toggleTask(task.path);
 					this.render();
+					this.searchInput.focus();
 				});
 
 				itemIndex++;
