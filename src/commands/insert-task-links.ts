@@ -46,7 +46,10 @@ export const insertTaskLinks = (app: App): void => {
 				ch: line.length,
 			});
 		} else {
-			editor.replaceSelection(taskLinkLines.join("\n") + "\n");
+			editor.replaceRange("\n" + taskLinkLines.join("\n"), {
+				line: cursorLine,
+				ch: line.length,
+			});
 		}
 
 		new Notice(
