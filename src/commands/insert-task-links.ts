@@ -25,6 +25,7 @@ export const insertTaskLinks = (app: App): void => {
 		const line = editor.getLine(cursorLine);
 		const bareListMatch = line.match(/^(\s*)(?:- \[ \]|[-*+])\s*$/);
 		const checkboxWithContentMatch = line.match(/^(\s*)- \[ \]/);
+		const emptyLineMatch = line.match(/^\s*$/);
 
 		if (bareListMatch) {
 			const indent = bareListMatch[1];
@@ -45,6 +46,12 @@ export const insertTaskLinks = (app: App): void => {
 				line: cursorLine,
 				ch: line.length,
 			});
+		} else if (emptyLineMatch) {
+			editor.replaceRange(
+				taskLinkLines.join("\n"),
+				{ line: cursorLine, ch: 0 },
+				{ line: cursorLine, ch: line.length },
+			);
 		} else {
 			editor.replaceRange("\n" + taskLinkLines.join("\n"), {
 				line: cursorLine,
