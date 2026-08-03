@@ -23,11 +23,11 @@ export const insertTaskLinks = (app: App): void => {
 		const editor = activeView.editor;
 		const cursorLine = editor.getCursor().line;
 		const line = editor.getLine(cursorLine);
-		const bareCheckboxMatch = line.match(/^(\s*)- \[ \]\s*$/);
+		const bareListMatch = line.match(/^(\s*)(?:- \[ \]|[-*+])\s*$/);
 		const checkboxWithContentMatch = line.match(/^(\s*)- \[ \]/);
 
-		if (bareCheckboxMatch) {
-			const indent = bareCheckboxMatch[1];
+		if (bareListMatch) {
+			const indent = bareListMatch[1];
 			const replacement = taskLinkLines
 				.map((l) => `${indent}${l}`)
 				.join("\n");
