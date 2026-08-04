@@ -6,6 +6,7 @@ import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
 import { setProjectStatus } from "../commands/set-status";
+import { convertNoteToTask } from "../commands/convert-note-to-task";
 
 export function createFileMenuHandler(app: App) {
 	return (menu: Menu, file: TFile) => {
@@ -172,6 +173,20 @@ export function createFileMenuHandler(app: App) {
 				item.setTitle("Add '#reflected' Tag");
 				item.onClick(() => {
 					addTag(app, file, "reflected");
+				});
+			});
+		}
+
+		if (
+			file.extension === "md" &&
+			!isTask &&
+			!isProject &&
+			!file.path.startsWith("_templates/")
+		) {
+			menu.addItem((item) => {
+				item.setTitle("Convert to Task");
+				item.onClick(() => {
+					void convertNoteToTask(app, file);
 				});
 			});
 		}
