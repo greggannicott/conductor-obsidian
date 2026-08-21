@@ -31,6 +31,12 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 600;
 }
 
+/* Secondary line in suggestion rows (e.g. topics under journal titles) */
+.conductor-suggest-subtext {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
 /* Combo modal */
 .conductor-combo-input {
 	width: 100%;
