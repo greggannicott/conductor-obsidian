@@ -1,4 +1,5 @@
-import { App, prepareFuzzySearch, SuggestModal, TFile } from "obsidian";
+import { App, TFile } from "obsidian";
+import { ConductorSelectorModal } from "./conductor-selector-modal";
 
 export type JournalEntry = {
 	file: TFile;
@@ -10,80 +11,49 @@ export type JournalEntry = {
 
 type onChooseCallback = (entry: JournalEntry) => void;
 
-type JournalModalItem =
-	| {
-			kind: "header";
-			title: string;
-	  }
-	| {
-			kind: "journal";
-			journal: JournalEntry;
-	  };
-
-export class ChooseJournalModal extends SuggestModal<JournalModalItem> {
+export class ChooseJournalModal {
 	public entries: JournalEntry[];
 	public onChoose: onChooseCallback;
 
+	private app: App;
+
 	constructor(app: App) {
-		super(app);
-		this.setPlaceholder("Select a journal entry to link...");
+		this.app = app;
 	}
 
-	getSuggestions(query: string): JournalModalItem[] {
-		let matches = this.entries ?? [];
-
-		const q = query.trim();
-		if (q.length > 0) {
-			const search = prepareFuzzySearch(q);
-			matches = matches.filter((entry) => search(this.getEntryText(entry)));
-		}
-
-		return this.getGroupedItems(matches);
-	}
-
-	renderSuggestion(item: JournalModalItem, el: HTMLElement): void {
-		if (item.kind === "header") {
-			el.addClass("conductor-suggest-header");
-			el.setAttr("aria-disabled", "true");
-			el.createDiv({ text: item.title });
-			return;
-		}
-
-		el.createDiv({ text: item.journal.title });
-		el.createDiv({
-			text: item.journal.topics.join(", "),
-			cls: "conductor-suggest-subtext",
-		});
-	}
-
-	onChooseSuggestion(
-		item: JournalModalItem,
-		evt: MouseEvent | KeyboardEvent,
-	): void {
-		if (item.kind === "header") return;
-		this.onChoose(item.journal);
-		// SuggestModal doesn't close automatically unless we do it.
-		evt.preventDefault();
-		this.close();
-	}
-
-	private getEntryText(entry: JournalEntry): string {
-		if (entry.topics.length === 0) return entry.title;
-		return `${entry.title} ${entry.topics.join(" ")}`;
-	}
-
-	private getGroupedItems(entries: JournalEntry[]): JournalModalItem[] {
-		const sorted = [...entries].sort((a, b) => b.sortKey - a.sortKey);
-
-		const items: JournalModalItem[] = [];
-		let currentDay = "";
-		for (const entry of sorted) {
-			if (entry.dateText !== currentDay) {
-				currentDay = entry.dateText;
-				items.push({ kind: "header", title: currentDay });
-			}
-			items.push({ kind: "journal", journal: entry });
-		}
-		return items;
+	open(): void {
+		new ConductorSelectorModal<JournalEntry>(this.app, {
+			items: this.entries ?? [],
+			placeholder: "Select a journal entry to link...",
+			getText: (entry) => entry.title,
+			getSearchText: (entry) =>
+				entry.topics.length === 0
+					? entry.title
+					: `${entry.title} ${entry.topics.join(" ")}`,
+			getSubtext: (entry) => entry.topics.join(", ") || null,
+			sortItems: (a, b) => b.sortKey - a.sortKey,
+			groupings: [
+				{
+					id: "day",
+					label: "By Day",
+					buildGroups: (entries) => {
+						const groups: {
+							header: string;
+							items: JournalEntry[];
+						}[] = [];
+						let currentDay = "";
+						for (const entry of entries) {
+							if (entry.dateText !== currentDay) {
+								currentDay = entry.dateText;
+								groups.push({ header: currentDay, items: [] });
+							}
+							groups[groups.length - 1].items.push(entry);
+						}
+						return groups;
+					},
+				},
+			],
+			onSelect: (entry) => this.onChoose(entry),
+		}).open();
 	}
 }

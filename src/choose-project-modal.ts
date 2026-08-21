@@ -1,26 +1,25 @@
-import { FuzzySuggestModal, App } from "obsidian";
+import { App } from "obsidian";
+import { ConductorSelectorModal } from "./conductor-selector-modal";
 import { Project } from "./projects";
 
 type onChooseCallback = (project: Project) => void;
 
-export class ChooseProjectModal extends FuzzySuggestModal<Project> {
+export class ChooseProjectModal {
 	public projects: Project[];
 	public onChoose: onChooseCallback;
 
+	private app: App;
+
 	constructor(app: App) {
-		super(app);
-		this.setPlaceholder("Select a project...");
+		this.app = app;
 	}
 
-	getItems(): Project[] {
-		return this.projects;
-	}
-
-	getItemText(project: Project): string {
-		return `${project.context} -> ${project.name}`;
-	}
-
-	onChooseItem(project: Project, _: MouseEvent | KeyboardEvent) {
-		this.onChoose(project);
+	open(): void {
+		new ConductorSelectorModal<Project>(this.app, {
+			items: this.projects ?? [],
+			placeholder: "Select a project...",
+			getText: (project) => `${project.context} -> ${project.name}`,
+			onSelect: (project) => this.onChoose(project),
+		}).open();
 	}
 }
