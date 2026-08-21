@@ -6,6 +6,10 @@ import {
 import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
+import {
+	convertNoteToTask,
+	isNoteConvertible,
+} from "./commands/convert-note-to-task";
 import { showCreateTaskFlow, showCreateTaskForAnyProjectFlow } from "./commands/create-task";
 import {
 	setActiveTaskStatus,
@@ -405,6 +409,19 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-meeting",
 			name: "Create Meeting",
 			callback: () => void createMeeting(this.app),
+		});
+
+		this.addCommand({
+			id: "convert-note-to-task",
+			name: "Convert Note to Task",
+			checkCallback: (checking: boolean) => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (!file || !isNoteConvertible(this.app, file)) return false;
+				if (!checking) {
+					void convertNoteToTask(this.app, file);
+				}
+				return true;
+			},
 		});
 
 		this.addCommand({

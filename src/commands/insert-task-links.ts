@@ -23,11 +23,12 @@ export const insertTaskLinks = (app: App): void => {
 		const editor = activeView.editor;
 		const cursorLine = editor.getCursor().line;
 		const line = editor.getLine(cursorLine);
-		const bareCheckboxMatch = line.match(/^(\s*)- \[ \]\s*$/);
+		const bareListMatch = line.match(/^(\s*)(?:- \[ \]|[-*+])\s*$/);
 		const checkboxWithContentMatch = line.match(/^(\s*)- \[ \]/);
+		const emptyLineMatch = line.match(/^\s*$/);
 
-		if (bareCheckboxMatch) {
-			const indent = bareCheckboxMatch[1];
+		if (bareListMatch) {
+			const indent = bareListMatch[1];
 			const replacement = taskLinkLines
 				.map((l) => `${indent}${l}`)
 				.join("\n");
@@ -45,8 +46,17 @@ export const insertTaskLinks = (app: App): void => {
 				line: cursorLine,
 				ch: line.length,
 			});
+		} else if (emptyLineMatch) {
+			editor.replaceRange(
+				taskLinkLines.join("\n"),
+				{ line: cursorLine, ch: 0 },
+				{ line: cursorLine, ch: line.length },
+			);
 		} else {
-			editor.replaceSelection(taskLinkLines.join("\n") + "\n");
+			editor.replaceRange("\n" + taskLinkLines.join("\n"), {
+				line: cursorLine,
+				ch: line.length,
+			});
 		}
 
 		new Notice(

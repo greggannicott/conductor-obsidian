@@ -1,6 +1,6 @@
 import { App, Modal, prepareFuzzySearch } from "obsidian";
-import { Task, getTasks, TaskPriority, TaskStatus } from "./tasks";
-import { getProjects, outstandingProjectTypes } from "./projects";
+import { Task, getTasks, TaskPriority, TaskStatus, TaskType } from "./tasks";
+import { Context, getProjects, outstandingProjectTypes } from "./projects";
 
 export type onChooseCallback = (tasks: Task[]) => void;
 
@@ -19,6 +19,11 @@ const priorityEmoji: Record<string, string> = {
 const statusEmoji: Record<string, string> = {
 	"01 - To Do": "⭕",
 	"02 - In Progress": "🔄",
+};
+
+const contextOrder: Record<string, number> = {
+	[Context.Work]: 0,
+	[Context.Personal]: 1,
 };
 
 export class InsertTaskLinksModal extends Modal {
@@ -68,6 +73,9 @@ export class InsertTaskLinksModal extends Modal {
 			statusFilter: {
 				statusIs: [TaskStatus.ToDo, TaskStatus.InProgress],
 			},
+			typeFilter: {
+				typeExcludes: [TaskType.BlogPost],
+			},
 		});
 
 		const validTasks = allTasks
@@ -97,16 +105,23 @@ export class InsertTaskLinksModal extends Modal {
 			tasksWithOutstandingProjects.map((t) => [t.path, t]),
 		);
 
-		const groupMap = new Map<string, Task[]>();
+		const groupMap = new Map<
+			string,
+			{ context: Context | null; tasks: Task[] }
+		>();
 		for (const task of tasksWithOutstandingProjects) {
-			const projectName = task.parents?.[0]?.name || "Uncategorized";
+			const project = task.parents?.[0];
+			const projectName = project?.name || "Uncategorized";
 			if (!groupMap.has(projectName)) {
-				groupMap.set(projectName, []);
+				groupMap.set(projectName, {
+					context: project?.context ?? null,
+					tasks: [],
+				});
 			}
-			groupMap.get(projectName)!.push(task);
+			groupMap.get(projectName)!.tasks.push(task);
 		}
 
-		for (const [, tasks] of groupMap) {
+		for (const [, { tasks }] of groupMap) {
 			tasks.sort((a, b) => {
 				const pa = priorityOrder[a.priority] ?? 2;
 				const pb = priorityOrder[b.priority] ?? 2;
@@ -115,8 +130,13 @@ export class InsertTaskLinksModal extends Modal {
 		}
 
 		this.allGroups = [...groupMap.entries()]
-			.sort(([a], [b]) => a.localeCompare(b))
-			.map(([projectName, tasks]) => ({ projectName, tasks }));
+			.sort(([nameA, a], [nameB, b]) => {
+				const ca = contextOrder[a.context ?? ""] ?? 2;
+				const cb = contextOrder[b.context ?? ""] ?? 2;
+				if (ca !== cb) return ca - cb;
+				return nameA.localeCompare(nameB);
+			})
+			.map(([projectName, { tasks }]) => ({ projectName, tasks }));
 	}
 
 	private onSearchInput(): void {
@@ -198,14 +218,13 @@ export class InsertTaskLinksModal extends Modal {
 					text: statusEmoji[task.status] ?? "",
 				});
 
-				itemEl.addEventListener("click", () => {
-					this.highlightedIndex = itemIndex;
-					this.render();
-				});
+				const currentItemIndex = itemIndex;
 
-				itemEl.addEventListener("dblclick", () => {
+				itemEl.addEventListener("click", () => {
+					this.highlightedIndex = currentItemIndex;
 					this.toggleTask(task.path);
 					this.render();
+					this.searchInput.focus();
 				});
 
 				itemIndex++;
