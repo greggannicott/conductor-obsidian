@@ -445,7 +445,7 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "insert-journal-link",
 			name: "Insert Journal Link",
-			callback: () => insertJournalLink(this.app),
+			callback: () => void insertJournalLink(this.app),
 		});
 
 		this.addCommand({

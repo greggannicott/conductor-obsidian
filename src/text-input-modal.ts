@@ -10,17 +10,23 @@ export type TextInputKeybinding = {
 export type TextInputModalConfiguration = {
 	title: string;
 	placeholder?: string;
+	// Optional initial value, pre-selected so typing replaces it.
+	value?: string;
 	keybindings?: TextInputKeybinding[];
 };
 
 type SubmitEvent = {
 	value: string;
 	submitKeybinding: string;
+	// True when the modal was closed without submitting (e.g. Esc).
+	cancelled: boolean;
 };
 
 export class TextInputModal extends Modal {
 	private resolve: (value: SubmitEvent) => void;
 	private keybindings: TextInputKeybinding[];
+	private input: HTMLInputElement;
+	private submitted = false;
 
 	constructor(app: App, config: TextInputModalConfiguration) {
 		super(app);
@@ -35,9 +41,13 @@ export class TextInputModal extends Modal {
 		];
 		this.keybindings = config.keybindings ?? defaultKeybindings;
 
-		const input = this.contentEl.createEl("input", {
+		this.input = this.contentEl.createEl("input", {
 			cls: ["text-input", "input"],
 		});
+
+		if (config.value) {
+			this.input.value = config.value;
+		}
 
 		const promptInstructions = this.contentEl.createEl("div", {
 			cls: "prompt-instructions",
@@ -55,22 +65,43 @@ export class TextInputModal extends Modal {
 		}
 
 		if (config.placeholder) {
-			input.placeholder = config.placeholder;
+			this.input.placeholder = config.placeholder;
 		}
 
-		input.addEventListener("keydown", (e) => {
+		this.input.addEventListener("keydown", (e) => {
 			for (const kb of this.keybindings) {
 				if (kb.check(e)) {
 					e.preventDefault();
+					this.submitted = true;
 					this.resolve({
-						value: input.value,
+						value: this.input.value,
 						submitKeybinding: kb.id,
+						cancelled: false,
 					});
 					this.close();
 					break;
 				}
 			}
 		});
+	}
+
+	onOpen(): void {
+		super.onOpen();
+		this.input.focus();
+		this.input.select();
+	}
+
+	onClose(): void {
+		// Resolve even when closed without submitting (e.g. Esc) so
+		// awaited callers are not left hanging.
+		if (!this.submitted) {
+			this.resolve({
+				value: "",
+				submitKeybinding: "cancel",
+				cancelled: true,
+			});
+		}
+		super.onClose();
 	}
 
 	static show(

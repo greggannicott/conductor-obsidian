@@ -1,12 +1,13 @@
 import { App, MarkdownView, Notice, moment } from "obsidian";
 import { ChooseJournalModal, JournalEntry } from "src/choose-journal-modal";
+import { TextInputModal } from "src/text-input-modal";
 import { getTopicNamesForNote } from "src/topics";
 import { getFilesWithCategory } from "src/utilities";
 
 // Journal basenames look like "2026-08-21 1200 - Title" or "2026-02-15 1232 sprint at the end".
 const JOURNAL_TITLE_PATTERN = /^(\d{4}-\d{2}-\d{2}) (\d{4})(?: - )?(.*)$/;
 
-export const insertJournalLink = (app: App): void => {
+export const insertJournalLink = async (app: App): Promise<void> => {
 	const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 	if (!activeView) {
 		new Notice("No active editor to insert into");
@@ -39,11 +40,19 @@ export const insertJournalLink = (app: App): void => {
 
 	const chooseJournalModal = new ChooseJournalModal(app);
 	chooseJournalModal.entries = entries;
-	chooseJournalModal.onChoose = (entry) => {
+	chooseJournalModal.onChoose = async (entry) => {
+		const prompt = await TextInputModal.show(app, {
+			title: "Text to display",
+			placeholder: "Text to display",
+			value: entry.title,
+		});
+		if (prompt.cancelled) return;
+
+		const displayText = prompt.value.trim() || entry.title;
 		activeView.editor.replaceSelection(
-			`[[${entry.file.basename}|${entry.title}]]`,
+			`[[${entry.file.basename}|${displayText}]]`,
 		);
-		new Notice(`Inserted link to "${entry.title}"`);
+		new Notice(`Inserted link to "${displayText}"`);
 	};
 	chooseJournalModal.open();
 };
