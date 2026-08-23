@@ -16,6 +16,13 @@ If your plugin does not need CSS, delete this file.
 	border-width: var(--input-border-width);
 }
 
+/* Multi-line variant of the text input modal (height comes from content) */
+.text-input-multiline {
+	height: auto;
+	min-height: 200px;
+	resize: vertical;
+}
+
 /* Links to closed tasks (Done / Abandoned / Won't Do) render with a strikethrough */
 .conductor-task-closed {
 	text-decoration: line-through;

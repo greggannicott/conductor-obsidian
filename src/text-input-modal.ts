@@ -12,6 +12,8 @@ export type TextInputModalConfiguration = {
 	placeholder?: string;
 	// Optional initial value, pre-selected so typing replaces it.
 	value?: string;
+	// Render a multi-line textarea instead of a single-line input.
+	multiline?: boolean;
 	keybindings?: TextInputKeybinding[];
 };
 
@@ -22,28 +24,48 @@ type SubmitEvent = {
 	cancelled: boolean;
 };
 
+const DEFAULT_SINGLE_LINE_KEYBINDINGS: TextInputKeybinding[] = [
+	{
+		id: "enter",
+		commandText: "↵",
+		check: (e) => e.key === "Enter",
+		instruction: "submit",
+	},
+];
+
+const DEFAULT_MULTILINE_KEYBINDINGS: TextInputKeybinding[] = [
+	{
+		id: "meta-enter",
+		commandText: "⌘+↵",
+		check: (e) => e.metaKey && e.key === "Enter",
+		instruction: "submit",
+	},
+];
+
 export class TextInputModal extends Modal {
 	private resolve: (value: SubmitEvent) => void;
 	private keybindings: TextInputKeybinding[];
-	private input: HTMLInputElement;
+	private input: HTMLInputElement | HTMLTextAreaElement;
 	private submitted = false;
 
 	constructor(app: App, config: TextInputModalConfiguration) {
 		super(app);
 
-		const defaultKeybindings: TextInputKeybinding[] = [
-			{
-				id: "enter",
-				commandText: "↵",
-				check: (e) => e.key === "Enter",
-				instruction: "submit",
-			},
-		];
-		this.keybindings = config.keybindings ?? defaultKeybindings;
+		this.keybindings =
+			config.keybindings ??
+			(config.multiline
+				? DEFAULT_MULTILINE_KEYBINDINGS
+				: DEFAULT_SINGLE_LINE_KEYBINDINGS);
 
-		this.input = this.contentEl.createEl("input", {
-			cls: ["text-input", "input"],
-		});
+		if (config.multiline) {
+			this.input = this.contentEl.createEl("textarea", {
+				cls: ["text-input", "input", "text-input-multiline"],
+			});
+		} else {
+			this.input = this.contentEl.createEl("input", {
+				cls: ["text-input", "input"],
+			});
+		}
 
 		if (config.value) {
 			this.input.value = config.value;
@@ -69,9 +91,11 @@ export class TextInputModal extends Modal {
 		}
 
 		this.input.addEventListener("keydown", (e) => {
+			// input/textarea union loses the specific event map, so narrow here.
+			const keyEvent = e as KeyboardEvent;
 			for (const kb of this.keybindings) {
-				if (kb.check(e)) {
-					e.preventDefault();
+				if (kb.check(keyEvent)) {
+					keyEvent.preventDefault();
 					this.submitted = true;
 					this.resolve({
 						value: this.input.value,
