@@ -226,6 +226,7 @@ export function getTasks(
 			if (filters.projectFilter) {
 				return (
 					t?.parents &&
+					t.parents[0] &&
 					filters.projectFilter.projectIs.includes(t.parents[0].name)
 				);
 			}

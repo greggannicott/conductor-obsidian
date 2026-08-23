@@ -146,7 +146,7 @@ export function getProjectFromLink(
 	link: string,
 	path: string,
 ): Project | null {
-	let project!: Project | null;
+	let project: Project | null = null;
 	const cleanPath = link.replace(/^\[\[|\]\]$/g, "");
 	const projectPath = app.metadataCache.getFirstLinkpathDest(cleanPath, path);
 	if (projectPath) {

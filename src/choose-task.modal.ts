@@ -39,11 +39,14 @@ const statusBucket = (status?: string): TaskStatus =>
 		? (status as TaskStatus)
 		: TaskStatus.ToDo;
 
-function getTaskText(task: Task): string {
-	if (task.parents?.length == 1) {
-		return `${task.parents[0].name} -> ${task.name}`;
-	} else if (task.parents?.length > 1) {
-		return `${task.parents.map((p) => p.name).join(", ")} -> ${task.name}`;
+export function getTaskText(task: Task): string {
+	// A parent link that does not resolve to an existing project note is
+	// dropped rather than crashing on its name.
+	const parents = task.parents?.filter((p) => p) ?? [];
+	if (parents.length == 1) {
+		return `${parents[0].name} -> ${task.name}`;
+	} else if (parents.length > 1) {
+		return `${parents.map((p) => p.name).join(", ")} -> ${task.name}`;
 	} else {
 		return task.name;
 	}
