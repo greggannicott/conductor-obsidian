@@ -46,8 +46,12 @@ import {
 } from "./commands/jira";
 import { TaskStatus, TaskPriority } from "./tasks";
 import { ProjectStatus } from "./projects";
-import { addTag, removeTag, toggleTag } from "./utilities";
-import { isActiveFileProject } from "./utilities";
+import {
+	addTag,
+	removeTag,
+	toggleTag,
+	isActiveFileProject,
+} from "./utilities";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
 import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links";
@@ -162,101 +166,61 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => setActiveTaskStatus(this.app, TaskStatus.WontDo),
 		});
 
-		this.addCommand({
-			id: "set-project-to-todo",
-			name: "Set Project Status to '⭕ 01 - To Do'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.ToDo);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-todo",
+			"Set Project Status to '⭕ 01 - To Do'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.ToDo),
+		);
 
-		this.addCommand({
-			id: "set-project-to-in-progress",
-			name: "Set Project Status to '🔄 02 - In Progress'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.InProgress);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-in-progress",
+			"Set Project Status to '🔄 02 - In Progress'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.InProgress),
+		);
 
-		this.addCommand({
-			id: "set-project-to-doing",
-			name: "Set Project Status to '🔄 02 - Doing'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.InProgress);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-doing",
+			"Set Project Status to '🔄 02 - Doing'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.InProgress),
+		);
 
-		this.addCommand({
-			id: "set-project-to-done",
-			name: "Set Project Status to '✅ 03 - Done'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.Done);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-done",
+			"Set Project Status to '✅ 03 - Done'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.Done),
+		);
 
-		this.addCommand({
-			id: "set-project-to-abandoned",
-			name: "Set Project Status to '❌ 04 - Abandoned'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.Abandoned);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-abandoned",
+			"Set Project Status to '❌ 04 - Abandoned'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.Abandoned),
+		);
 
-		this.addCommand({
-			id: "set-project-to-wont-do",
-			name: "Set Project Status to '🙅🏼‍♂️ 05 - Won't Do'",
-			checkCallback: (checking: boolean) => {
-				if (!isActiveFileProject(this.app)) return false;
-				if (!checking) {
-					setActiveProjectStatus(this.app, ProjectStatus.WontDo);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"set-project-to-wont-do",
+			"Set Project Status to '🙅🏼‍♂️ 05 - Won't Do'",
+			() => isActiveFileProject(this.app),
+			() => setActiveProjectStatus(this.app, ProjectStatus.WontDo),
+		);
 
-		this.addCommand({
-			id: "impede-task",
-			name: "Impede Task",
-			checkCallback: (checking: boolean) => {
-				if (!isTaskImpedeable(this.app)) return false;
-				if (!checking) {
-					void impedeActiveTask(this.app);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"impede-task",
+			"Impede Task",
+			() => isTaskImpedeable(this.app),
+			() => void impedeActiveTask(this.app),
+		);
 
-		this.addCommand({
-			id: "unimpede-task",
-			name: "Unimpede Task",
-			checkCallback: (checking: boolean) => {
-				if (!isTaskUnimpedeable(this.app)) return false;
-				if (!checking) {
-					void unimpeadeActiveTask(this.app);
-				}
-				return true;
-			},
-		});
+		this.addCheckedCommand(
+			"unimpede-task",
+			"Unimpede Task",
+			() => isTaskUnimpedeable(this.app),
+			() => void unimpeadeActiveTask(this.app),
+		);
 
 		this.addCommand({
 			id: "create-tasks-from-checkboxes",
@@ -288,97 +252,15 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => setActiveTaskPriority(this.app, TaskPriority.Low),
 		});
 
-		this.addCommand({
-			id: "add-inbox-tag",
-			name: "Add #inbox Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) addTag(this.app, file, "inbox");
-			},
-		});
-
-		this.addCommand({
-			id: "remove-inbox-tag",
-			name: "Remove #inbox Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) removeTag(this.app, file, "inbox");
-			},
-		});
-
-		this.addCommand({
-			id: "toggle-inbox-tag",
-			name: "Toggle #inbox Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) toggleTag(this.app, file, "inbox");
-			},
-		});
-
-		this.addCommand({
-			id: "add-reflected-tag",
-			name: "Add #reflected Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) addTag(this.app, file, "reflected");
-			},
-		});
-
-		this.addCommand({
-			id: "remove-reflected-tag",
-			name: "Remove #reflected Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) removeTag(this.app, file, "reflected");
-			},
-		});
-
-		this.addCommand({
-			id: "toggle-reflected-tag",
-			name: "Toggle #reflected Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) toggleTag(this.app, file, "reflected");
-			},
-		});
+		for (const tagName of ["inbox", "reflected", "review"]) {
+			this.addActiveFileTagCommands(tagName);
+		}
 
 		this.addCommand({
 			id: "open-parent-project-jira-ticket",
 			name: "Open Parent Project's Jira Ticket",
-			callback: () => openParentProjectJiraTicket(this.app, this.settings.jiraBaseUrl),
-		});
-
-		this.addCommand({
-			id: "add-review-tag",
-			name: "Add #review Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) addTag(this.app, file, "review");
-			},
-		});
-
-		this.addCommand({
-			id: "remove-review-tag",
-			name: "Remove #review Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) removeTag(this.app, file, "review");
-			},
-		});
-
-		this.addCommand({
-			id: "toggle-review-tag",
-			name: "Toggle #review Tag",
-			callback: () => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (file) toggleTag(this.app, file, "review");
-			},
-		});
-
-		this.addCommand({
-			id: "open-parent-project-jira-ticket",
-			name: "Open Parent Project's Jira Ticket",
-			callback: () => openParentProjectJiraTicket(this.app, this.settings.jiraBaseUrl),
+			callback: () =>
+				openParentProjectJiraTicket(this.app, this.settings.jiraBaseUrl),
 		});
 
 		this.addCommand({
@@ -390,7 +272,8 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "copy-parent-project-jira-url",
 			name: "Copy Parent Project's Jira URL",
-			callback: () => copyParentProjectJiraURL(this.app, this.settings.jiraBaseUrl),
+			callback: () =>
+				copyParentProjectJiraURL(this.app, this.settings.jiraBaseUrl),
 		});
 
 		this.addCommand({
@@ -411,18 +294,18 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => void createMeeting(this.app),
 		});
 
-		this.addCommand({
-			id: "convert-note-to-task",
-			name: "Convert Note to Task",
-			checkCallback: (checking: boolean) => {
+		this.addCheckedCommand(
+			"convert-note-to-task",
+			"Convert Note to Task",
+			() => {
 				const file = this.app.workspace.activeEditor?.file;
-				if (!file || !isNoteConvertible(this.app, file)) return false;
-				if (!checking) {
-					void convertNoteToTask(this.app, file);
-				}
-				return true;
+				return Boolean(file && isNoteConvertible(this.app, file));
 			},
-		});
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) void convertNoteToTask(this.app, file);
+			},
+		);
 
 		this.addCommand({
 			id: "touch-task",
@@ -466,6 +349,43 @@ export default class ConductorObsidian extends Plugin {
 		);
 
 		registerTaskLinkStrikethrough(this);
+	}
+
+	private addCheckedCommand(
+		id: string,
+		name: string,
+		check: () => boolean,
+		run: () => void,
+	): void {
+		this.addCommand({
+			id,
+			name,
+			checkCallback: (checking: boolean) => {
+				if (!check()) return false;
+				if (!checking) run();
+				return true;
+			},
+		});
+	}
+
+	private addActiveFileTagCommands(tagName: string): void {
+		const verbs = [
+			{ verb: "add", apply: addTag },
+			{ verb: "remove", apply: removeTag },
+			{ verb: "toggle", apply: toggleTag },
+		] as const;
+
+		for (const { verb, apply } of verbs) {
+			const Verb = verb.charAt(0).toUpperCase() + verb.slice(1);
+			this.addCommand({
+				id: `${verb}-${tagName}-tag`,
+				name: `${Verb} #${tagName} Tag`,
+				callback: () => {
+					const file = this.app.workspace.activeEditor?.file;
+					if (file) apply(this.app, file, tagName);
+				},
+			});
+		}
 	}
 
 	async loadSettings() {
