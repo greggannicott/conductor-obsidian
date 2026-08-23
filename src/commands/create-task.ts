@@ -1,5 +1,5 @@
 import { App, Notice } from "obsidian";
-import { ChooseProjectModal } from "src/choose-project-modal";
+import { showProjectSelector } from "src/choose-project-modal";
 import { TextInputModal, TextInputKeybinding } from "src/text-input-modal";
 import { getProjects, getActiveProject, Project } from "src/projects";
 import {
@@ -14,27 +14,20 @@ export const showCreateTaskFlow = async (app: App): Promise<void> => {
 
 	if (activeProject) {
 		await displayTaskNameInput(app, activeProject);
-	} else {
-		const projects = getProjects(app);
-		const selectProjectModal = new ChooseProjectModal(app);
-		selectProjectModal.projects = projects;
-		selectProjectModal.onChoose = (project: Project) => {
-			void displayTaskNameInput(app, project);
-		};
-		selectProjectModal.open();
+		return;
 	}
+
+	const project = await showProjectSelector(app, getProjects(app));
+	if (!project) return;
+	await displayTaskNameInput(app, project);
 };
 
 export const showCreateTaskForAnyProjectFlow = async (
 	app: App,
 ): Promise<void> => {
-	const projects = getProjects(app);
-	const selectProjectModal = new ChooseProjectModal(app);
-	selectProjectModal.projects = projects;
-	selectProjectModal.onChoose = (project: Project) => {
-		void displayTaskNameInput(app, project);
-	};
-	selectProjectModal.open();
+	const project = await showProjectSelector(app, getProjects(app));
+	if (!project) return;
+	await displayTaskNameInput(app, project);
 };
 
 async function displayTaskNameInput(

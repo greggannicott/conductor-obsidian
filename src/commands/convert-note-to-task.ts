@@ -1,5 +1,5 @@
 import { App, Notice, TFile, moment } from "obsidian";
-import { ChooseProjectModal } from "src/choose-project-modal";
+import { showProjectSelector } from "src/choose-project-modal";
 import { getProjects, Project } from "src/projects";
 import { Category, getCategory, vaultFileExists } from "src/utilities";
 
@@ -65,13 +65,7 @@ const getConversionBlockReason = (app: App, file: TFile): string | null => {
 };
 
 const promptForProject = (app: App): Promise<Project | null> => {
-	const projects = getProjects(app);
-	return new Promise<Project | null>((resolve) => {
-		const modal = new ChooseProjectModal(app);
-		modal.projects = projects;
-		modal.onChoose = (project: Project) => resolve(project);
-		modal.open();
-	});
+	return showProjectSelector(app, getProjects(app));
 };
 
 const getTargetTaskPath = (

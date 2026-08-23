@@ -1,5 +1,5 @@
 import { App, MarkdownView, Notice, moment } from "obsidian";
-import { ChooseJournalModal, JournalEntry } from "src/choose-journal-modal";
+import { showJournalSelector, JournalEntry } from "src/choose-journal-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { getTopicNamesForNote } from "src/topics";
 import { getFilesWithCategory } from "src/utilities";
@@ -38,21 +38,19 @@ export const insertJournalLink = async (app: App): Promise<void> => {
 		return;
 	}
 
-	const chooseJournalModal = new ChooseJournalModal(app);
-	chooseJournalModal.entries = entries;
-	chooseJournalModal.onChoose = async (entry) => {
-		const prompt = await TextInputModal.show(app, {
-			title: "Text to display",
-			placeholder: "Text to display",
-			value: entry.title,
-		});
-		if (prompt.cancelled) return;
+	const entry = await showJournalSelector(app, entries);
+	if (!entry) return;
 
-		const displayText = prompt.value.trim() || entry.title;
-		activeView.editor.replaceSelection(
-			`[[${entry.file.basename}|${displayText}]]`,
-		);
-		new Notice(`Inserted link to "${displayText}"`);
-	};
-	chooseJournalModal.open();
+	const prompt = await TextInputModal.show(app, {
+		title: "Text to display",
+		placeholder: "Text to display",
+		value: entry.title,
+	});
+	if (prompt.cancelled) return;
+
+	const displayText = prompt.value.trim() || entry.title;
+	activeView.editor.replaceSelection(
+		`[[${entry.file.basename}|${displayText}]]`,
+	);
+	new Notice(`Inserted link to "${displayText}"`);
 };

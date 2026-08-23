@@ -1,5 +1,5 @@
 import { App, Notice, moment } from "obsidian";
-import { ChooseProjectModal } from "src/choose-project-modal";
+import { showProjectSelector } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
 import { createNewTask, TaskPriority, TaskStatus } from "src/tasks";
 import {
@@ -108,15 +108,7 @@ const getSelectedProjectOrNotify = async (
 };
 
 const promptForProjectSelection = (app: App): Promise<Project | null> => {
-	const projects = getProjects(app);
-	return new Promise<Project | null>((resolve) => {
-		const selectProjectModal = new ChooseProjectModal(app);
-		selectProjectModal.projects = projects;
-		selectProjectModal.onChoose = (project: Project) => {
-			resolve(project);
-		};
-		selectProjectModal.open();
-	});
+	return showProjectSelector(app, getProjects(app));
 };
 
 const createTasksAndReplacements = async (

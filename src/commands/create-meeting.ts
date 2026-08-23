@@ -1,18 +1,13 @@
 import { App, Notice } from "obsidian";
 import {
-	ChooseMeetingTypeModal,
+	showMeetingTypeSelector,
 	MeetingType,
 } from "src/choose-meeting-type-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { createFileFromTemplate } from "src/utilities";
 
 export const createMeeting = async (app: App): Promise<void> => {
-	const meetingType = await new Promise<MeetingType | null>((resolve) => {
-		const modal = new ChooseMeetingTypeModal(app);
-		modal.onChoose = (type: MeetingType) => resolve(type);
-		modal.open();
-	});
-
+	const meetingType = await showMeetingTypeSelector(app);
 	if (!meetingType) return;
 
 	const { value: meetingName } = await TextInputModal.show(app, {

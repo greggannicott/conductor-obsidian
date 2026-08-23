@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { ChooseProjectModal } from "src/choose-project-modal";
+import { showProjectSelector } from "src/choose-project-modal";
 import {
 	getProjects,
 	getActiveProject,
@@ -7,17 +7,13 @@ import {
 	ProjectStatus,
 } from "src/projects";
 
-export const openProject = (app: App): void => {
-	const selectProjectModal = new ChooseProjectModal(app);
-	selectProjectModal.projects = getProjects(app);
-	selectProjectModal.onChoose = (project) => {
-		app.workspace.getLeaf(false).openFile(project.file);
-	};
-	selectProjectModal.open();
+export const openProject = async (app: App): Promise<void> => {
+	const project = await showProjectSelector(app, getProjects(app));
+	if (!project) return;
+	await app.workspace.getLeaf(false).openFile(project.file);
 };
 
-export const openOutstandingProject = (app: App): void => {
-	const selectProjectModal = new ChooseProjectModal(app);
+export const openOutstandingProject = async (app: App): Promise<void> => {
 	const filter: ProjectFilters = {
 		statusFilter: {
 			statusIs: [ProjectStatus.ToDo, ProjectStatus.InProgress],
@@ -26,11 +22,9 @@ export const openOutstandingProject = (app: App): void => {
 			ongoingIs: false,
 		},
 	};
-	selectProjectModal.projects = getProjects(app, filter);
-	selectProjectModal.onChoose = (project) => {
-		app.workspace.getLeaf(false).openFile(project.file);
-	};
-	selectProjectModal.open();
+	const project = await showProjectSelector(app, getProjects(app, filter));
+	if (!project) return;
+	await app.workspace.getLeaf(false).openFile(project.file);
 };
 
 export const openParentProject = (app: App): void => {

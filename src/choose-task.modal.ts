@@ -2,10 +2,8 @@ import { App } from "obsidian";
 import { ConductorSelectorModal } from "./conductor-selector-modal";
 import { Task } from "./tasks";
 
-type onChooseCallback = (task: Task) => void;
-
 type GroupMode = "priority" | "status";
-type ChooseTaskModalOptions = {
+export type ShowTaskSelectorOptions = {
 	initialGroupMode?: GroupMode;
 };
 
@@ -37,80 +35,70 @@ const statusBucket = (status?: string): string =>
 		? status
 		: "01 - To Do";
 
-export class ChooseTaskModal {
-	public tasks: (Task | null)[];
-	public onChoose: onChooseCallback;
-
-	private app: App;
-	private initialGroupMode: GroupMode;
-
-	constructor(app: App, options?: ChooseTaskModalOptions) {
-		this.app = app;
-		this.initialGroupMode = options?.initialGroupMode ?? "priority";
+function getTaskText(task: Task): string {
+	if (task.parents?.length == 1) {
+		return `${task.parents[0].name} -> ${task.name}`;
+	} else if (task.parents?.length > 1) {
+		return `${task.parents.map((p) => p.name).join(", ")} -> ${task.name}`;
+	} else {
+		return task.name;
 	}
+}
 
-	open(): void {
-		const tasks = (this.tasks ?? []).filter((t): t is Task => t !== null);
-		const byName = (a: Task, b: Task) =>
-			this.getTaskText(a).localeCompare(this.getTaskText(b));
+export function showTaskSelector(
+	app: App,
+	tasks: (Task | null)[],
+	options?: ShowTaskSelectorOptions,
+): Promise<Task | null> {
+	const validTasks = (tasks ?? []).filter((t): t is Task => t !== null);
+	const byName = (a: Task, b: Task) =>
+		getTaskText(a).localeCompare(getTaskText(b));
 
-		new ConductorSelectorModal<Task>(this.app, {
-			items: tasks,
-			placeholder: "Select a task...",
-			getText: (task) => this.getTaskText(task),
-			sortItems: byName,
-			initialGroupingId: this.initialGroupMode,
-			groupings: [
-				{
-					id: "priority",
-					label: "Group by Priority",
-					toggleKey: "p",
-					buildGroups: (items) => {
-						const buckets = new Map<string, Task[]>();
-						for (const task of items) {
-							const key = priorityBucket(task.priority);
-							if (!buckets.has(key)) buckets.set(key, []);
-							buckets.get(key)!.push(task);
-						}
-						return Object.entries(PRIORITY_HEADERS).map(
-							([priority, header]) => ({
-								header,
-								items: buckets.get(priority) ?? [],
-							}),
-						);
-					},
+	return ConductorSelectorModal.show<Task>(app, {
+		items: validTasks,
+		placeholder: "Select a task...",
+		getText: getTaskText,
+		sortItems: byName,
+		initialGroupingId: options?.initialGroupMode ?? "priority",
+		groupings: [
+			{
+				id: "priority",
+				label: "Group by Priority",
+				toggleKey: "p",
+				buildGroups: (items) => {
+					const buckets = new Map<string, Task[]>();
+					for (const task of items) {
+						const key = priorityBucket(task.priority);
+						if (!buckets.has(key)) buckets.set(key, []);
+						buckets.get(key)!.push(task);
+					}
+					return Object.entries(PRIORITY_HEADERS).map(
+						([priority, header]) => ({
+							header,
+							items: buckets.get(priority) ?? [],
+						}),
+					);
 				},
-				{
-					id: "status",
-					label: "Group by Status",
-					toggleKey: "s",
-					buildGroups: (items) => {
-						const buckets = new Map<string, Task[]>();
-						for (const task of items) {
-							const key = statusBucket(task.status);
-							if (!buckets.has(key)) buckets.set(key, []);
-							buckets.get(key)!.push(task);
-						}
-						return STATUS_ORDER.map((status) => ({
-							header: `${STATUS_EMOJI[status]} ${status}`,
-							items: buckets.get(status) ?? [],
-						}));
-					},
+			},
+			{
+				id: "status",
+				label: "Group by Status",
+				toggleKey: "s",
+				buildGroups: (items) => {
+					const buckets = new Map<string, Task[]>();
+					for (const task of items) {
+						const key = statusBucket(task.status);
+						if (!buckets.has(key)) buckets.set(key, []);
+						buckets.get(key)!.push(task);
+					}
+					return STATUS_ORDER.map((status) => ({
+						header: `${STATUS_EMOJI[status]} ${status}`,
+						items: buckets.get(status) ?? [],
+					}));
 				},
-			],
-			onSelect: (task) => this.onChoose(task),
-		}).open();
-	}
-
-	private getTaskText(task: Task): string {
-		if (task.parents?.length == 1) {
-			return `${task.parents[0].name} -> ${task.name}`;
-		} else if (task.parents?.length > 1) {
-			return `${task.parents.map((p) => p.name).join(", ")} -> ${task.name}`;
-		} else {
-			return task.name;
-		}
-	}
+			},
+		],
+	});
 }
 
 const STATUS_EMOJI: Record<string, string> = {

@@ -21,7 +21,7 @@ export type ConductorSelectorOptions<T> = {
 	sortItems?: (a: T, b: T) => number;
 	groupings?: ConductorSelectorGrouping<T>[];
 	initialGroupingId?: string;
-	onSelect: (item: T) => void;
+	onSelect?: (item: T) => void;
 };
 
 type ConductorSelectorEntry<T> =
@@ -40,6 +40,8 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 	private options: ConductorSelectorOptions<T>;
 	private activeGroupingId: string | null;
 	private handleToggleKeydown: ((e: KeyboardEvent) => void) | null = null;
+	// Set by show(); resolves with null when the modal closes without a selection.
+	private resolveSelection: ((item: T | null) => void) | null = null;
 
 	constructor(app: App, options: ConductorSelectorOptions<T>) {
 		super(app);
@@ -81,6 +83,10 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			this.inputEl.removeEventListener("keydown", this.handleToggleKeydown);
 			this.handleToggleKeydown = null;
 		}
+		// Resolve even when closed without selecting (e.g. Esc) so awaited
+		// callers are not left hanging; a prior onSelect resolve wins.
+		this.resolveSelection?.(null);
+		this.resolveSelection = null;
 		super.onClose();
 	}
 
@@ -143,10 +149,24 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		evt: MouseEvent | KeyboardEvent,
 	): void {
 		if (item.kind === "header") return;
-		this.options.onSelect(item.item);
+		this.options.onSelect?.(item.item);
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
 		this.close();
+	}
+
+	static show<T>(
+		app: App,
+		options: Omit<ConductorSelectorOptions<T>, "onSelect">,
+	): Promise<T | null> {
+		return new Promise((resolve) => {
+			const modal = new ConductorSelectorModal<T>(app, {
+				...options,
+				onSelect: (item) => resolve(item),
+			});
+			modal.resolveSelection = resolve;
+			modal.open();
+		});
 	}
 
 	private getActiveGrouping(): ConductorSelectorGrouping<T> | null {

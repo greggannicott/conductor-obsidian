@@ -1,5 +1,5 @@
 import { App, Notice, TFolder, TFile } from "obsidian";
-import { ChooseTemplateModal } from "src/choose-template-modal";
+import { showTemplateSelector } from "src/choose-template-modal";
 import { createFileFromTemplate, addTag, vaultFileExists } from "src/utilities";
 import {
 	getActiveEditorOrNotify,
@@ -82,21 +82,14 @@ const getTemplateNames = (app: App): string[] => {
 		.map((file) => file.basename);
 };
 
-const promptForTemplateSelection = (app: App): Promise<string | null> => {
+const promptForTemplateSelection = async (app: App): Promise<string | null> => {
 	const templateNames = getTemplateNames(app);
 	if (templateNames.length === 0) {
 		new Notice("No templates found in _templates/");
-		return Promise.resolve(null);
+		return null;
 	}
 
-	return new Promise<string | null>((resolve) => {
-		const modal = new ChooseTemplateModal(app);
-		modal.templates = templateNames;
-		modal.onChoose = (templateName: string) => {
-			resolve(templateName);
-		};
-		modal.open();
-	});
+	return showTemplateSelector(app, templateNames);
 };
 
 const createNotesAndReplacements = async (

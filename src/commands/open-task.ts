@@ -1,6 +1,6 @@
 import { App } from "obsidian";
-import { ChooseProjectModal } from "src/choose-project-modal";
-import { ChooseTaskModal } from "src/choose-task.modal";
+import { showProjectSelector } from "src/choose-project-modal";
+import { showTaskSelector } from "src/choose-task.modal";
 import {
 	getProjects,
 	getActiveProject,
@@ -10,16 +10,18 @@ import {
 } from "src/projects";
 import {
 	getTasks,
+	Task,
 	TaskFilters,
 	TaskType,
 	TaskStatus,
 	outstandingTaskTypes,
 } from "src/tasks";
 
-export const openTask = (app: App): void => {
-	const selectTaskModal = new ChooseTaskModal(app, {
-		initialGroupMode: "status",
-	});
+const openTaskFile = async (app: App, task: Task): Promise<void> => {
+	await app.workspace.getLeaf(false).openFile(task.file);
+};
+
+export const openTask = async (app: App): Promise<void> => {
 	const activeProject = getActiveProject(app);
 	let filters: TaskFilters = {
 		projectFilter: undefined,
@@ -29,15 +31,14 @@ export const openTask = (app: App): void => {
 			projectIs: [activeProject.name],
 		};
 	}
-	selectTaskModal.tasks = getTasks(app, filters);
-	selectTaskModal.onChoose = (task) => {
-		app.workspace.getLeaf(false).openFile(task.file);
-	};
-	selectTaskModal.open();
+	const task = await showTaskSelector(app, getTasks(app, filters), {
+		initialGroupMode: "status",
+	});
+	if (!task) return;
+	await openTaskFile(app, task);
 };
 
-export const openInProgressTask = (app: App): void => {
-	const selectTaskModal = new ChooseTaskModal(app);
+export const openInProgressTask = async (app: App): Promise<void> => {
 	const filters: TaskFilters = {
 		statusFilter: {
 			statusIs: [TaskStatus.InProgress],
@@ -49,33 +50,30 @@ export const openInProgressTask = (app: App): void => {
 			impededIs: false,
 		},
 	};
-	selectTaskModal.tasks = getTasks(app, filters);
-	selectTaskModal.onChoose = (task) => {
-		app.workspace.getLeaf(false).openFile(task.file);
-	};
-	selectTaskModal.open();
+	const task = await showTaskSelector(app, getTasks(app, filters));
+	if (!task) return;
+	await openTaskFile(app, task);
 };
 
-export const openTaskFromAnyProject = (app: App): void => {
-	const selectProjectModal = new ChooseProjectModal(app);
-	selectProjectModal.projects = getProjects(app);
-	selectProjectModal.onChoose = (project) => {
-		const selectTaskModal = new ChooseTaskModal(app);
-		const filters: TaskFilters = {
+export const openTaskFromAnyProject = async (app: App): Promise<void> => {
+	const project = await showProjectSelector(app, getProjects(app));
+	if (!project) return;
+
+	const task = await showTaskSelector(
+		app,
+		getTasks(app, {
 			projectFilter: {
 				projectIs: [project.name],
 			},
-		};
-		selectTaskModal.tasks = getTasks(app, filters);
-		selectTaskModal.onChoose = (task) => {
-			app.workspace.getLeaf(false).openFile(task.file);
-		};
-		selectTaskModal.open();
-	};
-	selectProjectModal.open();
+		}),
+	);
+	if (!task) return;
+	await openTaskFile(app, task);
 };
 
-export const openTaskFromAnOutstandingProject = (app: App): void => {
+export const openTaskFromAnOutstandingProject = async (
+	app: App,
+): Promise<void> => {
 	const projectFilter: ProjectFilters = {
 		statusFilter: {
 			statusIs: outstandingProjectTypes,
@@ -86,27 +84,24 @@ export const openTaskFromAnOutstandingProject = (app: App): void => {
 	};
 	const outstandingProjects = getProjects(app, projectFilter);
 
-	const selectTaskModal = new ChooseTaskModal(app);
-	const taskFilters: TaskFilters = {
-		projectFilter: {
-			projectIs: outstandingProjects.map((p) => p.name),
-		},
-		statusFilter: {
-			statusIs: outstandingTaskTypes,
-		},
-	};
-
-	selectTaskModal.tasks = getTasks(app, taskFilters);
-
-	selectTaskModal.onChoose = (task) => {
-		app.workspace.getLeaf(false).openFile(task.file);
-	};
-	selectTaskModal.open();
+	const task = await showTaskSelector(
+		app,
+		getTasks(app, {
+			projectFilter: {
+				projectIs: outstandingProjects.map((p) => p.name),
+			},
+			statusFilter: {
+				statusIs: outstandingTaskTypes,
+			},
+		}),
+	);
+	if (!task) return;
+	await openTaskFile(app, task);
 };
 
-export const openInProgressTaskFromInProgressProject = (
+export const openInProgressTaskFromInProgressProject = async (
 	app: App,
-): void => {
+): Promise<void> => {
 	const projectFilter: ProjectFilters = {
 		statusFilter: {
 			statusIs: [ProjectStatus.InProgress],
@@ -117,9 +112,6 @@ export const openInProgressTaskFromInProgressProject = (
 	};
 	const inProgressProjects = getProjects(app, projectFilter);
 
-	const selectTaskModal = new ChooseTaskModal(app, {
-		initialGroupMode: "priority",
-	});
 	const taskFilters: TaskFilters = {
 		projectFilter: {
 			projectIs: inProgressProjects.map((p) => p.name),
@@ -132,13 +124,13 @@ export const openInProgressTaskFromInProgressProject = (
 	const tasks = getTasks(app, taskFilters);
 
 	if (tasks.length === 1 && tasks[0]?.file) {
-		app.workspace.getLeaf(false).openFile(tasks[0].file);
-	} else {
-		selectTaskModal.tasks = getTasks(app, taskFilters);
-
-		selectTaskModal.onChoose = (task) => {
-			app.workspace.getLeaf(false).openFile(task.file);
-		};
-		selectTaskModal.open();
+		await openTaskFile(app, tasks[0]);
+		return;
 	}
+
+	const task = await showTaskSelector(app, tasks, {
+		initialGroupMode: "priority",
+	});
+	if (!task) return;
+	await openTaskFile(app, task);
 };
