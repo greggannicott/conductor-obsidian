@@ -21,8 +21,9 @@ export type ConductorSelectorOptions<T> = {
 	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
 	sortItems?: (a: T, b: T) => number;
+	// The first grouping is the default (active on open). By convention the
+	// caller orders the array accordingly.
 	groupings?: ConductorSelectorGrouping<T>[];
-	initialGroupingId?: string;
 	// Multi-select mode: click or Cmd/Ctrl+Space toggles items, Enter confirms
 	// the selection set. Only meaningful via showMulti().
 	multiSelect?: boolean;
@@ -59,8 +60,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		this.modalEl.addClass("conductor-selector-modal");
 		this.options = options;
 		this.multiSelect = options.multiSelect ?? false;
-		this.activeGroupingId =
-			options.initialGroupingId ?? options.groupings?.[0]?.id ?? null;
+		this.activeGroupingId = options.groupings?.[0]?.id ?? null;
 
 		if (options.placeholder) this.setPlaceholder(options.placeholder);
 		if (options.emptyText) this.emptyStateText = options.emptyText;

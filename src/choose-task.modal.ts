@@ -1,5 +1,8 @@
 import { App } from "obsidian";
-import { ConductorSelectorModal } from "./conductor-selector-modal";
+import {
+	ConductorSelectorGrouping,
+	ConductorSelectorModal,
+} from "./conductor-selector-modal";
 import {
 	Task,
 	TaskPriority,
@@ -55,47 +58,53 @@ export function showTaskSelector(
 	const byName = (a: Task, b: Task) =>
 		getTaskText(a).localeCompare(getTaskText(b));
 
+	const priorityGrouping: ConductorSelectorGrouping<Task> = {
+		id: "priority",
+		label: "Group by Priority",
+		toggleKey: "p",
+		buildGroups: (items) => {
+			const buckets = new Map<string, Task[]>();
+			for (const task of items) {
+				const key = priorityBucket(task.priority);
+				if (!buckets.has(key)) buckets.set(key, []);
+				buckets.get(key)!.push(task);
+			}
+			return TASK_PRIORITIES.map((priority) => ({
+				header: `${PRIORITY_EMOJI[priority]} ${priority}`,
+				items: buckets.get(priority) ?? [],
+			}));
+		},
+	};
+
+	const statusGrouping: ConductorSelectorGrouping<Task> = {
+		id: "status",
+		label: "Group by Status",
+		toggleKey: "s",
+		buildGroups: (items) => {
+			const buckets = new Map<string, Task[]>();
+			for (const task of items) {
+				const key = statusBucket(task.status);
+				if (!buckets.has(key)) buckets.set(key, []);
+				buckets.get(key)!.push(task);
+			}
+			return STATUS_ORDER.map((status) => ({
+				header: `${STATUS_EMOJI[status]} ${status}`,
+				items: buckets.get(status) ?? [],
+			}));
+		},
+	};
+
+	// First grouping is always the default; order follows the requested mode.
+	const groupings =
+		options?.initialGroupMode === "status"
+			? [statusGrouping, priorityGrouping]
+			: [priorityGrouping, statusGrouping];
+
 	return ConductorSelectorModal.show<Task>(app, {
 		items: validTasks,
 		placeholder: "Select a task...",
 		getText: getTaskText,
 		sortItems: byName,
-		initialGroupingId: options?.initialGroupMode ?? "priority",
-		groupings: [
-			{
-				id: "priority",
-				label: "Group by Priority",
-				toggleKey: "p",
-				buildGroups: (items) => {
-					const buckets = new Map<string, Task[]>();
-					for (const task of items) {
-						const key = priorityBucket(task.priority);
-						if (!buckets.has(key)) buckets.set(key, []);
-						buckets.get(key)!.push(task);
-					}
-					return TASK_PRIORITIES.map((priority) => ({
-						header: `${PRIORITY_EMOJI[priority]} ${priority}`,
-						items: buckets.get(priority) ?? [],
-					}));
-				},
-			},
-			{
-				id: "status",
-				label: "Group by Status",
-				toggleKey: "s",
-				buildGroups: (items) => {
-					const buckets = new Map<string, Task[]>();
-					for (const task of items) {
-						const key = statusBucket(task.status);
-						if (!buckets.has(key)) buckets.set(key, []);
-						buckets.get(key)!.push(task);
-					}
-					return STATUS_ORDER.map((status) => ({
-						header: `${STATUS_EMOJI[status]} ${status}`,
-						items: buckets.get(status) ?? [],
-					}));
-				},
-			},
-		],
+		groupings,
 	});
 }
