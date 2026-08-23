@@ -1,5 +1,10 @@
 import { App, TFile, parseFrontMatterStringArray } from "obsidian";
-import { TaskStatus, TaskPriority } from "./tasks";
+import {
+	TaskStatus,
+	TaskPriority,
+	PRIORITY_EMOJI,
+	STATUS_EMOJI,
+} from "./tasks";
 import { ProjectStatus } from "./projects";
 
 export const enum Category {
@@ -176,39 +181,17 @@ export async function removeTag(
 	});
 }
 
+// Enum values look like "01 - To Do" / "01 - High"; the label is what follows.
+const valueLabel = (value: string): string => value.replace(/^\d+ - /, "");
+
 export function getPriorityDisplay(priority: TaskPriority): string {
-	switch (priority) {
-		case TaskPriority.High:
-			return "🔴 - High";
-		case TaskPriority.Medium:
-			return "🟡 - Medium";
-		case TaskPriority.Low:
-			return "🟢 - Low";
-		default:
-			return priority;
-	}
+	const emoji = PRIORITY_EMOJI[priority];
+	return emoji ? `${emoji} - ${valueLabel(priority)}` : priority;
 }
 
 export function getStatusDisplay(status: TaskStatus | ProjectStatus): string {
-	switch (status) {
-		case TaskStatus.ToDo:
-		case ProjectStatus.ToDo:
-			return "⭕ - To Do";
-		case TaskStatus.InProgress:
-		case ProjectStatus.InProgress:
-			return "🔄 - In Progress";
-		case TaskStatus.Done:
-		case ProjectStatus.Done:
-			return "✅ - Done";
-		case TaskStatus.Abandoned:
-		case ProjectStatus.Abandoned:
-			return "❌ - Abandoned";
-		case TaskStatus.WontDo:
-		case ProjectStatus.WontDo:
-			return "🙅🏼‍♂️ - Won't Do";
-		default:
-			return status;
-	}
+	const emoji = STATUS_EMOJI[status];
+	return emoji ? `${emoji} - ${valueLabel(status)}` : status;
 }
 
 export function isActiveFileProject(app: App): boolean {

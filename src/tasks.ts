@@ -30,6 +30,24 @@ export enum TaskStatus {
 	WontDo = "05 - Won't Do",
 }
 
+// Canonical status list and emoji map. ProjectStatus values intentionally
+// mirror TaskStatus values, so these apply to projects as well.
+export const TASK_STATUSES: TaskStatus[] = [
+	TaskStatus.ToDo,
+	TaskStatus.InProgress,
+	TaskStatus.Done,
+	TaskStatus.Abandoned,
+	TaskStatus.WontDo,
+];
+
+export const STATUS_EMOJI: Record<string, string> = {
+	[TaskStatus.ToDo]: "⭕",
+	[TaskStatus.InProgress]: "🔄",
+	[TaskStatus.Done]: "✅",
+	[TaskStatus.Abandoned]: "❌",
+	[TaskStatus.WontDo]: "🙅🏼‍♂️",
+};
+
 export const outstandingTaskTypes: TaskStatus[] = [
 	TaskStatus.ToDo,
 	TaskStatus.InProgress,
@@ -46,6 +64,18 @@ export enum TaskPriority {
 	Medium = "02 - Medium",
 	Low = "03 - Low",
 }
+
+export const TASK_PRIORITIES: TaskPriority[] = [
+	TaskPriority.High,
+	TaskPriority.Medium,
+	TaskPriority.Low,
+];
+
+export const PRIORITY_EMOJI: Record<TaskPriority, string> = {
+	[TaskPriority.High]: "🔴",
+	[TaskPriority.Medium]: "🟡",
+	[TaskPriority.Low]: "🟢",
+};
 
 export enum TaskType {
 	BlogPost = "[[Blog Post]]",

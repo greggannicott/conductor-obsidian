@@ -1,7 +1,8 @@
 import { App, Menu, TFile } from "obsidian";
-import { TaskPriority } from "../tasks";
+import { TASK_PRIORITIES } from "../tasks";
 import { setTaskPriorityForFiles } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
+import { getPriorityDisplay } from "../utilities";
 
 export function createFilesMenuHandler(app: App) {
 	return (menu: Menu, files: any[]) => {
@@ -26,26 +27,18 @@ export function createFilesMenuHandler(app: App) {
 			item.setTitle("Set Priority");
 			const submenu = (item as any).setSubmenu();
 
-			submenu.addItem((subItem: any) => {
-				subItem.setTitle("🔴 - High");
-				subItem.onClick(() => {
-					void setTaskPriorityForFiles(app, selectedTaskFiles, TaskPriority.High);
+			for (const priority of TASK_PRIORITIES) {
+				submenu.addItem((subItem: any) => {
+					subItem.setTitle(getPriorityDisplay(priority));
+					subItem.onClick(() => {
+						void setTaskPriorityForFiles(
+							app,
+							selectedTaskFiles,
+							priority,
+						);
+					});
 				});
-			});
-
-			submenu.addItem((subItem: any) => {
-				subItem.setTitle("🟡 - Medium");
-				subItem.onClick(() => {
-					void setTaskPriorityForFiles(app, selectedTaskFiles, TaskPriority.Medium);
-				});
-			});
-
-			submenu.addItem((subItem: any) => {
-				subItem.setTitle("🟢 - Low");
-				subItem.onClick(() => {
-					void setTaskPriorityForFiles(app, selectedTaskFiles, TaskPriority.Low);
-				});
-			});
+			}
 		});
 
 		menu.addItem((item: any) => {

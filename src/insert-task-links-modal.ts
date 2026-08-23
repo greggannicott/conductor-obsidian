@@ -1,24 +1,16 @@
 import { App } from "obsidian";
 import { ConductorSelectorModal } from "./conductor-selector-modal";
-import { Task, getTasks, TaskPriority, TaskStatus, TaskType } from "./tasks";
+import {
+	Task,
+	getTasks,
+	TaskPriority,
+	TaskStatus,
+	TaskType,
+	TASK_PRIORITIES,
+	PRIORITY_EMOJI,
+	STATUS_EMOJI,
+} from "./tasks";
 import { Context, getProjects, outstandingProjectTypes } from "./projects";
-
-const priorityOrder: Record<string, number> = {
-	"01 - High": 0,
-	"02 - Medium": 1,
-	"03 - Low": 2,
-};
-
-const priorityEmoji: Record<string, string> = {
-	"01 - High": "🔴",
-	"02 - Medium": "🟡",
-	"03 - Low": "🟢",
-};
-
-const statusEmoji: Record<string, string> = {
-	"01 - To Do": "⭕",
-	"02 - In Progress": "🔄",
-};
 
 const contextOrder: Record<string, number> = {
 	[Context.Work]: 0,
@@ -34,9 +26,10 @@ const compareTasks = (a: Task, b: Task): number => {
 	const ca = contextOrder[a.parents?.[0]?.context ?? ""] ?? 2;
 	const cb = contextOrder[b.parents?.[0]?.context ?? ""] ?? 2;
 	if (ca !== cb) return ca - cb;
-	const pa = priorityOrder[a.priority] ?? 2;
-	const pb = priorityOrder[b.priority] ?? 2;
-	if (pa !== pb) return pa - pb;
+	const pa = TASK_PRIORITIES.indexOf(a.priority);
+	const pb = TASK_PRIORITIES.indexOf(b.priority);
+	if (pa !== pb) return (pa === -1 ? TASK_PRIORITIES.length : pa) -
+		(pb === -1 ? TASK_PRIORITIES.length : pb);
 	return a.name.localeCompare(b.name);
 };
 
@@ -80,9 +73,10 @@ export function showOutstandingTasksSelector(app: App): Promise<Task[]> {
 		getText: (task) => task.name,
 		getSearchText: (task) => `${projectNameForTask(task)} ${task.name}`,
 		getBadges: (task) =>
-			[priorityEmoji[task.priority], statusEmoji[task.status]].filter(
-				(badge): badge is string => Boolean(badge),
-			),
+			[
+				PRIORITY_EMOJI[task.priority as TaskPriority],
+				STATUS_EMOJI[task.status],
+			].filter((badge): badge is string => Boolean(badge)),
 		sortItems: compareTasks,
 		groupings: [
 			{

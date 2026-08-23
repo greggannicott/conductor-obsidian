@@ -1,7 +1,17 @@
 import { App, Menu, Notice, TFile } from "obsidian";
-import { getTask, TaskStatus, TaskPriority } from "../tasks";
-import { getProjectFromFile, ProjectStatus } from "../projects";
-import { addTag } from "../utilities";
+import {
+	getTask,
+	TaskStatus,
+	TASK_STATUSES,
+	TASK_PRIORITIES,
+	outstandingTaskTypes,
+} from "../tasks";
+import {
+	getProjectFromFile,
+	ProjectStatus,
+	outstandingProjectTypes,
+} from "../projects";
+import { addTag, getStatusDisplay, getPriorityDisplay } from "../utilities";
 import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
@@ -29,50 +39,18 @@ export function createFileMenuHandler(app: App) {
 			menu.addItem((item) => {
 				item.setTitle("Set Status");
 				const submenu = (item as any).setSubmenu();
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("⭕ - To Do");
-					if (task && task.status === TaskStatus.ToDo) {
-						subItem.setChecked(true);
+				TASK_STATUSES.forEach((status, index) => {
+					if (index === outstandingTaskTypes.length) {
+						submenu.addSeparator();
 					}
-					subItem.onClick(() => {
-						setTaskStatus(app, file, TaskStatus.ToDo);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🔄 - In Progress");
-					if (task && task.status === TaskStatus.InProgress) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskStatus(app, file, TaskStatus.InProgress);
-					});
-				});
-				submenu.addSeparator();
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("✅ - Done");
-					if (task && task.status === TaskStatus.Done) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskStatus(app, file, TaskStatus.Done);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("❌ - Abandoned");
-					if (task && task.status === TaskStatus.Abandoned) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskStatus(app, file, TaskStatus.Abandoned);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🙅🏼‍♂️ - Won't Do");
-					if (task && task.status === TaskStatus.WontDo) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskStatus(app, file, TaskStatus.WontDo);
+					submenu.addItem((subItem: any) => {
+						subItem.setTitle(getStatusDisplay(status));
+						if (task && task.status === status) {
+							subItem.setChecked(true);
+						}
+						subItem.onClick(() => {
+							setTaskStatus(app, file, status);
+						});
 					});
 				});
 			});
@@ -80,33 +58,17 @@ export function createFileMenuHandler(app: App) {
 			menu.addItem((item) => {
 				item.setTitle("Set Priority");
 				const submenu = (item as any).setSubmenu();
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🔴 - High");
-					if (task && task.priority === TaskPriority.High) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskPriority(app, file, TaskPriority.High);
+				for (const priority of TASK_PRIORITIES) {
+					submenu.addItem((subItem: any) => {
+						subItem.setTitle(getPriorityDisplay(priority));
+						if (task && task.priority === priority) {
+							subItem.setChecked(true);
+						}
+						subItem.onClick(() => {
+							setTaskPriority(app, file, priority);
+						});
 					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🟡 - Medium");
-					if (task && task.priority === TaskPriority.Medium) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskPriority(app, file, TaskPriority.Medium);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🟢 - Low");
-					if (task && task.priority === TaskPriority.Low) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setTaskPriority(app, file, TaskPriority.Low);
-					});
-				});
+				}
 			});
 
 			menu.addItem((item) => {
@@ -123,41 +85,20 @@ export function createFileMenuHandler(app: App) {
 			menu.addItem((item) => {
 				item.setTitle("Set Status");
 				const submenu = (item as any).setSubmenu();
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("⭕ - To Do");
-					if (project && project.status === ProjectStatus.ToDo) {
-						subItem.setChecked(true);
+				TASK_STATUSES.forEach((status, index) => {
+					// ProjectStatus values mirror TaskStatus values exactly.
+					const projectStatus = status as unknown as ProjectStatus;
+					if (index === outstandingProjectTypes.length) {
+						submenu.addSeparator();
 					}
-					subItem.onClick(() => {
-						setProjectStatus(app, file, ProjectStatus.ToDo);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("🔄 - In Progress");
-					if (project && project.status === ProjectStatus.InProgress) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setProjectStatus(app, file, ProjectStatus.InProgress);
-					});
-				});
-				submenu.addSeparator();
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("✅ - Done");
-					if (project && project.status === ProjectStatus.Done) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setProjectStatus(app, file, ProjectStatus.Done);
-					});
-				});
-				submenu.addItem((subItem: any) => {
-					subItem.setTitle("❌ - Abandoned");
-					if (project && project.status === ProjectStatus.Abandoned) {
-						subItem.setChecked(true);
-					}
-					subItem.onClick(() => {
-						setProjectStatus(app, file, ProjectStatus.Abandoned);
+					submenu.addItem((subItem: any) => {
+						subItem.setTitle(getStatusDisplay(projectStatus));
+						if (project && project.status === projectStatus) {
+							subItem.setChecked(true);
+						}
+						subItem.onClick(() => {
+							setProjectStatus(app, file, projectStatus);
+						});
 					});
 				});
 			});

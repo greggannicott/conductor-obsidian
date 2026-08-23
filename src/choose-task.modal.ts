@@ -1,39 +1,40 @@
 import { App } from "obsidian";
 import { ConductorSelectorModal } from "./conductor-selector-modal";
-import { Task } from "./tasks";
+import {
+	Task,
+	TaskPriority,
+	TaskStatus,
+	TASK_PRIORITIES,
+	PRIORITY_EMOJI,
+	STATUS_EMOJI,
+} from "./tasks";
 
 type GroupMode = "priority" | "status";
 export type ShowTaskSelectorOptions = {
 	initialGroupMode?: GroupMode;
 };
 
-const PRIORITY_HEADERS: Record<string, string> = {
-	"01 - High": "🔴 01 - High",
-	"02 - Medium": "🟡 02 - Medium",
-	"03 - Low": "🟢 03 - Low",
-};
-
 // Order in which status buckets are displayed; To Do is kept last so
 // In Progress is quick to reach.
-const STATUS_ORDER: string[] = [
-	"02 - In Progress",
-	"03 - Done",
-	"04 - Abandoned",
-	"05 - Won't Do",
-	"01 - To Do",
+const STATUS_ORDER: TaskStatus[] = [
+	TaskStatus.InProgress,
+	TaskStatus.Done,
+	TaskStatus.Abandoned,
+	TaskStatus.WontDo,
+	TaskStatus.ToDo,
 ];
 
 // Unknown priorities fall back to Low, matching the previous behaviour.
-const priorityBucket = (priority?: string): string =>
-	priority === "01 - High" || priority === "02 - Medium"
-		? priority
-		: "03 - Low";
+const priorityBucket = (priority?: string): TaskPriority =>
+	priority === TaskPriority.High || priority === TaskPriority.Medium
+		? (priority as TaskPriority)
+		: TaskPriority.Low;
 
 // Unknown statuses fall back to To Do, matching the previous behaviour.
-const statusBucket = (status?: string): string =>
-	status !== undefined && STATUS_ORDER.includes(status)
-		? status
-		: "01 - To Do";
+const statusBucket = (status?: string): TaskStatus =>
+	status !== undefined && (STATUS_ORDER as string[]).includes(status)
+		? (status as TaskStatus)
+		: TaskStatus.ToDo;
 
 function getTaskText(task: Task): string {
 	if (task.parents?.length == 1) {
@@ -72,12 +73,10 @@ export function showTaskSelector(
 						if (!buckets.has(key)) buckets.set(key, []);
 						buckets.get(key)!.push(task);
 					}
-					return Object.entries(PRIORITY_HEADERS).map(
-						([priority, header]) => ({
-							header,
-							items: buckets.get(priority) ?? [],
-						}),
-					);
+					return TASK_PRIORITIES.map((priority) => ({
+						header: `${PRIORITY_EMOJI[priority]} ${priority}`,
+						items: buckets.get(priority) ?? [],
+					}));
 				},
 			},
 			{
@@ -100,11 +99,3 @@ export function showTaskSelector(
 		],
 	});
 }
-
-const STATUS_EMOJI: Record<string, string> = {
-	"01 - To Do": "⭕",
-	"02 - In Progress": "🔄",
-	"03 - Done": "✅",
-	"04 - Abandoned": "❌",
-	"05 - Won't Do": "🙅🏼‍♂️",
-};
