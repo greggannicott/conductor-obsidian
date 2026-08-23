@@ -17,10 +17,15 @@ export type ConductorSelectorOptions<T> = {
 	getSearchText?: (item: T) => string;
 	// Optional muted second line rendered beneath the text.
 	getSubtext?: (item: T) => string | null;
+	// Optional trailing badges rendered at the end of the row (e.g. emojis).
+	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
 	sortItems?: (a: T, b: T) => number;
 	groupings?: ConductorSelectorGrouping<T>[];
 	initialGroupingId?: string;
+	// Multi-select mode: click or Cmd/Ctrl+Space toggles items, Enter confirms
+	// the selection set. Only meaningful via showMulti().
+	multiSelect?: boolean;
 	onSelect?: (item: T) => void;
 };
 
@@ -42,10 +47,17 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 	private handleToggleKeydown: ((e: KeyboardEvent) => void) | null = null;
 	// Set by show(); resolves with null when the modal closes without a selection.
 	private resolveSelection: ((item: T | null) => void) | null = null;
+	// Set by showMulti(); resolves with [] when the modal closes without confirming.
+	private resolveMultiSelection: ((items: T[]) => void) | null = null;
+	private readonly multiSelect: boolean;
+	private selectedItems: Set<T> = new Set();
+	private itemByElement = new WeakMap<HTMLElement, T>();
+	private suggestionListEl: HTMLElement | null = null;
 
 	constructor(app: App, options: ConductorSelectorOptions<T>) {
 		super(app);
 		this.options = options;
+		this.multiSelect = options.multiSelect ?? false;
 		this.activeGroupingId =
 			options.initialGroupingId ?? options.groupings?.[0]?.id ?? null;
 
@@ -58,6 +70,17 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		super.onOpen();
 		this.handleToggleKeydown = (e: KeyboardEvent) => {
 			if (e.isComposing) return;
+
+			if (
+				this.multiSelect &&
+				(e.ctrlKey || e.metaKey) &&
+				e.code === "Space"
+			) {
+				e.preventDefault();
+				this.toggleHighlightedSelection();
+				return;
+			}
+
 			// Only allow switching when not searching.
 			if (this.inputEl.value.trim().length > 0) return;
 			// Require Cmd (macOS) so normal typing works.
@@ -87,6 +110,8 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		// callers are not left hanging; a prior onSelect resolve wins.
 		this.resolveSelection?.(null);
 		this.resolveSelection = null;
+		this.resolveMultiSelection?.([]);
+		this.resolveMultiSelection = null;
 		super.onClose();
 	}
 
@@ -136,11 +161,33 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			return;
 		}
 
+		// Track the list container and element->item mapping so multi-select
+		// can find and toggle whatever row is currently highlighted.
+		this.suggestionListEl = el.parentElement;
+		this.itemByElement.set(el, item.item);
+
+		if (this.multiSelect) {
+			const isSelected = this.selectedItems.has(item.item);
+			el.createSpan({
+				cls: "conductor-suggest-check",
+				text: isSelected ? "☑" : "☐",
+			});
+			if (isSelected) el.addClass("conductor-suggest-selected");
+		}
+
 		el.createDiv({ text: this.options.getText(item.item) });
 
 		const subtext = this.options.getSubtext?.(item.item);
 		if (subtext) {
 			el.createDiv({ text: subtext, cls: "conductor-suggest-subtext" });
+		}
+
+		const badges = this.options.getBadges?.(item.item);
+		if (badges && badges.length > 0) {
+			el.createSpan({
+				cls: "conductor-suggest-badges",
+				text: badges.join(" "),
+			});
 		}
 	}
 
@@ -149,6 +196,29 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		evt: MouseEvent | KeyboardEvent,
 	): void {
 		if (item.kind === "header") return;
+
+		if (this.multiSelect) {
+			// Clicking a row toggles it without closing; Enter (or any
+			// keyboard chooser) confirms the selection set.
+			if (evt instanceof MouseEvent) {
+				const el = evt.currentTarget;
+				this.toggleItemSelection(
+					el instanceof HTMLElement ? el : null,
+					item.item,
+				);
+				return;
+			}
+			const chosen = [...this.selectedItems];
+			if (chosen.length === 0) chosen.push(item.item);
+			const resolve = this.resolveMultiSelection;
+			this.resolveMultiSelection = null;
+			resolve?.(chosen);
+			// SuggestModal doesn't close automatically unless we do it.
+			evt.preventDefault();
+			this.close();
+			return;
+		}
+
 		this.options.onSelect?.(item.item);
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
@@ -157,7 +227,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 	static show<T>(
 		app: App,
-		options: Omit<ConductorSelectorOptions<T>, "onSelect">,
+		options: Omit<ConductorSelectorOptions<T>, "onSelect" | "multiSelect">,
 	): Promise<T | null> {
 		return new Promise((resolve) => {
 			const modal = new ConductorSelectorModal<T>(app, {
@@ -169,11 +239,49 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		});
 	}
 
+	static showMulti<T>(
+		app: App,
+		options: Omit<ConductorSelectorOptions<T>, "onSelect" | "multiSelect">,
+	): Promise<T[]> {
+		return new Promise((resolve) => {
+			const modal = new ConductorSelectorModal<T>(app, {
+				...options,
+				multiSelect: true,
+			});
+			modal.resolveMultiSelection = resolve;
+			modal.open();
+		});
+	}
+
 	private getActiveGrouping(): ConductorSelectorGrouping<T> | null {
 		return (
 			this.options.groupings?.find((g) => g.id === this.activeGroupingId) ??
 			null
 		);
+	}
+
+	private toggleHighlightedSelection(): void {
+		const el = this.suggestionListEl?.querySelector<HTMLElement>(
+			".suggestion-item.is-selected",
+		);
+		const item = el ? this.itemByElement.get(el) : undefined;
+		if (!item) return;
+		this.toggleItemSelection(el ?? null, item);
+	}
+
+	private toggleItemSelection(el: HTMLElement | null, item: T): void {
+		const nowSelected = !this.selectedItems.has(item);
+		if (nowSelected) {
+			this.selectedItems.add(item);
+		} else {
+			this.selectedItems.delete(item);
+		}
+
+		if (el) {
+			el.toggleClass("conductor-suggest-selected", nowSelected);
+			const check = el.querySelector(".conductor-suggest-check");
+			if (check) check.textContent = nowSelected ? "☑" : "☐";
+		}
 	}
 
 	private updateInstructions(): void {
@@ -183,6 +291,12 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				command: `⌘-${g.toggleKey!.toUpperCase()}`,
 				purpose: g.label,
 			}));
+		if (this.multiSelect) {
+			instructions.push(
+				{ command: "⌘/ctrl space", purpose: "toggle" },
+				{ command: "↵", purpose: "confirm selection" },
+			);
+		}
 		if (instructions.length > 0) this.setInstructions(instructions);
 	}
 }
