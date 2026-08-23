@@ -56,6 +56,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 	constructor(app: App, options: ConductorSelectorOptions<T>) {
 		super(app);
+		this.modalEl.addClass("conductor-selector-modal");
 		this.options = options;
 		this.multiSelect = options.multiSelect ?? false;
 		this.activeGroupingId =
@@ -68,6 +69,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 	onOpen(): void {
 		super.onOpen();
+		this.applyInstructionHighlight();
 		this.handleToggleKeydown = (e: KeyboardEvent) => {
 			if (e.isComposing) return;
 
@@ -298,5 +300,23 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			);
 		}
 		if (instructions.length > 0) this.setInstructions(instructions);
+		this.applyInstructionHighlight();
+	}
+
+	private applyInstructionHighlight(): void {
+		const groupings = (this.options.groupings ?? []).filter(
+			(g) => g.toggleKey,
+		);
+		if (groupings.length === 0) return;
+		const els =
+			this.containerEl.querySelectorAll<HTMLElement>(".prompt-instruction");
+		groupings.forEach((g, i) => {
+			const el = els[i];
+			if (!el) return;
+			el.toggleClass(
+				"conductor-instruction-active",
+				g.id === this.activeGroupingId,
+			);
+		});
 	}
 }

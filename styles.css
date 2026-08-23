@@ -92,3 +92,26 @@ If your plugin does not need CSS, delete this file.
 .conductor-combo-item:hover {
 	background-color: var(--background-modifier-hover);
 }
+
+/* Instruction bar in the selector modal: every hint reserves identical
+   pill spacing so toggling the active one never shifts the row */
+.conductor-selector-modal .prompt-instruction {
+	padding: 2px 8px;
+	border-radius: var(--radius-s);
+}
+
+/* Active grouping hint in the selector instruction bar */
+.conductor-selector-modal .conductor-instruction-active {
+	background-color: color-mix(
+		in srgb,
+		var(--interactive-accent) 18%,
+		transparent
+	);
+}
+
+.conductor-selector-modal
+	.conductor-instruction-active
+	.prompt-instruction-command {
+	color: var(--interactive-accent);
+	font-weight: var(--font-semibold);
+}
