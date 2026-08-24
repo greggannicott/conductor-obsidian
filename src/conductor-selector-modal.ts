@@ -176,16 +176,18 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		this.suggestionListEl = el.parentElement;
 		this.itemByElement.set(el, item.item);
 
+		const row = el.createDiv({ cls: "conductor-suggest-row" });
+
 		if (this.multiSelect) {
 			const isSelected = this.selectedItems.has(item.item);
-			el.createSpan({
+			row.createSpan({
 				cls: "conductor-suggest-check",
 				text: isSelected ? "☑" : "☐",
 			});
 			if (isSelected) el.addClass("conductor-suggest-selected");
 		}
 
-		el.createDiv({ text: this.options.getText(item.item) });
+		row.createSpan({ text: this.options.getText(item.item) });
 
 		const subtext = this.options.getSubtext?.(item.item);
 		if (subtext) {
@@ -194,7 +196,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 		const badges = this.options.getBadges?.(item.item);
 		if (badges && badges.length > 0) {
-			el.createSpan({
+			row.createSpan({
 				cls: "conductor-suggest-badges",
 				text: badges.join(" "),
 			});

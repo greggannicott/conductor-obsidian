@@ -45,6 +45,12 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Multi-select suggestion rows */
+.conductor-suggest-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
 .conductor-suggest-check {
 	width: 16px;
 	text-align: center;
