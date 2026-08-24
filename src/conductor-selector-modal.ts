@@ -27,6 +27,8 @@ export type ConductorSelectorOptions<T> = {
 	// Multi-select mode: click or Cmd/Ctrl+Space toggles items, Enter confirms
 	// the selection set. Only meaningful via showMulti().
 	multiSelect?: boolean;
+	// Multi-select only: items already checked when the modal opens.
+	initialSelection?: T[];
 	onSelect?: (item: T) => void;
 };
 
@@ -61,6 +63,9 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		this.options = options;
 		this.multiSelect = options.multiSelect ?? false;
 		this.activeGroupingId = options.groupings?.[0]?.id ?? null;
+		for (const item of options.initialSelection ?? []) {
+			this.selectedItems.add(item);
+		}
 
 		if (options.placeholder) this.setPlaceholder(options.placeholder);
 		if (options.emptyText) this.emptyStateText = options.emptyText;
@@ -200,7 +205,15 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		item: ConductorSelectorEntry<T>,
 		evt: MouseEvent | KeyboardEvent,
 	): void {
-		if (item.kind === "header") return;
+		if (item.kind === "header") {
+			// Obsidian highlights index 0 without skipping disabled rows, so
+			// keyboard Enter can land on a group header. Treat it as a confirm
+			// of the selection set; clicking headers does nothing.
+			if (this.multiSelect && !(evt instanceof MouseEvent)) {
+				this.confirmMultiSelection(evt, null);
+			}
+			return;
+		}
 
 		if (this.multiSelect) {
 			// Clicking a row toggles it without closing; Enter (or any
@@ -213,14 +226,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				);
 				return;
 			}
-			const chosen = [...this.selectedItems];
-			if (chosen.length === 0) chosen.push(item.item);
-			const resolve = this.resolveMultiSelection;
-			this.resolveMultiSelection = null;
-			resolve?.(chosen);
-			// SuggestModal doesn't close automatically unless we do it.
-			evt.preventDefault();
-			this.close();
+			this.confirmMultiSelection(evt, item.item);
 			return;
 		}
 
@@ -229,6 +235,33 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
 		this.close();
+	}
+
+	private confirmMultiSelection(
+		evt: KeyboardEvent,
+		highlighted: T | null,
+	): void {
+		const chosen = [...this.selectedItems];
+		if (chosen.length === 0 && highlighted) chosen.push(highlighted);
+		if (chosen.length === 0) {
+			const first = this.firstRenderedItem();
+			if (!first) return;
+			chosen.push(first);
+		}
+
+		const resolve = this.resolveMultiSelection;
+		this.resolveMultiSelection = null;
+		resolve?.(chosen);
+		// SuggestModal doesn't close automatically unless we do it.
+		evt.preventDefault();
+		this.close();
+	}
+
+	private firstRenderedItem(): T | null {
+		const el = this.suggestionListEl?.querySelector<HTMLElement>(
+			".suggestion-item:not(.conductor-suggest-header)",
+		);
+		return el ? (this.itemByElement.get(el) ?? null) : null;
 	}
 
 	static show<T>(
