@@ -108,12 +108,15 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			this.inputEl.removeEventListener("keydown", this.handleToggleKeydown);
 			this.handleToggleKeydown = null;
 		}
-		// Resolve even when closed without selecting (e.g. Esc) so awaited
-		// callers are not left hanging; a prior onSelect resolve wins.
-		this.resolveSelection?.(null);
-		this.resolveSelection = null;
-		this.resolveMultiSelection?.([]);
-		this.resolveMultiSelection = null;
+		// Obsidian closes the modal BEFORE invoking onChooseSuggestion, so a
+		// selection may still land after onClose. Defer the fallback resolve
+		// by one macrotask; choosing nulls the resolvers first and wins.
+		setTimeout(() => {
+			this.resolveSelection?.(null);
+			this.resolveSelection = null;
+			this.resolveMultiSelection?.([]);
+			this.resolveMultiSelection = null;
+		}, 0);
 		super.onClose();
 	}
 
@@ -221,6 +224,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			return;
 		}
 
+		this.resolveSelection = null;
 		this.options.onSelect?.(item.item);
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
