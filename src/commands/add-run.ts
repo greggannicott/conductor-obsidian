@@ -84,8 +84,8 @@ export const addRun = async (app: App): Promise<void> => {
 	});
 	if (pacePrompt.cancelled) return;
 	const pace = pacePrompt.value.trim();
-	if (!pace) {
-		new Notice("Average pace is required");
+	if (!pace || !/^\d+(\.\d+)?$/.test(pace)) {
+		new Notice("Average pace must be a number (e.g. 5.30)");
 		return;
 	}
 
@@ -117,10 +117,10 @@ export const addRun = async (app: App): Promise<void> => {
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${runType}]]`;
 		fm["date-of-event"] = date;
-		fm["distance (km)"] = distance;
+		fm["distance"] = distance;
 		fm["workout-time-in-seconds"] = workoutSeconds;
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
-		fm["average-pace"] = pace;
+		fm["average-pace"] = parseFloat(pace);
 		fm["average-heart-rate"] = parseInt(heartRate, 10);
 	});
 
