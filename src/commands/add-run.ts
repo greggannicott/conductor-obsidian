@@ -51,8 +51,8 @@ export const addRun = async (app: App): Promise<void> => {
 	});
 	if (distancePrompt.cancelled) return;
 	const distance = distancePrompt.value.trim();
-	if (!distance) {
-		new Notice("Distance is required");
+	if (!distance || !/^\d+(\.\d+)?$/.test(distance)) {
+		new Notice("Distance must be a number (e.g. 21.1)");
 		return;
 	}
 
@@ -117,7 +117,7 @@ export const addRun = async (app: App): Promise<void> => {
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${runType}]]`;
 		fm["date-of-event"] = date;
-		fm["distance"] = distance;
+		fm["distance"] = parseFloat(distance);
 		fm["workout-time-in-seconds"] = workoutSeconds;
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
 		fm["average-pace"] = parseFloat(pace);
