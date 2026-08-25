@@ -72,6 +72,22 @@ export function getFilesWithCategory(app: App, category: string): TFile[] {
 	});
 }
 
+export function getAllCategories(app: App): string[] {
+	const categories = new Set<string>();
+	for (const file of app.vault.getMarkdownFiles()) {
+		if (file.path.startsWith("_templates/")) continue;
+		const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+		const cats = parseFrontMatterStringArray(frontmatter, "categories");
+		if (cats) {
+			for (const cat of cats) {
+				const stripped = cat.replace(/^\[\[|\]\]$/g, "").trim();
+				if (stripped) categories.add(stripped);
+			}
+		}
+	}
+	return [...categories].sort();
+}
+
 export function getPeople(app: App): TFile[] {
 	return getFilesWithCategory(app, "Person");
 }

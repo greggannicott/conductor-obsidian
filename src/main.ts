@@ -22,6 +22,8 @@ import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 	import { insertJournalLink } from "./commands/insert-journal-link";
 	import { createJournalNoteForExperiment } from "./commands/create-journal-note-for-experiment";
 import { openNoteByTopic } from "./commands/open-note-by-topic";
+import { insertLinkByCategory } from "./commands/insert-link-by-category";
+import { openNoteByCategory } from "./commands/open-link-by-category";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -342,6 +344,18 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-note-by-topic",
 			name: "Open Note by Topic",
 			callback: () => openNoteByTopic(this.app),
+		});
+
+		this.addCommand({
+			id: "insert-link-by-category",
+			name: "Insert Link by Category",
+			callback: () => void insertLinkByCategory(this.app),
+		});
+
+		this.addCommand({
+			id: "open-note-by-category",
+			name: "Open Note by Category",
+			callback: () => void openNoteByCategory(this.app),
 		});
 
 		this.registerEvent(
