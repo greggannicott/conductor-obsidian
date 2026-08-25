@@ -23,6 +23,7 @@ import { createJournalNoteForExperiment } from "./commands/create-journal-note-f
 import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
+import { addRun } from "./commands/add-run";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -294,6 +295,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-meeting",
 			name: "Create Meeting",
 			callback: () => void createMeeting(this.app),
+		});
+
+		this.addCommand({
+			id: "add-run",
+			name: "Add Run",
+			callback: () => void addRun(this.app),
 		});
 
 		this.addCheckedCommand(

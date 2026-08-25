@@ -121,3 +121,104 @@ If your plugin does not need CSS, delete this file.
 	color: var(--interactive-accent);
 	font-weight: var(--font-semibold);
 }
+
+/* Date picker modal */
+.conductor-dp-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--size-4-2);
+}
+
+.conductor-dp-nav button {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 1.2em;
+	padding: var(--size-4-1) var(--size-4-2);
+	color: var(--text-normal);
+	border-radius: var(--radius-s);
+}
+
+.conductor-dp-nav button:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.conductor-dp-month-label {
+	font-weight: 600;
+	font-size: var(--font-ui-medium);
+}
+
+.conductor-dp-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+}
+
+.conductor-dp-day-header {
+	text-align: center;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	padding: var(--size-4-1) 0;
+}
+
+.conductor-dp-day {
+	text-align: center;
+	padding: var(--size-4-1);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.conductor-dp-day:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.conductor-dp-day.empty {
+	cursor: default;
+}
+
+.conductor-dp-day.empty:hover {
+	background-color: transparent;
+}
+
+.conductor-dp-today {
+	color: var(--interactive-accent);
+	font-weight: 600;
+}
+
+.conductor-dp-selected {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 600;
+}
+
+.conductor-dp-selected:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.conductor-dp-highlighted {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.conductor-dp-footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: var(--size-4-2);
+}
+
+.conductor-dp-today-btn {
+	background: none;
+	border: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+	padding: var(--size-4-1) var(--size-4-2);
+	color: var(--text-normal);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.conductor-dp-today-btn:hover {
+	background-color: var(--background-modifier-hover);
+}
