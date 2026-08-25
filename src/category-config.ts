@@ -195,6 +195,12 @@ const personConfig: CategoryDisplayConfig = {
 
 // --- Event config ---
 
+const eventDateSort = (app: App, a: TFile, b: TFile): number => {
+	const dateA = getFrontmatterString(app, a, "date-of-event") ?? "9999-99-99";
+	const dateB = getFrontmatterString(app, b, "date-of-event") ?? "9999-99-99";
+	return dateA.localeCompare(dateB);
+};
+
 const eventConfig: CategoryDisplayConfig = {
 	getText: (_app, file) => file.basename,
 	getBadges: (app, file) => {
@@ -208,16 +214,12 @@ const eventConfig: CategoryDisplayConfig = {
 		}
 		return badges;
 	},
-	sortItems: (app, a, b) => {
-		const dateA = getFrontmatterString(app, a, "date-of-event") ?? "9999-99-99";
-		const dateB = getFrontmatterString(app, b, "date-of-event") ?? "9999-99-99";
-		if (dateA !== dateB) return dateA.localeCompare(dateB);
-		return a.basename.localeCompare(b.basename);
-	},
+	sortItems: (app, a, b) => eventDateSort(app, a, b),
 	getGroupings: (app) => [
 		{
 			id: "type",
-			label: "By Type",
+			label: "Group by Type",
+			toggleKey: "t",
 			buildGroups: (files) => {
 				const buckets = new Map<string, TFile[]>();
 				for (const file of files) {
@@ -229,11 +231,46 @@ const eventConfig: CategoryDisplayConfig = {
 					.sort(([a], [b]) => a.localeCompare(b))
 					.map(([type, bucket]) => ({
 						header: type,
-						items: bucket.sort((x, y) => {
-							const dx = getFrontmatterString(app, x, "date-of-event") ?? "9999-99-99";
-							const dy = getFrontmatterString(app, y, "date-of-event") ?? "9999-99-99";
-							return dx.localeCompare(dy);
-						}),
+						items: bucket.sort((x, y) => eventDateSort(app, x, y)),
+					}));
+			},
+		},
+		{
+			id: "year",
+			label: "Group by Year",
+			toggleKey: "y",
+			buildGroups: (files) => {
+				const buckets = new Map<string, TFile[]>();
+				for (const file of files) {
+					const date = getFrontmatterString(app, file, "date-of-event");
+					const year = date ? date.substring(0, 4) : "Unknown";
+					if (!buckets.has(year)) buckets.set(year, []);
+					buckets.get(year)!.push(file);
+				}
+				return [...buckets.entries()]
+					.sort(([a], [b]) => b.localeCompare(a))
+					.map(([year, bucket]) => ({
+						header: year,
+						items: bucket.sort((x, y) => eventDateSort(app, x, y)),
+					}));
+			},
+		},
+		{
+			id: "city",
+			label: "Group by City",
+			toggleKey: "c",
+			buildGroups: (files) => {
+				const buckets = new Map<string, TFile[]>();
+				for (const file of files) {
+					const city = getFirstWikilinkValue(app, file, "city") ?? "Unknown";
+					if (!buckets.has(city)) buckets.set(city, []);
+					buckets.get(city)!.push(file);
+				}
+				return [...buckets.entries()]
+					.sort(([a], [b]) => a.localeCompare(b))
+					.map(([city, bucket]) => ({
+						header: city,
+						items: bucket.sort((x, y) => eventDateSort(app, x, y)),
 					}));
 			},
 		},
