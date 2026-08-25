@@ -69,11 +69,11 @@ export const addRun = async (app: App): Promise<void> => {
 
 	const elapsedTimePrompt = await TextInputModal.show(app, {
 		title: "Elapsed Time",
-		placeholder: "HH:MM:SS",
+		placeholder: "HH:MM:SS (defaults to workout time)",
 	});
 	if (elapsedTimePrompt.cancelled) return;
 	const elapsedTime = elapsedTimePrompt.value.trim();
-	if (!/^\d{1,2}:\d{2}:\d{2}$/.test(elapsedTime)) {
+	if (elapsedTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(elapsedTime)) {
 		new Notice("Elapsed time must be in HH:MM:SS format");
 		return;
 	}
@@ -110,7 +110,9 @@ export const addRun = async (app: App): Promise<void> => {
 	}
 
 	const workoutSeconds = parseTimeToSeconds(workoutTime);
-	const elapsedSeconds = parseTimeToSeconds(elapsedTime);
+	const elapsedSeconds = elapsedTime
+		? parseTimeToSeconds(elapsedTime)
+		: workoutSeconds;
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${runType}]]`;
