@@ -12,6 +12,7 @@ const RUN_TYPES = [
 	"Time Trial Run",
 	"Threshold Run",
 	"Park Run",
+	"Race",
 ] as const;
 
 type RunType = (typeof RUN_TYPES)[number];
