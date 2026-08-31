@@ -1,6 +1,6 @@
 import { App, Modal, moment } from "obsidian";
 
-const DAYS_HEADER = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const DAYS_HEADER = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 export class DatePickerModal extends Modal {
 	private resolve: ((value: string | null) => void) | null = null;
@@ -126,7 +126,7 @@ export class DatePickerModal extends Modal {
 		}
 
 		const startOfMonth = this.currentMonth.clone().startOf("month");
-		const startDay = startOfMonth.day();
+		const startDay = (startOfMonth.day() + 6) % 7;
 		const daysInMonth = this.currentMonth.daysInMonth();
 		const today = moment().startOf("day");
 
