@@ -45,17 +45,6 @@ export const addRun = async (app: App): Promise<void> => {
 	const date = await DatePickerModal.show(app);
 	if (!date) return;
 
-	const distancePrompt = await TextInputModal.show(app, {
-		title: "Distance (km)",
-		placeholder: "21.1",
-	});
-	if (distancePrompt.cancelled) return;
-	const distance = distancePrompt.value.trim();
-	if (!distance || !/^\d+(\.\d+)?$/.test(distance)) {
-		new Notice("Distance must be a number (e.g. 21.1)");
-		return;
-	}
-
 	const workoutTimePrompt = await TextInputModal.show(app, {
 		title: "Workout Time",
 		placeholder: "HH:MM:SS",
@@ -75,6 +64,17 @@ export const addRun = async (app: App): Promise<void> => {
 	const elapsedTime = elapsedTimePrompt.value.trim();
 	if (elapsedTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(elapsedTime)) {
 		new Notice("Elapsed time must be in HH:MM:SS format");
+		return;
+	}
+
+	const distancePrompt = await TextInputModal.show(app, {
+		title: "Distance (km)",
+		placeholder: "21.1",
+	});
+	if (distancePrompt.cancelled) return;
+	const distance = distancePrompt.value.trim();
+	if (!distance || !/^\d+(\.\d+)?$/.test(distance)) {
+		new Notice("Distance must be a number (e.g. 21.1)");
 		return;
 	}
 
