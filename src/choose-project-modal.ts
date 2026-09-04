@@ -10,5 +10,9 @@ export function showProjectSelector(
 		items: projects ?? [],
 		placeholder: "Select a project...",
 		getText: (project) => `${project.context} -> ${project.name}`,
+		getSearchText: (project) =>
+			`${project.context} -> ${project.name} ${project.jiraId}`,
+		getBadges: (project) =>
+			project.jiraId ? [project.jiraId] : [],
 	});
 }
