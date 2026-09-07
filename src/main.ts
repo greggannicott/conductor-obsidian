@@ -44,7 +44,7 @@ import {
 } from "./commands/open-task";
 import {
 	copyRelatedLinearId,
-	copyParentProjectJiraURL,
+	copyRelatedLinearURL,
 } from "./commands/jira";
 import { openRelatedLinearTicket } from "./commands/linear";
 import { TaskStatus, TaskPriority } from "./tasks";
@@ -60,12 +60,10 @@ import { createFilesMenuHandler } from "./events/files-menu";
 import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links";
 
 interface ConductorSettings {
-	jiraBaseUrl?: string;
 	linearBaseUrl?: string;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
-	jiraBaseUrl: "https://jira.syncsort.com",
 	linearBaseUrl: "https://linear.app/precisely",
 };
 
@@ -275,10 +273,10 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "copy-parent-project-jira-url",
-			name: "Copy Parent Project's Jira URL",
+			id: "copy-related-linear-url",
+			name: "Copy Related Linear URL",
 			callback: () =>
-				copyParentProjectJiraURL(this.app, this.settings.jiraBaseUrl),
+				copyRelatedLinearURL(this.app, this.settings.linearBaseUrl),
 		});
 
 		this.addCommand({

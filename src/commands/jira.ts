@@ -1,16 +1,6 @@
 import { App } from "obsidian";
-import { getActiveProjectJiraId, getRelatedTicketId } from "src/projects";
-
-export const openParentProjectJiraTicket = (
-	app: App,
-	jiraBaseUrl?: string,
-): void => {
-	const jiraId = getActiveProjectJiraId(app);
-	if (!jiraId) return;
-
-	const jiraUrl = buildJiraUrl(jiraId, jiraBaseUrl);
-	window.open(jiraUrl, "_blank");
-};
+import { getRelatedTicketId } from "src/projects";
+import { buildLinearUrl } from "./linear";
 
 export const copyRelatedLinearId = (app: App): void => {
 	const ticketId = getRelatedTicketId(app);
@@ -19,21 +9,13 @@ export const copyRelatedLinearId = (app: App): void => {
 	navigator.clipboard.writeText(ticketId);
 };
 
-export const copyParentProjectJiraURL = (
+export const copyRelatedLinearURL = (
 	app: App,
-	jiraBaseUrl?: string,
+	linearBaseUrl?: string,
 ): void => {
-	const jiraId = getActiveProjectJiraId(app);
-	if (!jiraId) return;
+	const ticketId = getRelatedTicketId(app);
+	if (!ticketId) return;
 
-	const jiraUrl = buildJiraUrl(jiraId, jiraBaseUrl);
-	navigator.clipboard.writeText(jiraUrl);
+	const linearUrl = buildLinearUrl(ticketId, linearBaseUrl);
+	navigator.clipboard.writeText(linearUrl);
 };
-
-function buildJiraUrl(
-	jiraId: string,
-	jiraBaseUrl?: string,
-): string {
-	const baseUrl = jiraBaseUrl || "https://jira.syncsort.com";
-	return `${baseUrl}/browse/${jiraId}`;
-}

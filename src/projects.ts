@@ -71,15 +71,6 @@ export function getActiveProject(app: App): Project | null {
 	return activeProject;
 }
 
-// Get the Jira ID of the currently active project
-export function getActiveProjectJiraId(app: App): string | null {
-	const activeProject = getActiveProject(app);
-	if (!activeProject?.jiraId) {
-		return null;
-	}
-	return activeProject.jiraId;
-}
-
 // Get the ticket ID for the active file: the task's jira-id if present,
 // otherwise the parent project's jira-id.
 export function getRelatedTicketId(app: App): string | null {

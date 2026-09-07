@@ -15,7 +15,7 @@ export const openRelatedLinearTicket = (
 	window.open(linearUrl, "_blank");
 };
 
-function buildLinearUrl(ticketId: string, linearBaseUrl?: string): string {
+export function buildLinearUrl(ticketId: string, linearBaseUrl?: string): string {
 	const baseUrl = linearBaseUrl || "https://linear.app/precisely";
 	return `${baseUrl}/issue/${ticketId}`;
 }
