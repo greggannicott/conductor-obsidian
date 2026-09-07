@@ -1,35 +1,26 @@
 import { App, Notice, TFile } from "obsidian";
 import { TextInputModal } from "src/text-input-modal";
 import { getActiveTask } from "src/tasks";
+import { isActiveFileTask } from "src/utilities";
 
 export function isTaskImpedeable(app: App): boolean {
+	if (!isActiveFileTask(app)) return false;
 	const activeFile = app.workspace.activeEditor?.file;
-	if (!activeFile) return false;
-	const metadata = app.metadataCache.getFileCache(activeFile);
-	const categories = metadata?.frontmatter?.categories;
-	const isTask =
-		categories &&
-		Array.isArray(categories) &&
-		categories.includes("[[Task]]");
-	if (!isTask) return false;
-	const isImpeded = metadata?.frontmatter?.impeded === true;
-	if (isImpeded) return false;
-	return true;
+	const isImpeded = Boolean(
+		activeFile &&
+			app.metadataCache.getFileCache(activeFile)?.frontmatter?.impeded === true,
+	);
+	return !isImpeded;
 }
 
 export function isTaskUnimpedeable(app: App): boolean {
+	if (!isActiveFileTask(app)) return false;
 	const activeFile = app.workspace.activeEditor?.file;
-	if (!activeFile) return false;
-	const metadata = app.metadataCache.getFileCache(activeFile);
-	const categories = metadata?.frontmatter?.categories;
-	const isTask =
-		categories &&
-		Array.isArray(categories) &&
-		categories.includes("[[Task]]");
-	if (!isTask) return false;
-	const isImpeded = metadata?.frontmatter?.impeded === true;
-	if (!isImpeded) return false;
-	return true;
+	const isImpeded = Boolean(
+		activeFile &&
+			app.metadataCache.getFileCache(activeFile)?.frontmatter?.impeded === true,
+	);
+	return isImpeded;
 }
 
 export async function impedeActiveTask(app: App): Promise<void> {

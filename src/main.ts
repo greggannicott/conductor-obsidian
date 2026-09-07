@@ -54,6 +54,7 @@ import {
 	removeTag,
 	toggleTag,
 	isActiveFileProject,
+	isActiveFileTask,
 } from "./utilities";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
@@ -133,41 +134,47 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => void showCreateTaskForAnyProjectFlow(this.app),
 		});
 
-		this.addCommand({
-			id: "set-task-to-todo",
-			name: "Set Task Status to '⭕ 01 - To Do'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.ToDo),
-		});
+		this.addCheckedCommand(
+			"set-task-to-todo",
+			"Set Task Status to '⭕ 01 - To Do'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.ToDo),
+		);
 
-		this.addCommand({
-			id: "set-task-to-in-progress",
-			name: "Set Task Status to '🔄 02 - In Progress'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.InProgress),
-		});
+		this.addCheckedCommand(
+			"set-task-to-in-progress",
+			"Set Task Status to '🔄 02 - In Progress'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.InProgress),
+		);
 
-		this.addCommand({
-			id: "set-task-to-doing",
-			name: "Set Task Status to '🔄 02 - Doing'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.InProgress),
-		});
+		this.addCheckedCommand(
+			"set-task-to-doing",
+			"Set Task Status to '🔄 02 - Doing'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.InProgress),
+		);
 
-		this.addCommand({
-			id: "set-task-to-done",
-			name: "Set Task Status to '✅ 03 - Done'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.Done),
-		});
+		this.addCheckedCommand(
+			"set-task-to-done",
+			"Set Task Status to '✅ 03 - Done'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.Done),
+		);
 
-		this.addCommand({
-			id: "set-task-to-abandoned",
-			name: "Set Task Status to '❌ 04 - Abandoned'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.Abandoned),
-		});
+		this.addCheckedCommand(
+			"set-task-to-abandoned",
+			"Set Task Status to '❌ 04 - Abandoned'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.Abandoned),
+		);
 
-		this.addCommand({
-			id: "set-task-to-wont-do",
-			name: "Set Task Status to '🙅🏼‍♂️ 05 - Won't Do'",
-			callback: () => setActiveTaskStatus(this.app, TaskStatus.WontDo),
-		});
+		this.addCheckedCommand(
+			"set-task-to-wont-do",
+			"Set Task Status to '🙅🏼‍♂️ 05 - Won't Do'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskStatus(this.app, TaskStatus.WontDo),
+		);
 
 		this.addCheckedCommand(
 			"set-project-to-todo",
@@ -237,23 +244,26 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => void createNewNotesFromBullets(this.app),
 		});
 
-		this.addCommand({
-			id: "set-task-to-high-priority",
-			name: "Set Task Priority to '🔴 01 - High'",
-			callback: () => setActiveTaskPriority(this.app, TaskPriority.High),
-		});
+		this.addCheckedCommand(
+			"set-task-to-high-priority",
+			"Set Task Priority to '🔴 01 - High'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskPriority(this.app, TaskPriority.High),
+		);
 
-		this.addCommand({
-			id: "set-task-to-medium-priority",
-			name: "Set Task Priority to '🟡 02 - Medium'",
-			callback: () => setActiveTaskPriority(this.app, TaskPriority.Medium),
-		});
+		this.addCheckedCommand(
+			"set-task-to-medium-priority",
+			"Set Task Priority to '🟡 02 - Medium'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskPriority(this.app, TaskPriority.Medium),
+		);
 
-		this.addCommand({
-			id: "set-task-to-low-priority",
-			name: "Set Task Priority to '🟢 03 - Low'",
-			callback: () => setActiveTaskPriority(this.app, TaskPriority.Low),
-		});
+		this.addCheckedCommand(
+			"set-task-to-low-priority",
+			"Set Task Priority to '🟢 03 - Low'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskPriority(this.app, TaskPriority.Low),
+		);
 
 		for (const tagName of ["inbox", "reflected", "review"]) {
 			this.addActiveFileTagCommands(tagName);
@@ -316,11 +326,12 @@ export default class ConductorObsidian extends Plugin {
 			},
 		);
 
-		this.addCommand({
-			id: "touch-task",
-			name: "Touch Task",
-			callback: () => void touchTask(this.app),
-		});
+		this.addCheckedCommand(
+			"touch-task",
+			"Touch Task",
+			() => isActiveFileTask(this.app),
+			() => void touchTask(this.app),
+		);
 
 		this.addCommand({
 			id: "insert-task-links",

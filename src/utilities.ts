@@ -221,3 +221,15 @@ export function isActiveFileProject(app: App): boolean {
 		categories.includes("[[Project]]")
 	);
 }
+
+export function isActiveFileTask(app: App): boolean {
+	const activeFile = app.workspace.activeEditor?.file;
+	if (!activeFile) return false;
+	const metadata = app.metadataCache.getFileCache(activeFile);
+	const categories = metadata?.frontmatter?.categories;
+	return (
+		categories &&
+		Array.isArray(categories) &&
+		categories.includes("[[Task]]")
+	);
+}
