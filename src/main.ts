@@ -43,10 +43,10 @@ import {
 	openInProgressTaskFromInProgressProject,
 } from "./commands/open-task";
 import {
-	openParentProjectJiraTicket,
 	copyParentProjectJiraId,
 	copyParentProjectJiraURL,
 } from "./commands/jira";
+import { openRelatedLinearTicket } from "./commands/linear";
 import { TaskStatus, TaskPriority } from "./tasks";
 import { ProjectStatus } from "./projects";
 import {
@@ -61,10 +61,12 @@ import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links
 
 interface ConductorSettings {
 	jiraBaseUrl?: string;
+	linearBaseUrl?: string;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
 	jiraBaseUrl: "https://jira.syncsort.com",
+	linearBaseUrl: "https://linear.app/precisely",
 };
 
 export default class ConductorObsidian extends Plugin {
@@ -260,10 +262,10 @@ export default class ConductorObsidian extends Plugin {
 		}
 
 		this.addCommand({
-			id: "open-parent-project-jira-ticket",
-			name: "Open Parent Project's Jira Ticket",
+			id: "open-related-linear-ticket",
+			name: "Open Related Linear Ticket",
 			callback: () =>
-				openParentProjectJiraTicket(this.app, this.settings.jiraBaseUrl),
+				openRelatedLinearTicket(this.app, this.settings.linearBaseUrl),
 		});
 
 		this.addCommand({
