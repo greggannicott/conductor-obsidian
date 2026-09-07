@@ -1,6 +1,5 @@
 import { App, Notice } from "obsidian";
-import { getActiveTask } from "src/tasks";
-import { getActiveProject } from "src/projects";
+import { getRelatedTicketId } from "src/projects";
 
 export const openRelatedLinearTicket = (
 	app: App,
@@ -15,20 +14,6 @@ export const openRelatedLinearTicket = (
 	const linearUrl = buildLinearUrl(ticketId, linearBaseUrl);
 	window.open(linearUrl, "_blank");
 };
-
-// Find the ticket to open: the active task's jira-id if present,
-// otherwise the parent project's jira-id.
-function getRelatedTicketId(app: App): string | null {
-	const activeTask = getActiveTask(app);
-	if (activeTask?.jiraId) {
-		return activeTask.jiraId;
-	}
-	const activeProject = getActiveProject(app);
-	if (activeProject?.jiraId) {
-		return activeProject.jiraId;
-	}
-	return null;
-}
 
 function buildLinearUrl(ticketId: string, linearBaseUrl?: string): string {
 	const baseUrl = linearBaseUrl || "https://linear.app/precisely";

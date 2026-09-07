@@ -43,7 +43,7 @@ import {
 	openInProgressTaskFromInProgressProject,
 } from "./commands/open-task";
 import {
-	copyParentProjectJiraId,
+	copyRelatedLinearId,
 	copyParentProjectJiraURL,
 } from "./commands/jira";
 import { openRelatedLinearTicket } from "./commands/linear";
@@ -269,9 +269,9 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
-			id: "copy-parent-project-jira-id",
-			name: "Copy Parent Project's Jira ID",
-			callback: () => copyParentProjectJiraId(this.app),
+			id: "copy-related-linear-id",
+			name: "Copy Related Linear ID",
+			callback: () => copyRelatedLinearId(this.app),
 		});
 
 		this.addCommand({

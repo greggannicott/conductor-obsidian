@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { getTask } from "./tasks";
+import { getActiveTask, getTask } from "./tasks";
 import { Category, getCategory, getFilesFromProjectsFolderWithCategory } from "./utilities";
 
 export type Project = {
@@ -78,6 +78,20 @@ export function getActiveProjectJiraId(app: App): string | null {
 		return null;
 	}
 	return activeProject.jiraId;
+}
+
+// Get the ticket ID for the active file: the task's jira-id if present,
+// otherwise the parent project's jira-id.
+export function getRelatedTicketId(app: App): string | null {
+	const activeTask = getActiveTask(app);
+	if (activeTask?.jiraId) {
+		return activeTask.jiraId;
+	}
+	const activeProject = getActiveProject(app);
+	if (activeProject?.jiraId) {
+		return activeProject.jiraId;
+	}
+	return null;
 }
 
 // Get a list of projects.

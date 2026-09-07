@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { getActiveProjectJiraId } from "src/projects";
+import { getActiveProjectJiraId, getRelatedTicketId } from "src/projects";
 
 export const openParentProjectJiraTicket = (
 	app: App,
@@ -12,11 +12,11 @@ export const openParentProjectJiraTicket = (
 	window.open(jiraUrl, "_blank");
 };
 
-export const copyParentProjectJiraId = (app: App): void => {
-	const jiraId = getActiveProjectJiraId(app);
-	if (!jiraId) return;
+export const copyRelatedLinearId = (app: App): void => {
+	const ticketId = getRelatedTicketId(app);
+	if (!ticketId) return;
 
-	navigator.clipboard.writeText(jiraId);
+	navigator.clipboard.writeText(ticketId);
 };
 
 export const copyParentProjectJiraURL = (
