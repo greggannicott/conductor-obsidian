@@ -270,6 +270,15 @@ export default class ConductorObsidian extends Plugin {
 		}
 
 		this.addCommand({
+			id: "add-details-migrated-tag",
+			name: "Add #details-migrated Tag",
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) addTag(this.app, file, "details-migrated");
+			},
+		});
+
+		this.addCommand({
 			id: "open-related-linear-ticket",
 			name: "Open Related Linear Ticket",
 			callback: () =>

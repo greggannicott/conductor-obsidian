@@ -120,6 +120,18 @@ export function createFileMenuHandler(app: App) {
 
 		if (
 			file.extension === "md" &&
+			!file.path.startsWith("_templates/")
+		) {
+			menu.addItem((item) => {
+				item.setTitle("Add '#details-migrated' Tag");
+				item.onClick(() => {
+					addTag(app, file, "details-migrated");
+				});
+			});
+		}
+
+		if (
+			file.extension === "md" &&
 			!isTask &&
 			!isProject &&
 			!file.path.startsWith("_templates/")
