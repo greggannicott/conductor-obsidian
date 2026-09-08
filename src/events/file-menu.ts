@@ -128,6 +128,13 @@ export function createFileMenuHandler(app: App) {
 					addTag(app, file, "details-migrated");
 				});
 			});
+
+			menu.addItem((item) => {
+				item.setTitle("Add '#reason-done' Tag");
+				item.onClick(() => {
+					addTag(app, file, "reason-done");
+				});
+			});
 		}
 
 		if (

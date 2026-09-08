@@ -279,6 +279,15 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.addCommand({
+			id: "add-reason-done-tag",
+			name: "Add #reason-done Tag",
+			callback: () => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) addTag(this.app, file, "reason-done");
+			},
+		});
+
+		this.addCommand({
 			id: "open-related-linear-ticket",
 			name: "Open Related Linear Ticket",
 			callback: () =>
