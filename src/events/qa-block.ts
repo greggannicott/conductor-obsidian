@@ -1,5 +1,6 @@
 import { EditorView } from "@codemirror/view";
 import {
+	App,
 	MarkdownView,
 	Plugin,
 	TFile,
@@ -151,7 +152,7 @@ function renderQA(pairs: QAPair[], container: HTMLElement): void {
 // ── Registration ──────────────────────────────────────────────────────
 
 function renderForFile(
-	app: { vault: { read: (f: TFile) => Promise<string> } },
+	app: App,
 	filePath: string,
 	containers: Set<HTMLElement>,
 ): void {
