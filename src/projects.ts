@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import { getActiveTask, getTask } from "./tasks";
+import { getTask } from "./tasks";
 import { Category, getCategory, getFilesFromProjectsFolderWithCategory } from "./utilities";
 
 export type Project = {
@@ -74,13 +74,32 @@ export function getActiveProject(app: App): Project | null {
 // Get the ticket ID for the active file: the task's jira-id if present,
 // otherwise the parent project's jira-id.
 export function getRelatedTicketId(app: App): string | null {
-	const activeTask = getActiveTask(app);
-	if (activeTask?.jiraId) {
-		return activeTask.jiraId;
-	}
-	const activeProject = getActiveProject(app);
-	if (activeProject?.jiraId) {
-		return activeProject.jiraId;
+	const activeFile = app.workspace.activeEditor?.file;
+	if (!activeFile) return null;
+	return getRelatedTicketIdForFile(app, activeFile);
+}
+
+// Get the ticket ID for a specific task or project file: the task's jira-id if
+// present, otherwise the parent project's jira-id.
+export function getRelatedTicketIdForFile(
+	app: App,
+	file: TFile,
+): string | null {
+	const category = getCategory(app, file);
+	if (category === Category.Task) {
+		const task = getTask(app, file.path);
+		if (task?.jiraId) {
+			return task.jiraId;
+		}
+		const project = task?.parents[0];
+		if (project?.jiraId) {
+			return project.jiraId;
+		}
+	} else if (category === Category.Project) {
+		const project = getProjectFromFile(app, file);
+		if (project?.jiraId) {
+			return project.jiraId;
+		}
 	}
 	return null;
 }

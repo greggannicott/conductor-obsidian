@@ -8,6 +8,7 @@ import {
 } from "../tasks";
 import {
 	getProjectFromFile,
+	getRelatedTicketIdForFile,
 	ProjectStatus,
 	outstandingProjectTypes,
 } from "../projects";
@@ -17,8 +18,9 @@ import { setTaskPriority } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
 import { setProjectStatus } from "../commands/set-status";
 import { convertNoteToTask } from "../commands/convert-note-to-task";
+import { openRelatedLinearTicketForFile } from "../commands/linear";
 
-export function createFileMenuHandler(app: App) {
+export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 	return (menu: Menu, file: TFile) => {
 		if (!(file instanceof TFile)) return;
 
@@ -102,6 +104,19 @@ export function createFileMenuHandler(app: App) {
 					});
 				});
 			});
+		}
+
+		if (isTask || isProject) {
+			const ticketId = getRelatedTicketIdForFile(app, file);
+
+			if (ticketId) {
+				menu.addItem((item) => {
+					item.setTitle("Open Related Linear Ticket");
+					item.onClick(() => {
+						openRelatedLinearTicketForFile(app, file, linearBaseUrl);
+					});
+				});
+			}
 		}
 
 		const isJournal =

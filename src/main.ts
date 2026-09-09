@@ -388,7 +388,10 @@ export default class ConductorObsidian extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on("file-menu", createFileMenuHandler(this.app)),
+			this.app.workspace.on(
+				"file-menu",
+				createFileMenuHandler(this.app, this.settings.linearBaseUrl),
+			),
 		);
 
 		this.registerEvent(
