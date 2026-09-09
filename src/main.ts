@@ -59,6 +59,7 @@ import {
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
 import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links";
+import { registerQABlock } from "./events/qa-block";
 
 interface ConductorSettings {
 	linearBaseUrl?: string;
@@ -402,6 +403,7 @@ export default class ConductorObsidian extends Plugin {
 		);
 
 		registerTaskLinkStrikethrough(this);
+		registerQABlock(this);
 	}
 
 	private addCheckedCommand(

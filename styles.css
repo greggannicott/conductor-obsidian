@@ -222,3 +222,12 @@ If your plugin does not need CSS, delete this file.
 .conductor-dp-today-btn:hover {
 	background-color: var(--background-modifier-hover);
 }
+
+/* Project overview QA block */
+.conductor-qa-block h3 {
+	margin-bottom: 0.25em;
+}
+
+.conductor-qa-block p {
+	margin-top: 0;
+}
