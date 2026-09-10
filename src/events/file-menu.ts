@@ -13,6 +13,7 @@ import {
 	outstandingProjectTypes,
 } from "../projects";
 import { addTag, getStatusDisplay, getPriorityDisplay } from "../utilities";
+import { addListen } from "../commands/add-listen";
 import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
@@ -129,6 +130,20 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 				item.setTitle("Add '#reflected' Tag");
 				item.onClick(() => {
 					addTag(app, file, "reflected");
+				});
+			});
+		}
+
+		const isMusicRelease =
+			categories &&
+			Array.isArray(categories) &&
+			categories.includes("[[Music Release]]");
+
+		if (isMusicRelease) {
+			menu.addItem((item) => {
+				item.setTitle("Add Listen");
+				item.onClick(() => {
+					void addListen(app, file);
 				});
 			});
 		}
