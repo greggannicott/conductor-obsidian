@@ -12,6 +12,8 @@ export type ConductorSelectorOptions<T> = {
 	items: T[];
 	placeholder?: string;
 	emptyText?: string;
+	// Pre-fills the search input on open.
+	initialValue?: string;
 	getText: (item: T) => string;
 	// Text the query is matched against; defaults to getText.
 	getSearchText?: (item: T) => string;
@@ -75,6 +77,10 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 	onOpen(): void {
 		super.onOpen();
 		this.applyInstructionHighlight();
+		if (this.options.initialValue) {
+			this.inputEl.value = this.options.initialValue;
+			this.inputEl.dispatchEvent(new Event("input"));
+		}
 		this.handleToggleKeydown = (e: KeyboardEvent) => {
 			if (e.isComposing) return;
 

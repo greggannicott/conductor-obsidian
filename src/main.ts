@@ -24,7 +24,7 @@ import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
 import { addRun } from "./commands/add-run";
-import { addListen } from "./commands/add-listen";
+import { addListen, showAddListen } from "./commands/add-listen";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -329,19 +329,7 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "add-listen",
 			name: "Add Listen",
-			checkCallback: (checking: boolean) => {
-				const file = this.app.workspace.activeEditor?.file;
-				if (!file) return false;
-				const metadata = this.app.metadataCache.getFileCache(file);
-				const categories = metadata?.frontmatter?.categories;
-				const isMusicRelease =
-					categories &&
-					Array.isArray(categories) &&
-					categories.includes("[[Music Release]]");
-				if (!isMusicRelease) return false;
-				if (!checking) void addListen(this.app, file);
-				return true;
-			},
+			callback: () => void showAddListen(this.app),
 		});
 
 		this.addCommand({

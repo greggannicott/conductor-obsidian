@@ -1,5 +1,6 @@
 import { App, Notice, TFile } from "obsidian";
-import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
+import { ConductorSelectorModal } from "src/conductor-selector-modal";
+import { createFileFromTemplate, getFilesWithCategory, sanitizeFileName } from "src/utilities";
 
 function formatDateTime(date: Date): string {
 	const pad = (n: number) => String(n).padStart(2, "0");
@@ -21,6 +22,62 @@ function getUniqueFilePath(app: App, basePath: string): string {
 	}
 	return filePath;
 }
+
+function getReleaseTitle(app: App, file: TFile): string {
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const title = frontmatter?.title;
+	return typeof title === "string" && title.trim()
+		? title.trim()
+		: file.basename;
+}
+
+function getArtists(app: App, file: TFile): string {
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const artists = frontmatter?.artists;
+	if (!Array.isArray(artists)) return "";
+	return artists
+		.map((artist) => String(artist).replace(/^\[\[|\]\]$/g, "").trim())
+		.filter(Boolean)
+		.join(", ");
+}
+
+export const showAddListen = async (app: App): Promise<void> => {
+	const releases = getFilesWithCategory(app, "Music Release");
+	if (releases.length === 0) {
+		new Notice("No music releases found");
+		return;
+	}
+	releases.sort((a, b) =>
+		getReleaseTitle(app, a).localeCompare(getReleaseTitle(app, b)),
+	);
+
+	let initialValue: string | undefined;
+	const activeFile = app.workspace.activeEditor?.file;
+	if (activeFile) {
+		const metadata = app.metadataCache.getFileCache(activeFile);
+		const categories = metadata?.frontmatter?.categories;
+		const isMusicRelease =
+			categories &&
+			Array.isArray(categories) &&
+			categories.includes("[[Music Release]]");
+		if (isMusicRelease) {
+			initialValue = getReleaseTitle(app, activeFile);
+		}
+	}
+
+	const selected = await ConductorSelectorModal.show(app, {
+		items: releases,
+		placeholder: "Select a music release...",
+		initialValue,
+		getText: (file) => getReleaseTitle(app, file),
+		getSubtext: (file) => {
+			const artists = getArtists(app, file);
+			return artists ? artists : null;
+		},
+	});
+	if (!selected) return;
+	await addListen(app, selected);
+};
 
 export const addListen = async (app: App, file: TFile): Promise<void> => {
 	await app.fileManager.processFrontMatter(file, (fm) => {
