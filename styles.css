@@ -222,3 +222,27 @@ If your plugin does not need CSS, delete this file.
 .conductor-dp-today-btn:hover {
 	background-color: var(--background-modifier-hover);
 }
+
+.zone-times-rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+}
+
+.zone-times-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+}
+
+.zone-times-label {
+	flex: 0 0 150px;
+	font-size: var(--font-ui-small);
+}
+
+.zone-times-hint {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin-top: var(--size-4-2);
+}

@@ -2,6 +2,7 @@ import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { DatePickerModal } from "src/date-picker-modal";
+import { ZoneTimesModal } from "src/zone-times-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 
 const RUN_TYPES = [
@@ -19,9 +20,9 @@ type RunType = (typeof RUN_TYPES)[number];
 
 function parseTimeToSeconds(time: string): number {
 	const parts = time.split(":");
-	const hours = parseInt(parts[0], 10);
-	const minutes = parseInt(parts[1], 10);
-	const seconds = parseInt(parts[2], 10);
+	const hours = parts.length > 2 ? parseInt(parts[0], 10) : 0;
+	const minutes = parseInt(parts.length > 2 ? parts[1] : parts[0], 10);
+	const seconds = parseInt(parts.length > 2 ? parts[2] : parts[1], 10);
 	return hours * 3600 + minutes * 60 + seconds;
 }
 
@@ -101,6 +102,26 @@ export const addRun = async (app: App): Promise<void> => {
 		return;
 	}
 
+	const zoneTimes = await ZoneTimesModal.show(app);
+	if (zoneTimes.cancelled) return;
+	const zoneTimesInSeconds = zoneTimes.values.map((value) => {
+		const trimmed = value.trim();
+		if (trimmed === "0") return 0;
+		if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+			return null;
+		}
+		return parseTimeToSeconds(trimmed);
+	});
+	const invalidZoneIndex = zoneTimesInSeconds.findIndex(
+		(seconds) => seconds === null,
+	);
+	if (invalidZoneIndex !== -1) {
+		new Notice(
+			`Time In Zone ${invalidZoneIndex + 1} must be in MM:SS or HH:MM:SS format`,
+		);
+		return;
+	}
+
 	const fileName = `${date} - ${runType}.md`;
 	const filePath = getUniqueFilePath(app, sanitizeFileName(fileName));
 
@@ -123,6 +144,9 @@ export const addRun = async (app: App): Promise<void> => {
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
 		fm["average-pace"] = parseFloat(pace);
 		fm["average-heart-rate"] = parseInt(heartRate, 10);
+		for (let i = 0; i < zoneTimesInSeconds.length; i++) {
+			fm[`time-in-zone-${i + 1}-in-seconds`] = zoneTimesInSeconds[i];
+		}
 	});
 
 	await app.workspace.getLeaf(false).openFile(file);
