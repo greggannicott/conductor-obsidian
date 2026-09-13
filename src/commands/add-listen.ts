@@ -106,6 +106,6 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		fm["date-time"] = dateTime;
 	});
 
-	await app.workspace.getLeaf(false).openFile(listenFile);
+	await app.workspace.getLeaf(false).openFile(file);
 	new Notice(`Created listen note: ${listenFile.basename}`);
 };
