@@ -80,6 +80,17 @@ export const addRun = async (app: App): Promise<void> => {
 		return;
 	}
 
+	const elevationGainPrompt = await TextInputModal.show(app, {
+		title: "Elevation Gain (meters)",
+		placeholder: "250 or -50",
+	});
+	if (elevationGainPrompt.cancelled) return;
+	const elevationGain = elevationGainPrompt.value.trim();
+	if (!elevationGain || !/^-?\d+(\.\d+)?$/.test(elevationGain)) {
+		new Notice("Elevation gain must be a number (e.g. 250 or -50)");
+		return;
+	}
+
 	const pacePrompt = await TextInputModal.show(app, {
 		title: "Average Pace (/km)",
 		placeholder: "5.30",
@@ -140,6 +151,7 @@ export const addRun = async (app: App): Promise<void> => {
 		fm["run-type"] = `[[${runType}]]`;
 		fm["date-of-event"] = date;
 		fm["distance"] = parseFloat(distance);
+		fm["elevation-gain"] = parseFloat(elevationGain);
 		fm["workout-time-in-seconds"] = workoutSeconds;
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
 		fm["average-pace"] = parseFloat(pace);
