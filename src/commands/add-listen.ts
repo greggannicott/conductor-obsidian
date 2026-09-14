@@ -1,6 +1,16 @@
 import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
-import { createFileFromTemplate, getFilesWithCategory, sanitizeFileName } from "src/utilities";
+import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
+import {
+	getArtists,
+	getMusicReleases,
+	getReleaseFile,
+	getReleaseTitle,
+} from "src/music-release";
+import {
+	getBacklogItemReleaseName,
+	markBacklogItemsListened,
+} from "src/backlog";
 
 function formatDateTime(date: Date): string {
 	const pad = (n: number) => String(n).padStart(2, "0");
@@ -23,33 +33,12 @@ function getUniqueFilePath(app: App, basePath: string): string {
 	return filePath;
 }
 
-function getReleaseTitle(app: App, file: TFile): string {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const title = frontmatter?.title;
-	return typeof title === "string" && title.trim()
-		? title.trim()
-		: file.basename;
-}
-
-function getArtists(app: App, file: TFile): string {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const artists = frontmatter?.artists;
-	if (!Array.isArray(artists)) return "";
-	return artists
-		.map((artist) => String(artist).replace(/^\[\[|\]\]$/g, "").trim())
-		.filter(Boolean)
-		.join(", ");
-}
-
 export const showAddListen = async (app: App): Promise<void> => {
-	const releases = getFilesWithCategory(app, "Music Release");
+	const releases = getMusicReleases(app);
 	if (releases.length === 0) {
 		new Notice("No music releases found");
 		return;
 	}
-	releases.sort((a, b) =>
-		getReleaseTitle(app, a).localeCompare(getReleaseTitle(app, b)),
-	);
 
 	let initialValue: string | undefined;
 	const activeFile = app.workspace.activeEditor?.file;
@@ -62,6 +51,20 @@ export const showAddListen = async (app: App): Promise<void> => {
 			categories.includes("[[Music Release]]");
 		if (isMusicRelease) {
 			initialValue = getReleaseTitle(app, activeFile);
+		}
+
+		const isBacklogItem =
+			categories &&
+			Array.isArray(categories) &&
+			categories.includes("[[Backlog Item]]");
+		if (isBacklogItem) {
+			const releaseName = getBacklogItemReleaseName(app, activeFile);
+			if (releaseName) {
+				const release = getReleaseFile(app, releaseName, activeFile.path);
+				if (release) {
+					initialValue = getReleaseTitle(app, release);
+				}
+			}
 		}
 	}
 
@@ -105,6 +108,11 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		fm["music-release"] = `[[${file.basename}]]`;
 		fm["date-time"] = dateTime;
 	});
+
+	const markedCount = await markBacklogItemsListened(app, file.basename);
+	if (markedCount > 0) {
+		new Notice(`Marked ${markedCount} backlog item(s) as listened`);
+	}
 
 	await app.workspace.getLeaf(false).openFile(file);
 	new Notice(`Created listen note: ${listenFile.basename}`);

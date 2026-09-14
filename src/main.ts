@@ -26,6 +26,7 @@ import { openNoteByCategory } from "./commands/open-link-by-category";
 import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
 import { addListen, showAddListen } from "./commands/add-listen";
+import { showAddToBacklog } from "./commands/add-to-backlog";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -337,6 +338,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-listen",
 			name: "Add Listen",
 			callback: () => void showAddListen(this.app),
+		});
+
+		this.addCommand({
+			id: "add-to-backlog",
+			name: "Add to Listening Backlog",
+			callback: () => void showAddToBacklog(this.app),
 		});
 
 		this.addCommand({

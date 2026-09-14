@@ -1,7 +1,6 @@
 import { App, Menu, Notice, TFile } from "obsidian";
 import {
 	getTask,
-	TaskStatus,
 	TASK_STATUSES,
 	TASK_PRIORITIES,
 	outstandingTaskTypes,
@@ -14,6 +13,14 @@ import {
 } from "../projects";
 import { addTag, getStatusDisplay, getPriorityDisplay } from "../utilities";
 import { addListen } from "../commands/add-listen";
+import { showAddToBacklog } from "../commands/add-to-backlog";
+import { getReleaseFile } from "../music-release";
+import {
+	BacklogItemStatus,
+	getBacklogItemReleaseName,
+	getBacklogItemStatus,
+	setBacklogItemStatus,
+} from "../backlog";
 import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
 import { touchTaskFiles } from "../commands/touch-task";
@@ -146,6 +153,56 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 					void addListen(app, file);
 				});
 			});
+
+			menu.addItem((item) => {
+				item.setTitle("Add to Listening Backlog");
+				item.onClick(() => {
+					void showAddToBacklog(app, file);
+				});
+			});
+		}
+
+		const isBacklogItem =
+			categories &&
+			Array.isArray(categories) &&
+			categories.includes("[[Backlog Item]]");
+
+		if (isBacklogItem) {
+			const status = getBacklogItemStatus(app, file);
+			const isUnresolved =
+				status === null || status === BacklogItemStatus.ToListen;
+
+			if (isUnresolved) {
+				menu.addItem((item) => {
+					item.setTitle("Add Listen");
+					item.onClick(() => {
+						const releaseName = getBacklogItemReleaseName(app, file);
+						if (!releaseName) {
+							new Notice("Backlog item has no linked music release");
+							return;
+						}
+						const release = getReleaseFile(app, releaseName, file.path);
+						if (!release) {
+							new Notice(`Music release [${releaseName}] not found`);
+							return;
+						}
+						void addListen(app, release);
+					});
+				});
+
+				menu.addItem((item) => {
+					item.setTitle("Mark as Skipped");
+					item.onClick(() => {
+						void setBacklogItemStatus(
+							app,
+							file,
+							BacklogItemStatus.Skipped,
+						).then(() => {
+							new Notice("Backlog item marked as skipped");
+						});
+					});
+				});
+			}
 		}
 
 		if (

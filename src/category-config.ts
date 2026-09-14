@@ -4,6 +4,10 @@ import {
 	ConductorSelectorOptions,
 } from "./conductor-selector-modal";
 import { getTopicNamesForNote } from "./topics";
+import {
+	BACKLOG_ITEM_STATUSES,
+	getBacklogItemStatus,
+} from "./backlog";
 
 // Journal basenames look like "2026-08-21 1200 - Title" or "2026-02-15 1232 sprint at the end".
 const JOURNAL_TITLE_PATTERN = /^(\d{4}-\d{2}-\d{2}) (\d{4})(?: - )?(.*)$/;
@@ -277,6 +281,66 @@ const eventConfig: CategoryDisplayConfig = {
 	],
 };
 
+// --- Backlog Item config ---
+
+const dateAddedValue = (app: App, file: TFile): number => {
+	const date = getFrontmatterString(app, file, "date-added");
+	if (!date) return 0;
+	const value = moment(date, "YYYY-MM-DDTHH:mm:ss").valueOf();
+	return Number.isFinite(value) ? value : 0;
+};
+
+const backlogItemConfig: CategoryDisplayConfig = {
+	getText: (_app, file) => {
+		const match = file.basename.match(JOURNAL_TITLE_PATTERN);
+		return match?.[3]?.trim() || file.basename;
+	},
+	getSubtext: (app, file) => {
+		const reason = getFrontmatterString(app, file, "reason");
+		return reason ? reason : null;
+	},
+	getBadges: (app, file) => {
+		const badges: string[] = [];
+		const status = getBacklogItemStatus(app, file);
+		if (status) badges.push(status);
+		const dateAdded = getFrontmatterString(app, file, "date-added");
+		if (dateAdded) badges.push(dateAdded.substring(0, 10));
+		return badges;
+	},
+	sortItems: (app, a, b) => dateAddedValue(app, b) - dateAddedValue(app, a),
+	getGroupings: (app) => [
+		{
+			id: "status",
+			label: "By Status",
+			buildGroups: (files) => {
+				const buckets = new Map<string, TFile[]>();
+				for (const file of files) {
+					const status =
+						getBacklogItemStatus(app, file) ?? "Unknown";
+					if (!buckets.has(status)) buckets.set(status, []);
+					buckets.get(status)!.push(file);
+				}
+				const statusRank =
+					Object.fromEntries(
+						BACKLOG_ITEM_STATUSES.map((s, i) => [s, i]),
+					) as Record<string, number>;
+				return [...buckets.entries()]
+					.sort(([a], [b]) => {
+						const ra = statusRank[a] ?? Number.MAX_SAFE_INTEGER;
+						const rb = statusRank[b] ?? Number.MAX_SAFE_INTEGER;
+						return ra - rb;
+					})
+					.map(([status, bucket]) => ({
+						header: status,
+						items: bucket.sort(
+							(x, y) => dateAddedValue(app, x) - dateAddedValue(app, y),
+						),
+					}));
+			},
+		},
+	],
+};
+
 // --- Config lookup ---
 
 const CATEGORY_CONFIGS: Record<string, CategoryDisplayConfig> = {
@@ -284,6 +348,7 @@ const CATEGORY_CONFIGS: Record<string, CategoryDisplayConfig> = {
 	Experiment: experimentConfig,
 	Person: personConfig,
 	Event: eventConfig,
+	"Backlog Item": backlogItemConfig,
 };
 
 function getCategoryDisplayConfig(category: string): CategoryDisplayConfig {

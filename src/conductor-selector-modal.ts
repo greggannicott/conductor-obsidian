@@ -79,6 +79,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		this.applyInstructionHighlight();
 		if (this.options.initialValue) {
 			this.inputEl.value = this.options.initialValue;
+			this.inputEl.select();
 			this.inputEl.dispatchEvent(new Event("input"));
 		}
 		this.handleToggleKeydown = (e: KeyboardEvent) => {
