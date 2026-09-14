@@ -336,7 +336,7 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "add-listen",
-			name: "Add Listen",
+			name: "Record Listen",
 			callback: () => void showAddListen(this.app),
 		});
 

@@ -148,7 +148,7 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 
 		if (isMusicRelease) {
 			menu.addItem((item) => {
-				item.setTitle("Add Listen");
+				item.setTitle("Record Listen");
 				item.onClick(() => {
 					void addListen(app, file);
 				});
@@ -174,7 +174,7 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 
 			if (isUnresolved) {
 				menu.addItem((item) => {
-					item.setTitle("Add Listen");
+					item.setTitle("Record Listen");
 					item.onClick(() => {
 						const releaseName = getBacklogItemReleaseName(app, file);
 						if (!releaseName) {
