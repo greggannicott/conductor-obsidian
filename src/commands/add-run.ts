@@ -7,6 +7,7 @@ import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 
 const RUN_TYPES = [
 	"Open Run",
+	"Zone 2",
 	"Interval Run",
 	"Pyramid Interval Run",
 	"Progression Run",
@@ -17,6 +18,10 @@ const RUN_TYPES = [
 ] as const;
 
 type RunType = (typeof RUN_TYPES)[number];
+
+const RUN_TYPE_TO_WIKILINK: Record<string, string> = {
+	"Zone 2": "Zone 2 Run",
+};
 
 function parseTimeToSeconds(time: string): number {
 	const parts = time.split(":");
@@ -148,7 +153,7 @@ export const addRun = async (app: App): Promise<void> => {
 		: workoutSeconds;
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
-		fm["run-type"] = `[[${runType}]]`;
+		fm["run-type"] = `[[${RUN_TYPE_TO_WIKILINK[runType] ?? runType}]]`;
 		fm["date-of-event"] = date;
 		fm["distance"] = parseFloat(distance);
 		fm["elevation-gain"] = parseFloat(elevationGain);
