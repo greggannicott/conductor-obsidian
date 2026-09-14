@@ -24,6 +24,7 @@ import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
 import { addRun } from "./commands/add-run";
+import { createProjectNote } from "./commands/create-project-note";
 import { addListen, showAddListen } from "./commands/add-listen";
 import {
 	isTaskImpedeable,
@@ -133,6 +134,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task-for-any-project",
 			name: "Create New Task For Any Project",
 			callback: () => void showCreateTaskForAnyProjectFlow(this.app),
+		});
+
+		this.addCommand({
+			id: "create-project-note",
+			name: "Create Project Note",
+			callback: () => void createProjectNote(this.app),
 		});
 
 		this.addCheckedCommand(
