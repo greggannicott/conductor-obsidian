@@ -148,16 +148,16 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 
 		if (isMusicRelease) {
 			menu.addItem((item) => {
-				item.setTitle("Record Listen");
+				item.setTitle("Add to Listening Backlog");
 				item.onClick(() => {
-					void addListen(app, file);
+					void showAddToBacklog(app, file);
 				});
 			});
 
 			menu.addItem((item) => {
-				item.setTitle("Add to Listening Backlog");
+				item.setTitle("Record Listen");
 				item.onClick(() => {
-					void showAddToBacklog(app, file);
+					void addListen(app, file);
 				});
 			});
 		}
