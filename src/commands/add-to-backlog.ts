@@ -9,7 +9,7 @@ import {
 } from "src/music-release";
 import { BacklogItemStatus } from "src/backlog";
 
-const BACKLOG_TEMPLATE_NAME = "Backlog Item";
+const BACKLOG_TEMPLATE_NAME = "Listen Backlog Item";
 
 export const showAddToBacklog = async (
 	app: App,
@@ -75,7 +75,7 @@ export const addBacklogItem = async (
 	);
 	if (!backlogFile) {
 		new Notice(
-			"Failed to create backlog item. Is the 'Backlog Item' template available?",
+			"Failed to create backlog item. Is the 'Listen Backlog Item' template available?",
 		);
 		return;
 	}
