@@ -51,16 +51,13 @@ export async function createProjectNote(app: App): Promise<void> {
 		return;
 	}
 
-	let displayText: string | null = null;
-	if (selectedText && title !== selectedText) {
-		const displayResult = await TextInputModal.show(app, {
-			title: "Link Text",
-			placeholder: "Enter link text...",
-			value: selectedText,
-		});
-		if (displayResult.cancelled) return;
-		displayText = displayResult.value;
-	}
+	const displayResult = await TextInputModal.show(app, {
+		title: "Link Text",
+		placeholder: "Enter link text...",
+		value: title,
+	});
+	if (displayResult.cancelled) return;
+	const displayText = displayResult.value;
 
 	const filePath = getUniqueProjectNotePath(app, project.context, title);
 	let note: TFile | null;
@@ -161,8 +158,8 @@ function getUniqueProjectNotePath(
 	return path;
 }
 
-function createProjectNoteLink(note: TFile, displayText: string | null): string {
-	return displayText === null || displayText === ""
+function createProjectNoteLink(note: TFile, displayText: string): string {
+	return displayText === ""
 		? `[[${note.basename}]]`
 		: `[[${note.basename}|${displayText}]]`;
 }
