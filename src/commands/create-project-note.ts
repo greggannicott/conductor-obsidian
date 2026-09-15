@@ -27,9 +27,9 @@ const PROJECT_NOTE_TYPES = [
 
 type ProjectNoteType = (typeof PROJECT_NOTE_TYPES)[number];
 
-type CodeContext = {
+type NoteContentContext = {
 	language: string | null;
-	code: string;
+	content: string;
 };
 
 export async function createProjectNote(app: App): Promise<void> {
@@ -64,9 +64,14 @@ export async function createProjectNote(app: App): Promise<void> {
 	if (displayResult.cancelled) return;
 	const displayText = displayResult.value;
 
-	const codeContext =
-		noteType === "Code Sample" ? await gatherCodeContext(app) : null;
-	if (noteType === "Code Sample" && codeContext === null) return;
+	const requiresContent =
+		noteType === "Code Sample" ||
+		noteType === "Log Sample" ||
+		noteType === "Agent Response";
+	const noteContentContext = requiresContent
+		? await gatherNoteContentContext(app, noteType)
+		: null;
+	if (requiresContent && noteContentContext === null) return;
 
 	const filePath = getUniqueProjectNotePath(app, project.context, title);
 	let note: TFile | null;
@@ -94,10 +99,12 @@ export async function createProjectNote(app: App): Promise<void> {
 		frontmatter.parents = [`[[${project.name}]]`];
 	});
 
-	if (codeContext) {
+	if (noteContentContext) {
 		await app.vault.process(
 			note,
-			(data) => data + buildCodeBlock(codeContext.language, codeContext.code),
+			(data) =>
+				data +
+				buildCodeBlock(noteContentContext.language, noteContentContext.content),
 		);
 	}
 
@@ -106,8 +113,8 @@ export async function createProjectNote(app: App): Promise<void> {
 		insertProjectNoteLink(editor, link, Boolean(selectedText));
 	} else {
 		await app.workspace.getLeaf(false).openFile(note);
-		if (codeContext) {
-			selectCodeInNote(app, codeContext.code);
+		if (noteContentContext) {
+			selectContentInNote(app, noteContentContext.content);
 		}
 	}
 }
@@ -195,18 +202,25 @@ function insertProjectNoteLink(
 	}
 }
 
-async function gatherCodeContext(app: App): Promise<CodeContext | null> {
-	const language = await chooseCodeLanguage(app);
+async function gatherNoteContentContext(
+	app: App,
+	noteType: ProjectNoteType,
+): Promise<NoteContentContext | null> {
+	const language =
+		noteType === "Code Sample" ? await chooseCodeLanguage(app) : null;
 	const clipboardText = await readClipboardText();
-	const codeResult = await TextInputModal.show(app, {
-		title: "Code",
-		placeholder: "Paste your code...",
+	const result = await TextInputModal.show(app, {
+		title: "Content",
+		placeholder:
+			noteType === "Code Sample"
+				? "Paste your code..."
+				: `Paste ${noteType.toLowerCase()} content...`,
 		value: clipboardText || undefined,
 		multiline: true,
 	});
-	if (codeResult.cancelled) return null;
+	if (result.cancelled) return null;
 
-	return { language, code: codeResult.value };
+	return { language, content: result.value };
 }
 
 async function chooseCodeLanguage(app: App): Promise<string | null> {
@@ -262,7 +276,7 @@ function buildCodeBlock(language: string | null, code: string): string {
 	return `\`\`\`${lang}\n${code.trimEnd()}\n\`\`\``;
 }
 
-function selectCodeInNote(app: App, code: string): void {
+function selectContentInNote(app: App, content: string): void {
 	const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 	if (!editor) return;
 
@@ -280,7 +294,7 @@ function selectCodeInNote(app: App, code: string): void {
 	}
 	if (closeFenceIndex >= lines.length) return;
 
-	if (code === "") {
+	if (content === "") {
 		editor.setCursor({ line: codeStart, ch: 0 });
 	} else {
 		editor.setSelection(
