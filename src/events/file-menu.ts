@@ -17,8 +17,10 @@ import { showAddToBacklog } from "../commands/add-to-backlog";
 import { getReleaseFile } from "../music-release";
 import {
 	BacklogItemStatus,
+	hasUnresolvedBacklogItems,
 	getBacklogItemReleaseName,
 	getBacklogItemStatus,
+	markBacklogItemsSkipped,
 	setBacklogItemStatus,
 } from "../backlog";
 import { setTaskStatus } from "../commands/set-status";
@@ -160,6 +162,22 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 					void addListen(app, file);
 				});
 			});
+
+			if (hasUnresolvedBacklogItems(app, file.basename)) {
+				menu.addItem((item) => {
+					item.setTitle("Mark as Skipped");
+					item.onClick(() => {
+						void markBacklogItemsSkipped(
+							app,
+							file.basename,
+						).then((count) => {
+							new Notice(
+								`Marked ${count} backlog item(s) as skipped`,
+							);
+						});
+					});
+				});
+			}
 		}
 
 		const isBacklogItem =

@@ -93,3 +93,28 @@ export async function markBacklogItemsListened(
 	}
 	return items.length;
 }
+
+// Marks every "To Listen" backlog item for the release as skipped. Returns the
+// number marked.
+export async function markBacklogItemsSkipped(
+	app: App,
+	releaseName: string,
+): Promise<number> {
+	const items = getBacklogItemsForRelease(app, releaseName).filter(
+		(file) => getBacklogItemStatus(app, file) === BacklogItemStatus.ToListen,
+	);
+	for (const item of items) {
+		await setBacklogItemStatus(app, item, BacklogItemStatus.Skipped);
+	}
+	return items.length;
+}
+
+// True when the release has at least one "To Listen" backlog item.
+export function hasUnresolvedBacklogItems(
+	app: App,
+	releaseName: string,
+): boolean {
+	return getBacklogItemsForRelease(app, releaseName).some(
+		(file) => getBacklogItemStatus(app, file) === BacklogItemStatus.ToListen,
+	);
+}
