@@ -19,6 +19,18 @@ export function getArtists(app: App, file: TFile): string {
 		.join(", ");
 }
 
+export function isActiveFileMusicRelease(app: App): boolean {
+	const activeFile = app.workspace.activeEditor?.file;
+	if (!activeFile) return false;
+	const metadata = app.metadataCache.getFileCache(activeFile);
+	const categories = metadata?.frontmatter?.categories;
+	return (
+		categories &&
+		Array.isArray(categories) &&
+		categories.includes("[[Music Release]]")
+	);
+}
+
 // All music releases in the vault, sorted by title (then basename as a tiebreaker).
 export function getMusicReleases(app: App): TFile[] {
 	const releases = getFilesWithCategory(app, "Music Release");

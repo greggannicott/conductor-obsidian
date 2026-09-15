@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, Notice } from "obsidian";
 
 import {
 	createNewTasksFromCheckboxes,
@@ -25,8 +25,10 @@ import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
 import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
-import { addListen, showAddListen } from "./commands/add-listen";
+import { showAddListen } from "./commands/add-listen";
 import { showAddToBacklog } from "./commands/add-to-backlog";
+import { isActiveFileMusicRelease } from "./music-release";
+import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
 	isTaskImpedeable,
 	isTaskUnimpedeable,
@@ -345,6 +347,30 @@ export default class ConductorObsidian extends Plugin {
 			name: "Add to Listening Backlog",
 			callback: () => void showAddToBacklog(this.app),
 		});
+
+		this.addCheckedCommand(
+			"skip-backlog-items",
+			"Skip Backlog Items",
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				return Boolean(
+					file &&
+						isActiveFileMusicRelease(this.app) &&
+						hasUnresolvedBacklogItems(this.app, file.basename),
+				);
+			},
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) {
+					void markBacklogItemsSkipped(
+						this.app,
+						file.basename,
+					).then((count) => {
+						new Notice(`Marked ${count} backlog item(s) as skipped`);
+					});
+				}
+			},
+		);
 
 		this.addCommand({
 			id: "add-run",
