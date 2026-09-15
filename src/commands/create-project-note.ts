@@ -1,4 +1,4 @@
-import { App, Editor, Notice, TFile } from "obsidian";
+import { App, Editor, MarkdownView, Notice, TFile } from "obsidian";
 import { showProjectSelector } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
 import {
@@ -26,6 +26,11 @@ const PROJECT_NOTE_TYPES = [
 ] as const;
 
 type ProjectNoteType = (typeof PROJECT_NOTE_TYPES)[number];
+
+type CodeContext = {
+	language: string | null;
+	code: string;
+};
 
 export async function createProjectNote(app: App): Promise<void> {
 	const editor = app.workspace.activeEditor?.editor;
@@ -59,6 +64,10 @@ export async function createProjectNote(app: App): Promise<void> {
 	if (displayResult.cancelled) return;
 	const displayText = displayResult.value;
 
+	const codeContext =
+		noteType === "Code Sample" ? await gatherCodeContext(app) : null;
+	if (noteType === "Code Sample" && codeContext === null) return;
+
 	const filePath = getUniqueProjectNotePath(app, project.context, title);
 	let note: TFile | null;
 	try {
@@ -85,11 +94,21 @@ export async function createProjectNote(app: App): Promise<void> {
 		frontmatter.parents = [`[[${project.name}]]`];
 	});
 
+	if (codeContext) {
+		await app.vault.process(
+			note,
+			(data) => data + buildCodeBlock(codeContext.language, codeContext.code),
+		);
+	}
+
 	const link = createProjectNoteLink(note, displayText);
 	if (editor) {
 		insertProjectNoteLink(editor, link, Boolean(selectedText));
 	} else {
 		await app.workspace.getLeaf(false).openFile(note);
+		if (codeContext) {
+			selectCodeInNote(app, codeContext.code);
+		}
 	}
 }
 
@@ -173,5 +192,100 @@ function insertProjectNoteLink(
 		editor.replaceSelection(link);
 	} else {
 		editor.replaceRange(link, editor.getCursor());
+	}
+}
+
+async function gatherCodeContext(app: App): Promise<CodeContext | null> {
+	const language = await chooseCodeLanguage(app);
+	const clipboardText = await readClipboardText();
+	const codeResult = await TextInputModal.show(app, {
+		title: "Code",
+		placeholder: "Paste your code...",
+		value: clipboardText || undefined,
+		multiline: true,
+	});
+	if (codeResult.cancelled) return null;
+
+	return { language, code: codeResult.value };
+}
+
+async function chooseCodeLanguage(app: App): Promise<string | null> {
+	return ConductorSelectorModal.show(app, {
+		items: getCodeBlockLanguages(),
+		placeholder: "Select a programming language...",
+		getText: (language) => language,
+	});
+}
+
+type CodeMirrorModeInfo = {
+	name?: unknown;
+	mode?: unknown;
+	alias?: unknown;
+};
+
+function getCodeBlockLanguages(): string[] {
+	const codeMirror = (
+		window as unknown as { CodeMirror?: { modeInfo?: CodeMirrorModeInfo[] } }
+	).CodeMirror;
+	const modeInfo = codeMirror?.modeInfo;
+	if (!Array.isArray(modeInfo)) return [];
+
+	const languages = new Set<string>();
+	for (const mode of modeInfo) {
+		if (typeof mode.name === "string" && mode.name.length > 0) {
+			languages.add(mode.name);
+		}
+		if (typeof mode.mode === "string" && mode.mode.length > 0) {
+			languages.add(mode.mode);
+		}
+		if (Array.isArray(mode.alias)) {
+			for (const alias of mode.alias) {
+				if (typeof alias === "string" && alias.length > 0) {
+					languages.add(alias);
+				}
+			}
+		}
+	}
+	return [...languages].sort();
+}
+
+async function readClipboardText(): Promise<string> {
+	try {
+		return await navigator.clipboard.readText();
+	} catch {
+		return "";
+	}
+}
+
+function buildCodeBlock(language: string | null, code: string): string {
+	const lang = language ?? "";
+	return `\`\`\`${lang}\n${code.trimEnd()}\n\`\`\``;
+}
+
+function selectCodeInNote(app: App, code: string): void {
+	const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+	if (!editor) return;
+
+	const lines = editor.getValue().split("\n");
+	const fenceIndex = lines.findIndex((line) => line.startsWith("```"));
+	if (fenceIndex === -1) return;
+
+	const codeStart = fenceIndex + 1;
+	let closeFenceIndex = codeStart;
+	while (
+		closeFenceIndex < lines.length &&
+		!lines[closeFenceIndex].startsWith("```")
+	) {
+		closeFenceIndex += 1;
+	}
+	if (closeFenceIndex >= lines.length) return;
+
+	if (code === "") {
+		editor.setCursor({ line: codeStart, ch: 0 });
+	} else {
+		editor.setSelection(
+			{ line: codeStart, ch: 0 },
+			{ line: closeFenceIndex, ch: 0 },
+		);
 	}
 }
