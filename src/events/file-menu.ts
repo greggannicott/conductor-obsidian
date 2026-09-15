@@ -11,7 +11,13 @@ import {
 	ProjectStatus,
 	outstandingProjectTypes,
 } from "../projects";
-import { addTag, getStatusDisplay, getPriorityDisplay } from "../utilities";
+import {
+	addTag,
+	fileHasTag,
+	getStatusDisplay,
+	getPriorityDisplay,
+	isFileCategory,
+} from "../utilities";
 import { addListen } from "../commands/add-listen";
 import { showAddToBacklog } from "../commands/add-to-backlog";
 import { getReleaseFile } from "../music-release";
@@ -223,17 +229,21 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 			}
 		}
 
-		if (
+		const hasTargetCategory =
 			file.extension === "md" &&
-			!file.path.startsWith("_templates/")
-		) {
+			!file.path.startsWith("_templates/") &&
+			isFileCategory(app, file, "Music Release", "Artist", "Label");
+
+		if (hasTargetCategory && !fileHasTag(app, file, "details-migrated")) {
 			menu.addItem((item) => {
 				item.setTitle("Add '#details-migrated' Tag");
 				item.onClick(() => {
 					addTag(app, file, "details-migrated");
 				});
 			});
+		}
 
+		if (hasTargetCategory && !fileHasTag(app, file, "reason-done")) {
 			menu.addItem((item) => {
 				item.setTitle("Add '#reason-done' Tag");
 				item.onClick(() => {

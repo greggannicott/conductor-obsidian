@@ -233,3 +233,39 @@ export function isActiveFileTask(app: App): boolean {
 		categories.includes("[[Task]]")
 	);
 }
+
+// True when the file's frontmatter categories contain any of the given names.
+export function isFileCategory(
+	app: App,
+	file: TFile,
+	...categoryNames: string[]
+): boolean {
+	const categories = parseFrontMatterStringArray(
+		app.metadataCache.getFileCache(file)?.frontmatter,
+		"categories",
+	);
+	const wanted = new Set(categoryNames.map((name) => `[[${name}]]`));
+	return categories?.some((category) => wanted.has(category)) ?? false;
+}
+
+export function isActiveFileCategory(
+	app: App,
+	...categoryNames: string[]
+): boolean {
+	const activeFile = app.workspace.activeEditor?.file;
+	return Boolean(activeFile && isFileCategory(app, activeFile, ...categoryNames));
+}
+
+// True when the file's frontmatter tags contain the given tag name.
+export function fileHasTag(app: App, file: TFile, tagName: string): boolean {
+	const tags = parseFrontMatterStringArray(
+		app.metadataCache.getFileCache(file)?.frontmatter,
+		"tags",
+	);
+	return tags?.includes(tagName) ?? false;
+}
+
+export function hasActiveFileTag(app: App, tagName: string): boolean {
+	const activeFile = app.workspace.activeEditor?.file;
+	return Boolean(activeFile && fileHasTag(app, activeFile, tagName));
+}

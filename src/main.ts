@@ -56,6 +56,8 @@ import { TaskStatus, TaskPriority } from "./tasks";
 import { ProjectStatus } from "./projects";
 import {
 	addTag,
+	hasActiveFileTag,
+	isActiveFileCategory,
 	removeTag,
 	toggleTag,
 	isActiveFileProject,
@@ -280,23 +282,37 @@ export default class ConductorObsidian extends Plugin {
 			this.addActiveFileTagCommands(tagName);
 		}
 
-		this.addCommand({
-			id: "add-details-migrated-tag",
-			name: "Add #details-migrated Tag",
-			callback: () => {
+		this.addCheckedCommand(
+			"add-details-migrated-tag",
+			"Add #details-migrated Tag",
+			() =>
+				isActiveFileCategory(
+					this.app,
+					"Music Release",
+					"Artist",
+					"Label",
+				) && !hasActiveFileTag(this.app, "details-migrated"),
+			() => {
 				const file = this.app.workspace.activeEditor?.file;
 				if (file) addTag(this.app, file, "details-migrated");
 			},
-		});
+		);
 
-		this.addCommand({
-			id: "add-reason-done-tag",
-			name: "Add #reason-done Tag",
-			callback: () => {
+		this.addCheckedCommand(
+			"add-reason-done-tag",
+			"Add #reason-done Tag",
+			() =>
+				isActiveFileCategory(
+					this.app,
+					"Music Release",
+					"Artist",
+					"Label",
+				) && !hasActiveFileTag(this.app, "reason-done"),
+			() => {
 				const file = this.app.workspace.activeEditor?.file;
 				if (file) addTag(this.app, file, "reason-done");
 			},
-		});
+		);
 
 		this.addCommand({
 			id: "open-related-linear-ticket",
