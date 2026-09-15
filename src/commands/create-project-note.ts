@@ -109,15 +109,15 @@ export async function createProjectNote(app: App): Promise<void> {
 	}
 
 	const link = createProjectNoteLink(note, displayText);
-	if (noteContentContext) {
-		if (editor) {
-			insertProjectNoteLink(editor, link, Boolean(selectedText));
-		} else {
-			await app.workspace.getLeaf(false).openFile(note);
+	if (editor) {
+		insertProjectNoteLink(editor, link, Boolean(selectedText));
+	}
+
+	if (!noteContentContext || !editor) {
+		await app.workspace.getLeaf(false).openFile(note);
+		if (noteContentContext) {
 			selectContentInNote(app, noteContentContext.content);
 		}
-	} else {
-		await app.workspace.getLeaf(false).openFile(note);
 	}
 }
 
