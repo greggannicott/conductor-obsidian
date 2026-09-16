@@ -1,5 +1,6 @@
 import { App, Notice, TFile, moment } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
+import { TextInputModal } from "src/text-input-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
 	getArtists,
@@ -132,6 +133,13 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		});
 	}
 
+	const { value, cancelled } = await TextInputModal.show(app, {
+		title: "Notes",
+		placeholder: "Anything noteworthy about this listen? (optional)",
+		multiline: true,
+	});
+	const trimmedNotes = cancelled ? "" : value.trim();
+
 	const markedItems = await markBacklogItemsListened(app, file.basename);
 
 	const listenFile = await createFileFromTemplate(app, filePath, "Listen");
@@ -151,6 +159,7 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		fm["listen-no"] = listenCount;
 		fm["rating-before"] = typeof rating === "number" ? rating : null;
 		fm["days-since-last-listen"] = daysSinceLastListen;
+		fm["notes"] = trimmedNotes.length > 0 ? trimmedNotes : null;
 		fm["backlog-listens"] =
 			markedItems.length > 0
 				? markedItems.map((item) => `[[${item.basename}]]`)
