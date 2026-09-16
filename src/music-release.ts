@@ -45,6 +45,19 @@ export function getMusicReleases(app: App): TFile[] {
 	return releases;
 }
 
+// Formats associated with the release, normalized to wikilinks (e.g. "[[CD]]").
+export function getFormats(app: App, file: TFile): string[] {
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const formats = frontmatter?.formats;
+	if (!Array.isArray(formats)) return [];
+	return formats
+		.map((format) => {
+			const name = String(format).replace(/^\[\[|\]\]$/g, "").trim();
+			return name ? `[[${name}]]` : "";
+		})
+		.filter(Boolean);
+}
+
 // Resolves a release name (with or without wikilink wrappers) to its TFile.
 export function getReleaseFile(
 	app: App,

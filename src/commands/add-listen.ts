@@ -3,6 +3,7 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
 	getArtists,
+	getFormats,
 	getMusicReleases,
 	getReleaseFile,
 	getReleaseTitle,
@@ -96,6 +97,22 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		`_consumptions/${sanitizeFileName(fileName)}`,
 	);
 
+	const releaseFrontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const growing = releaseFrontmatter?.growing;
+	const inRotation = releaseFrontmatter?.["in-rotation"];
+
+	const formats = getFormats(app, file);
+	let format: string | null = null;
+	if (formats.length === 1) {
+		format = formats[0];
+	} else if (formats.length > 1) {
+		format = await ConductorSelectorModal.show(app, {
+			items: formats,
+			placeholder: "Select a format...",
+			getText: (item) => item.replace(/^\[\[|\]\]$/g, "").trim(),
+		});
+	}
+
 	const listenFile = await createFileFromTemplate(app, filePath, "Listen");
 	if (!listenFile) {
 		new Notice(
@@ -107,6 +124,9 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 	await app.fileManager.processFrontMatter(listenFile, (fm) => {
 		fm["music-release"] = `[[${file.basename}]]`;
 		fm["date-time"] = dateTime;
+		fm["growing"] = typeof growing === "boolean" ? growing : null;
+		fm["in-rotation"] = typeof inRotation === "boolean" ? inRotation : null;
+		fm["format"] = format;
 	});
 
 	const markedCount = await markBacklogItemsListened(app, file.basename);
