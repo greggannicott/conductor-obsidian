@@ -1,9 +1,10 @@
-import { App, Notice, TFile } from "obsidian";
+import { App, Notice, TFile, moment } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
 	getArtists,
 	getFormats,
+	getListenDatesForRelease,
 	getMusicReleases,
 	getReleaseFile,
 	getReleaseTitle,
@@ -84,8 +85,11 @@ export const showAddListen = async (app: App): Promise<void> => {
 };
 
 export const addListen = async (app: App, file: TFile): Promise<void> => {
+	let listenCount: number | null = null;
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["listens"] = (fm["listens"] ?? 0) + 1;
+		listenCount =
+			typeof fm["listens"] === "number" ? fm["listens"] : null;
 	});
 
 	const now = new Date();
@@ -100,6 +104,21 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 	const releaseFrontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 	const growing = releaseFrontmatter?.growing;
 	const inRotation = releaseFrontmatter?.["in-rotation"];
+	const rating = releaseFrontmatter?.rating;
+
+	const priorListenDates = getListenDatesForRelease(app, file.basename);
+	let daysSinceLastListen: number | null = null;
+	if (priorListenDates.length > 0) {
+		const last = moment(priorListenDates[0], "YYYY-MM-DD HH:mm:ss");
+		if (last.isValid()) {
+			daysSinceLastListen = Math.max(
+				0,
+				Math.floor(
+					(now.getTime() - last.toDate().getTime()) / 86400000,
+				),
+			);
+		}
+	}
 
 	const formats = getFormats(app, file);
 	let format: string | null = null;
@@ -112,6 +131,8 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 			getText: (item) => item.replace(/^\[\[|\]\]$/g, "").trim(),
 		});
 	}
+
+	const markedItems = await markBacklogItemsListened(app, file.basename);
 
 	const listenFile = await createFileFromTemplate(app, filePath, "Listen");
 	if (!listenFile) {
@@ -127,11 +148,17 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		fm["growing"] = typeof growing === "boolean" ? growing : null;
 		fm["in-rotation"] = typeof inRotation === "boolean" ? inRotation : null;
 		fm["format"] = format;
+		fm["listen-no"] = listenCount;
+		fm["rating-before"] = typeof rating === "number" ? rating : null;
+		fm["days-since-last-listen"] = daysSinceLastListen;
+		fm["backlog-listens"] =
+			markedItems.length > 0
+				? markedItems.map((item) => `[[${item.basename}]]`)
+				: null;
 	});
 
-	const markedCount = await markBacklogItemsListened(app, file.basename);
-	if (markedCount > 0) {
-		new Notice(`Marked ${markedCount} backlog item(s) as listened`);
+	if (markedItems.length > 0) {
+		new Notice(`Marked ${markedItems.length} backlog item(s) as listened`);
 	}
 
 	await app.workspace.getLeaf(false).openFile(file);

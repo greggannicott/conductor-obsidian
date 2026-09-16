@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, parseFrontMatterStringArray } from "obsidian";
 import { getFilesWithCategory } from "./utilities";
 
 export function getReleaseTitle(app: App, file: TFile): string {
@@ -74,4 +74,37 @@ export function getReleaseFile(
 			(f) => f.basename === cleanName,
 		) ?? null
 	);
+}
+
+// Date-times of every listen recorded for the release, newest first. Each value
+// is the raw "date-time" frontmatter string (e.g. "2026-09-16 16:07:15").
+export function getListenDatesForRelease(
+	app: App,
+	releaseName: string,
+): string[] {
+	return app.vault
+		.getMarkdownFiles()
+		.filter((file) => {
+			if (file.path.startsWith("_templates/")) return false;
+			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+			const categories = parseFrontMatterStringArray(
+				frontmatter,
+				"categories",
+			);
+			if (!categories?.includes("[[Consumption]]")) return false;
+			const types = parseFrontMatterStringArray(frontmatter, "type");
+			if (!types?.includes("[[Listen]]")) return false;
+			const musicRelease = parseFrontMatterStringArray(
+				frontmatter,
+				"music-release",
+			);
+			return musicRelease?.includes(`[[${releaseName}]]`) ?? false;
+		})
+		.map((file) => {
+			const dateTime =
+				app.metadataCache.getFileCache(file)?.frontmatter?.["date-time"];
+			return typeof dateTime === "string" ? dateTime : "";
+		})
+		.filter(Boolean)
+		.sort((a, b) => b.localeCompare(a));
 }

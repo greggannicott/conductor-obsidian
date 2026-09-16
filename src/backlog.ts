@@ -80,18 +80,18 @@ export async function setBacklogItemStatus(
 }
 
 // Marks every "To Listen" backlog item for the release as listened, since the
-// desire to listen has been fulfilled. Returns the number marked.
+// desire to listen has been fulfilled. Returns the items marked.
 export async function markBacklogItemsListened(
 	app: App,
 	releaseName: string,
-): Promise<number> {
+): Promise<TFile[]> {
 	const items = getBacklogItemsForRelease(app, releaseName).filter(
 		(file) => getBacklogItemStatus(app, file) === BacklogItemStatus.ToListen,
 	);
 	for (const item of items) {
 		await setBacklogItemStatus(app, item, BacklogItemStatus.Listened);
 	}
-	return items.length;
+	return items;
 }
 
 // Marks every "To Listen" backlog item for the release as skipped. Returns the
