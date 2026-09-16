@@ -29,6 +29,9 @@ export type ConductorSelectorOptions<T> = {
 	// Multi-select mode: click or Cmd/Ctrl+Space toggles items, Enter confirms
 	// the selection set. Only meaningful via showMulti().
 	multiSelect?: boolean;
+	// Multi-select only: when nothing is checked, Enter confirms an empty
+	// selection instead of auto-selecting the highlighted/first item.
+	allowEmptySelection?: boolean;
 	// Multi-select only: items already checked when the modal opens.
 	initialSelection?: T[];
 	onSelect?: (item: T) => void;
@@ -251,11 +254,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		highlighted: T | null,
 	): void {
 		const chosen = [...this.selectedItems];
-		if (chosen.length === 0 && highlighted) chosen.push(highlighted);
-		if (chosen.length === 0) {
-			const first = this.firstRenderedItem();
-			if (!first) return;
-			chosen.push(first);
+		if (chosen.length === 0 && !this.options.allowEmptySelection) {
+			if (highlighted) {
+				chosen.push(highlighted);
+			} else {
+				const first = this.firstRenderedItem();
+				if (!first) return;
+				chosen.push(first);
+			}
 		}
 
 		const resolve = this.resolveMultiSelection;

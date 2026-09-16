@@ -57,13 +57,22 @@ export const showAddToBacklog = async (
 	});
 	if (cancelled) return;
 
-	await addBacklogItem(app, selected, value.trim());
+	const links = await ConductorSelectorModal.showMulti(app, {
+		items: getReasonLinkableNotes(app),
+		placeholder: "Link notes as a reason...",
+		getText: (file) => file.basename,
+		getSubtext: (file) => file.path,
+		allowEmptySelection: true,
+	});
+
+	await addBacklogItem(app, selected, value.trim(), links);
 };
 
 export const addBacklogItem = async (
 	app: App,
 	release: TFile,
 	reason: string,
+	links: TFile[],
 ): Promise<void> => {
 	const albumName = getReleaseTitle(app, release);
 	const filePath = getUniqueBacklogFilePath(app, albumName);
@@ -82,7 +91,11 @@ export const addBacklogItem = async (
 
 	await app.fileManager.processFrontMatter(backlogFile, (fm) => {
 		fm["music-release"] = `[[${release.basename}]]`;
-		fm["reason"] = reason;
+		fm["reason-comment"] = reason;
+		fm["reason-links"] =
+			links.length > 0
+				? links.map((file) => `[[${file.basename}]]`)
+				: null;
 		fm["date-added"] = moment().format("YYYY-MM-DDTHH:mm:ss");
 		fm["status"] = BacklogItemStatus.ToListen;
 	});
@@ -90,6 +103,30 @@ export const addBacklogItem = async (
 	await app.workspace.getLeaf(false).openFile(release);
 	new Notice(`Added "${albumName}" to backlog`);
 };
+
+const REASON_LINK_EXCLUDED_PREFIXES = [
+	"_templates",
+	"_assets",
+	"_backlog",
+	"_consumptions",
+	"_daily notes",
+	"_monthly notes",
+	"_weekly notes",
+	"Meta",
+];
+
+// Notes that may be linked as a "reason" for wanting to listen, sorted by name.
+function getReasonLinkableNotes(app: App): TFile[] {
+	return app.vault
+		.getMarkdownFiles()
+		.filter(
+			(file) =>
+				!REASON_LINK_EXCLUDED_PREFIXES.some((prefix) =>
+					file.path.startsWith(`${prefix}/`),
+				),
+		)
+		.sort((a, b) => a.basename.localeCompare(b.basename));
+}
 
 function getUniqueBacklogFilePath(app: App, albumName: string): string {
 	const timestamp = moment().format("YYYY-MM-DD HHmm");

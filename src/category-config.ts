@@ -296,7 +296,9 @@ const backlogItemConfig: CategoryDisplayConfig = {
 		return match?.[3]?.trim() || file.basename;
 	},
 	getSubtext: (app, file) => {
-		const reason = getFrontmatterString(app, file, "reason");
+		const reason =
+			getFrontmatterString(app, file, "reason-comment") ??
+			getFrontmatterString(app, file, "reason");
 		return reason ? reason : null;
 	},
 	getBadges: (app, file) => {
