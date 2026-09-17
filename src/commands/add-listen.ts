@@ -15,6 +15,8 @@ import {
 	markBacklogItemsListened,
 } from "src/backlog";
 
+const MUSIC_ASSISTANT_FORMAT = "[[Music Assistant]]";
+
 function formatDateTime(date: Date): string {
 	const pad = (n: number) => String(n).padStart(2, "0");
 	const yyyy = date.getFullYear();
@@ -121,17 +123,12 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		}
 	}
 
-	const formats = getFormats(app, file);
-	let format: string | null = null;
-	if (formats.length === 1) {
-		format = formats[0];
-	} else if (formats.length > 1) {
-		format = await ConductorSelectorModal.show(app, {
-			items: formats,
-			placeholder: "Select a format...",
-			getText: (item) => item.replace(/^\[\[|\]\]$/g, "").trim(),
-		});
-	}
+	const formatOptions = [...getFormats(app, file), MUSIC_ASSISTANT_FORMAT];
+	const format = await ConductorSelectorModal.show(app, {
+		items: formatOptions,
+		placeholder: "Select a format...",
+		getText: (item) => item.replace(/^\[\[|\]\]$/g, "").trim(),
+	});
 
 	const { value, cancelled } = await TextInputModal.show(app, {
 		title: "Notes",
