@@ -16,6 +16,7 @@ import {
 } from "src/backlog";
 
 const MUSIC_ASSISTANT_FORMAT = "[[Music Assistant]]";
+const SPOTIFY_FORMAT = "[[Spotify]]";
 
 function formatDateTime(date: Date): string {
 	const pad = (n: number) => String(n).padStart(2, "0");
@@ -123,7 +124,11 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		}
 	}
 
-	const formatOptions = [...getFormats(app, file), MUSIC_ASSISTANT_FORMAT];
+	const formatOptions = [
+		...getFormats(app, file),
+		MUSIC_ASSISTANT_FORMAT,
+		SPOTIFY_FORMAT,
+	];
 	const format = await ConductorSelectorModal.show(app, {
 		items: formatOptions,
 		placeholder: "Select a format...",
