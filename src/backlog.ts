@@ -1,5 +1,6 @@
 import { App, TFile, moment } from "obsidian";
 import { getFilesWithCategory } from "./utilities";
+import { getLinkedReleaseName } from "./music-release";
 
 export const BACKLOG_ITEM_CATEGORY = "Backlog Item";
 
@@ -57,10 +58,7 @@ export function getBacklogItemStatus(
 }
 
 export function getBacklogItemReleaseName(app: App, file: TFile): string | null {
-	const link = getFrontmatterWikilinks(app, file, "music-release")[0];
-	if (!link) return null;
-	const name = link.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
-	return name.length > 0 ? name : null;
+	return getLinkedReleaseName(app, file);
 }
 
 export async function setBacklogItemStatus(

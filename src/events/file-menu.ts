@@ -20,7 +20,16 @@ import {
 } from "../utilities";
 import { addListen } from "../commands/add-listen";
 import { showAddToBacklog } from "../commands/add-to-backlog";
-import { getReleaseFile } from "../music-release";
+import {
+	getRateableRelease,
+	getReleaseFile,
+	getReleaseRating,
+} from "../music-release";
+import {
+	RATING_OPTIONS,
+	getRatingLabel,
+	rateRelease,
+} from "../commands/rate-release";
 import {
 	BacklogItemStatus,
 	hasUnresolvedBacklogItems,
@@ -227,6 +236,31 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 					});
 				});
 			}
+		}
+
+		const rateReleaseTarget = getRateableRelease(app, file);
+		if (rateReleaseTarget) {
+			const currentRating = getReleaseRating(app, rateReleaseTarget);
+			menu.addItem((item) => {
+				item.setTitle("Rate");
+				const submenu = (item as any).setSubmenu();
+				for (const rating of RATING_OPTIONS) {
+					submenu.addItem((subItem: any) => {
+						subItem.setTitle(getRatingLabel(rating));
+						subItem.setChecked(currentRating === rating);
+						subItem.onClick(() => {
+							void rateRelease(app, rateReleaseTarget, rating);
+						});
+					});
+				}
+				submenu.addSeparator();
+				submenu.addItem((subItem: any) => {
+					subItem.setTitle("Clear");
+					subItem.onClick(() => {
+						void rateRelease(app, rateReleaseTarget, 0);
+					});
+				});
+			});
 		}
 
 		const hasTargetCategory =

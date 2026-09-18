@@ -1,6 +1,10 @@
 import { App, TFile, parseFrontMatterStringArray } from "obsidian";
 import type { ConductorSelectorGrouping } from "src/conductor-selector-modal";
-import { getFilesWithCategory } from "./utilities";
+import {
+	getFilesWithCategory,
+	isFileCategory,
+	isFileType,
+} from "./utilities";
 
 export function getReleaseTitle(app: App, file: TFile): string {
 	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
@@ -112,6 +116,56 @@ export function getReleaseFile(
 			(f) => f.basename === cleanName,
 		) ?? null
 	);
+}
+
+// The release name listed in a file's `music-release` frontmatter field. The
+// field is normally a wikilink string but array form is tolerated too.
+export function getLinkedReleaseName(app: App, file: TFile): string | null {
+	const value =
+		app.metadataCache.getFileCache(file)?.frontmatter?.["music-release"];
+	const links = Array.isArray(value)
+		? value.map(String)
+		: typeof value === "string"
+			? [value]
+			: [];
+	const link = links[0];
+	if (!link) return null;
+	const name = link.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+	return name.length > 0 ? name : null;
+}
+
+// Resolves the Music Release a file refers to. A Music Release file is
+// returned directly; any other file resolves via its `music-release` link.
+export function getReleaseFromFile(app: App, file: TFile): TFile | null {
+	if (isFileCategory(app, file, "Music Release")) return file;
+	const releaseName = getLinkedReleaseName(app, file);
+	return releaseName
+		? getReleaseFile(app, releaseName, file.path)
+		: null;
+}
+
+// Files a rating can be applied through: Music Releases directly, or Backlog
+// Item / Consumption notes of type Listen that link to a release.
+export function isRateableFile(app: App, file: TFile): boolean {
+	return (
+		isFileCategory(app, file, "Music Release") ||
+		(isFileCategory(app, file, "Backlog Item") &&
+			isFileType(app, file, "Listen")) ||
+		(isFileCategory(app, file, "Consumption") &&
+			isFileType(app, file, "Listen"))
+	);
+}
+
+// The Music Release to rate for a file. Returns null when the file isn't
+// rateable or its linked release can't be resolved.
+export function getRateableRelease(app: App, file: TFile): TFile | null {
+	if (!isRateableFile(app, file)) return null;
+	return getReleaseFromFile(app, file);
+}
+
+export function getReleaseRating(app: App, file: TFile): number | null {
+	const rating = app.metadataCache.getFileCache(file)?.frontmatter?.rating;
+	return typeof rating === "number" ? rating : null;
 }
 
 // Date-times of every listen recorded for the release, newest first. Each value

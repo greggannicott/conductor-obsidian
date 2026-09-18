@@ -210,6 +210,20 @@ export function getStatusDisplay(status: TaskStatus | ProjectStatus): string {
 	return emoji ? `${emoji} - ${valueLabel(status)}` : status;
 }
 
+// True when the file's frontmatter type field contains any of the given names.
+export function isFileType(
+	app: App,
+	file: TFile,
+	...typeNames: string[]
+): boolean {
+	const types = parseFrontMatterStringArray(
+		app.metadataCache.getFileCache(file)?.frontmatter,
+		"type",
+	);
+	const wanted = new Set(typeNames.map((name) => `[[${name}]]`));
+	return types?.some((type) => wanted.has(type)) ?? false;
+}
+
 export function isActiveFileProject(app: App): boolean {
 	const activeFile = app.workspace.activeEditor?.file;
 	if (!activeFile) return false;

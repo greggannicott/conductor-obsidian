@@ -27,6 +27,7 @@ import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
 import { showAddToBacklog } from "./commands/add-to-backlog";
+import { showRateRelease } from "./commands/rate-release";
 import { isActiveFileMusicRelease } from "./music-release";
 import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
@@ -362,6 +363,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-to-backlog",
 			name: "Add to Listening Backlog",
 			callback: () => void showAddToBacklog(this.app),
+		});
+
+		this.addCommand({
+			id: "rate-music-release",
+			name: "Rate Music Release",
+			callback: () => void showRateRelease(this.app),
 		});
 
 		this.addCheckedCommand(
