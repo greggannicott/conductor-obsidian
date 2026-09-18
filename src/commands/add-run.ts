@@ -1,8 +1,14 @@
-import { App, Notice, TFile } from "obsidian";
+import {
+	App,
+	Notice,
+	TFile,
+	parseFrontMatterStringArray,
+} from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { DatePickerModal } from "src/date-picker-modal";
 import { ZoneTimesModal } from "src/zone-times-modal";
+import { ConfirmModal } from "src/confirm-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 
 const RUN_TYPES = [
@@ -65,6 +71,26 @@ function getUniqueFilePath(app: App, basePath: string): string {
 	return filePath;
 }
 
+function findRunNoteOnDate(app: App, date: string): TFile | null {
+	return (
+		app.vault.getMarkdownFiles().find((file) => {
+			if (file.path.startsWith("_templates/")) return false;
+			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+			if (!frontmatter) return false;
+			if (String(frontmatter["date-of-event"]) !== date) return false;
+			const types = parseFrontMatterStringArray(frontmatter, "type") ?? [];
+			return types.some(
+				(type) =>
+					type
+						.replace(/^\[\[|\]\]$/g, "")
+						.split("|")[0]
+						.trim()
+						.toLowerCase() === "run",
+			);
+		}) ?? null
+	);
+}
+
 export const addRun = async (app: App): Promise<void> => {
 	const runType = await ConductorSelectorModal.show(app, {
 		items: [...RUN_TYPES],
@@ -75,6 +101,21 @@ export const addRun = async (app: App): Promise<void> => {
 
 	const date = await DatePickerModal.show(app);
 	if (!date) return;
+
+	const existingRunNote = findRunNoteOnDate(app, date);
+	if (existingRunNote) {
+		let proceed = false;
+		try {
+			proceed = await ConfirmModal.show(app, {
+				title: "Run note already exists",
+				message: `A run note for ${date} already exists (${existingRunNote.basename}). Do you want to continue anyway?`,
+			});
+		} catch (error) {
+			console.error("ConfirmModal failed", error);
+			new Notice("ConfirmModal failed, see console");
+		}
+		if (!proceed) return;
+	}
 
 	const workoutTimePrompt = await TextInputModal.show(app, {
 		title: "Workout Time",
