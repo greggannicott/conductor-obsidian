@@ -3,9 +3,11 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
-	getArtists,
+	compareReleasesByTitle,
 	getFormats,
 	getListenDatesForRelease,
+	getMusicReleaseArtistGrouping,
+	getMusicReleaseSearchText,
 	getMusicReleases,
 	getReleaseFile,
 	getReleaseTitle,
@@ -79,10 +81,9 @@ export const showAddListen = async (app: App): Promise<void> => {
 		placeholder: "Select a music release...",
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
-		getSubtext: (file) => {
-			const artists = getArtists(app, file);
-			return artists ? artists : null;
-		},
+		getSearchText: (file) => getMusicReleaseSearchText(app, file),
+		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
+		groupings: [getMusicReleaseArtistGrouping(app)],
 	});
 	if (!selected) return;
 	await addListen(app, selected);

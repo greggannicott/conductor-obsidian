@@ -1,4 +1,5 @@
 import { App, TFile, parseFrontMatterStringArray } from "obsidian";
+import type { ConductorSelectorGrouping } from "src/conductor-selector-modal";
 import { getFilesWithCategory } from "./utilities";
 
 export function getReleaseTitle(app: App, file: TFile): string {
@@ -9,14 +10,17 @@ export function getReleaseTitle(app: App, file: TFile): string {
 		: file.basename;
 }
 
-export function getArtists(app: App, file: TFile): string {
+export function getArtistNames(app: App, file: TFile): string[] {
 	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 	const artists = frontmatter?.artists;
-	if (!Array.isArray(artists)) return "";
+	if (!Array.isArray(artists)) return [];
 	return artists
 		.map((artist) => String(artist).replace(/^\[\[|\]\]$/g, "").trim())
-		.filter(Boolean)
-		.join(", ");
+		.filter(Boolean);
+}
+
+export function getArtists(app: App, file: TFile): string {
+	return getArtistNames(app, file).join(", ");
 }
 
 export function isActiveFileMusicRelease(app: App): boolean {
@@ -31,18 +35,54 @@ export function isActiveFileMusicRelease(app: App): boolean {
 	);
 }
 
+export function compareReleasesByTitle(app: App, a: TFile, b: TFile): number {
+	const titleComparison = getReleaseTitle(app, a).localeCompare(
+		getReleaseTitle(app, b),
+	);
+	return titleComparison !== 0
+		? titleComparison
+		: a.basename.localeCompare(b.basename);
+}
+
 // All music releases in the vault, sorted by title (then basename as a tiebreaker).
 export function getMusicReleases(app: App): TFile[] {
 	const releases = getFilesWithCategory(app, "Music Release");
-	releases.sort((a, b) => {
-		const titleComparison = getReleaseTitle(app, a).localeCompare(
-			getReleaseTitle(app, b),
-		);
-		return titleComparison !== 0
-			? titleComparison
-			: a.basename.localeCompare(b.basename);
-	});
+	releases.sort((a, b) => compareReleasesByTitle(app, a, b));
 	return releases;
+}
+
+// Text the picker matches against: the release title plus its artists, so
+// searching an artist name surfaces all of that artist's releases.
+export function getMusicReleaseSearchText(app: App, file: TFile): string {
+	return [getReleaseTitle(app, file), getArtists(app, file)]
+		.filter(Boolean)
+		.join(" ");
+}
+
+// Grouping of releases under non-selectable artist headers. Releases with
+// multiple artists appear under each artist; releases without a known artist
+// fall under "Unknown Artist".
+export function getMusicReleaseArtistGrouping(
+	app: App,
+): ConductorSelectorGrouping<TFile> {
+	return {
+		id: "artist",
+		label: "Group by Artist",
+		buildGroups: (releases) => {
+			const buckets = new Map<string, TFile[]>();
+			for (const release of releases) {
+				const artists = getArtistNames(app, release);
+				const names = artists.length > 0 ? artists : ["Unknown Artist"];
+				for (const name of names) {
+					if (!buckets.has(name)) buckets.set(name, []);
+					buckets.get(name)!.push(release);
+				}
+			}
+			return [...buckets.entries()]
+				.sort(([artistA], [artistB]) => artistA.localeCompare(artistB))
+				.map(([header, items]) => ({ header, items }));
+		},
+	};
 }
 
 // Formats associated with the release, normalized to wikilinks (e.g. "[[CD]]").
