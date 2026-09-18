@@ -100,7 +100,6 @@ export const addBacklogItem = async (
 		fm["status"] = BacklogItemStatus.ToListen;
 	});
 
-	await app.workspace.getLeaf(false).openFile(release);
 	new Notice(`Added "${albumName}" to backlog`);
 };
 

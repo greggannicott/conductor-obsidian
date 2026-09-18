@@ -172,6 +172,5 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		new Notice(`Marked ${markedItems.length} backlog item(s) as listened`);
 	}
 
-	await app.workspace.getLeaf(false).openFile(file);
 	new Notice(`Created listen note: ${listenFile.basename}`);
 };
