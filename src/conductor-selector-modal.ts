@@ -17,6 +17,10 @@ export type ConductorSelectorOptions<T> = {
 	getText: (item: T) => string;
 	// Text the query is matched against; defaults to getText.
 	getSearchText?: (item: T) => string;
+	// Alternative to getSearchText: fields matched independently, so a query
+	// must be satisfied within a single field rather than spanning across them.
+	// The item matches when any field matches; the best score wins for ranking.
+	getSearchTexts?: (item: T) => string[];
 	// Optional muted second line rendered beneath the text.
 	getSubtext?: (item: T) => string | null;
 	// Optional trailing badges rendered at the end of the row (e.g. emojis).
@@ -141,14 +145,27 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 		if (q.length > 0) {
 			const search = prepareFuzzySearch(q);
-			const getSearchText =
-				this.options.getSearchText ?? this.options.getText;
+			const getSingleText = this.options.getSearchText ?? this.options.getText;
+			const getSearchTexts =
+				this.options.getSearchTexts ??
+				((item: T) => [getSingleText(item)]);
 			items = items
-				.map((item) => ({ item, result: search(getSearchText(item)) }))
-				.filter((m): m is { item: T; result: NonNullable<typeof m.result> } =>
-					Boolean(m.result),
+				.map((item) => {
+					let best: NonNullable<ReturnType<typeof search>> | null = null;
+					for (const field of getSearchTexts(item)) {
+						if (!field.trim()) continue;
+						const result = search(field);
+						if (result && (!best || result.score > best.score)) {
+							best = result;
+						}
+					}
+					return { item, best };
+				})
+				.filter(
+					(m): m is { item: T; best: NonNullable<ReturnType<typeof search>> } =>
+						m.best !== null,
 				)
-				.sort((a, b) => b.result.score - a.result.score)
+				.sort((a, b) => b.best.score - a.best.score)
 				.map((m) => m.item);
 		}
 

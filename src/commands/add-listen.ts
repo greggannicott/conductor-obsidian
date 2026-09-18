@@ -7,7 +7,7 @@ import {
 	getFormats,
 	getListenDatesForRelease,
 	getMusicReleaseArtistGrouping,
-	getMusicReleaseSearchText,
+	getMusicReleaseSearchFields,
 	getMusicReleases,
 	getReleaseFile,
 	getReleaseTitle,
@@ -81,7 +81,7 @@ export const showAddListen = async (app: App): Promise<void> => {
 		placeholder: "Select a music release...",
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
-		getSearchText: (file) => getMusicReleaseSearchText(app, file),
+		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});

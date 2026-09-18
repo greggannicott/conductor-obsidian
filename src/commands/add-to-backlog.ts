@@ -5,7 +5,7 @@ import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
 	compareReleasesByTitle,
 	getMusicReleaseArtistGrouping,
-	getMusicReleaseSearchText,
+	getMusicReleaseSearchFields,
 	getMusicReleases,
 	getReleaseTitle,
 } from "src/music-release";
@@ -46,7 +46,7 @@ export const showAddToBacklog = async (
 		placeholder: "Select a music release...",
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
-		getSearchText: (file) => getMusicReleaseSearchText(app, file),
+		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});
