@@ -18,6 +18,7 @@ const RUN_TYPES = [
 	"Pyramid Interval Run",
 	"Progression Run",
 	"Time Trial Run",
+	"Goal Pace Run",
 	"Threshold Run",
 	"Park Run",
 	"Race",
@@ -98,6 +99,20 @@ export const addRun = async (app: App): Promise<void> => {
 		getText: (type) => type,
 	});
 	if (!runType) return;
+
+	let targetPace: string | null = null;
+	if (runType === "Goal Pace Run") {
+		const targetPacePrompt = await TextInputModal.show(app, {
+			title: "Target Pace (/km)",
+			placeholder: "5.30",
+		});
+		if (targetPacePrompt.cancelled) return;
+		targetPace = targetPacePrompt.value.trim();
+		if (!targetPace) {
+			new Notice("Target pace must be entered (e.g. 5.30)");
+			return;
+		}
+	}
 
 	const date = await DatePickerModal.show(app);
 	if (!date) return;
@@ -221,6 +236,9 @@ export const addRun = async (app: App): Promise<void> => {
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${RUN_TYPE_TO_WIKILINK[runType] ?? runType}]]`;
+		if (targetPace !== null) {
+			fm["target-pace"] = parseFloat(targetPace);
+		}
 		fm["date-of-event"] = date;
 		fm["distance"] = parseFloat(distance);
 		fm["elevation-gain"] = parseFloat(elevationGain);
