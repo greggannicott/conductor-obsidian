@@ -230,14 +230,30 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		}
 	}
 
+	// Obsidian resolves Enter/clicks through selectSuggestion, which closes the
+	// modal BEFORE invoking onChooseSuggestion. Intercept group headers here so
+	// the selector stays open until an actual item is chosen.
+	selectSuggestion(
+		value: ConductorSelectorEntry<T>,
+		evt: MouseEvent | KeyboardEvent,
+	): void {
+		if (
+			value.kind === "header" &&
+			!(this.multiSelect && !(evt instanceof MouseEvent))
+		) {
+			evt.preventDefault();
+			return;
+		}
+		super.selectSuggestion(value, evt);
+	}
+
 	onChooseSuggestion(
 		item: ConductorSelectorEntry<T>,
 		evt: MouseEvent | KeyboardEvent,
 	): void {
 		if (item.kind === "header") {
-			// Obsidian highlights index 0 without skipping disabled rows, so
-			// keyboard Enter can land on a group header. Treat it as a confirm
-			// of the selection set; clicking headers does nothing.
+			// Multi-select keyboard Enter on a header confirms the selection
+			// set; single-select headers never reach here.
 			if (this.multiSelect && !(evt instanceof MouseEvent)) {
 				this.confirmMultiSelection(evt, null);
 			}
