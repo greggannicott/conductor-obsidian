@@ -23,6 +23,30 @@ const RUN_TYPE_TO_WIKILINK: Record<string, string> = {
 	"Zone 2": "Zone 2 Run",
 };
 
+function getLastKnownWeight(app: App): number | null {
+	const weeklyNoteKey = (basename: string): number => {
+		const match = basename.match(/^(\d{4})-W(\d{1,2})$/);
+		return match
+			? parseInt(match[1], 10) * 100 + parseInt(match[2], 10)
+			: -1;
+	};
+
+	const weeklyNotes = app.vault
+		.getMarkdownFiles()
+		.filter((file) => file.path.startsWith("_weekly notes/"))
+		.sort((a, b) => weeklyNoteKey(b.basename) - weeklyNoteKey(a.basename));
+
+	for (const note of weeklyNotes) {
+		const weight = app.metadataCache.getFileCache(note)?.frontmatter?.[
+			"ht-weight"
+		];
+		if (weight == null || weight === "") continue;
+		const parsed = Number(weight);
+		if (Number.isFinite(parsed) && parsed > 0) return parsed;
+	}
+	return null;
+}
+
 function parseTimeToSeconds(time: string): number {
 	const parts = time.split(":");
 	const hours = parts.length > 2 ? parseInt(parts[0], 10) : 0;
@@ -147,6 +171,8 @@ export const addRun = async (app: App): Promise<void> => {
 		return;
 	}
 
+	const lastKnownWeight = getLastKnownWeight(app);
+
 	const workoutSeconds = parseTimeToSeconds(workoutTime);
 	const elapsedSeconds = elapsedTime
 		? parseTimeToSeconds(elapsedTime)
@@ -161,6 +187,9 @@ export const addRun = async (app: App): Promise<void> => {
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
 		fm["average-pace"] = parseFloat(pace);
 		fm["average-heart-rate"] = parseInt(heartRate, 10);
+		if (lastKnownWeight !== null) {
+			fm["last-known-weight"] = lastKnownWeight;
+		}
 		for (let i = 0; i < zoneTimesInSeconds.length; i++) {
 			fm[`time-in-zone-${i + 1}-in-seconds`] = zoneTimesInSeconds[i];
 		}
