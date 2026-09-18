@@ -28,6 +28,7 @@ import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
+import { showAddToRotation } from "./commands/add-to-rotation";
 import { isActiveFileMusicRelease } from "./music-release";
 import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
@@ -369,6 +370,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "rate-music-release",
 			name: "Rate Music Release",
 			callback: () => void showRateRelease(this.app),
+		});
+
+		this.addCommand({
+			id: "add-to-rotation",
+			name: "Add to Rotation",
+			callback: () => void showAddToRotation(this.app),
 		});
 
 		this.addCheckedCommand(

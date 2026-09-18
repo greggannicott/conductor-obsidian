@@ -30,6 +30,7 @@ import {
 	getRatingLabel,
 	rateRelease,
 } from "../commands/rate-release";
+import { showRemoveFromRotation } from "../commands/add-to-rotation";
 import {
 	BacklogItemStatus,
 	hasUnresolvedBacklogItems,
@@ -167,7 +168,7 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 			menu.addItem((item) => {
 				item.setTitle("Add to Listening Backlog");
 				item.onClick(() => {
-					void showAddToBacklog(app, file);
+					void showAddToBacklog(app, file, true);
 				});
 			});
 
@@ -240,6 +241,13 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 
 		const rateReleaseTarget = getRateableRelease(app, file);
 		if (rateReleaseTarget) {
+			menu.addItem((item) => {
+				item.setTitle("Add to Rotation");
+				item.onClick(() => {
+					void showRemoveFromRotation(app, rateReleaseTarget);
+				});
+			});
+
 			const currentRating = getReleaseRating(app, rateReleaseTarget);
 			menu.addItem((item) => {
 				item.setTitle("Rate");

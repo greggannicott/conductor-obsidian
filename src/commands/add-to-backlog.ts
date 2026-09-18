@@ -16,6 +16,7 @@ const BACKLOG_TEMPLATE_NAME = "Listen Backlog Item";
 export const showAddToBacklog = async (
 	app: App,
 	preselectedRelease?: TFile | null,
+	skipPicker = false,
 ): Promise<void> => {
 	const releases = getMusicReleases(app);
 	if (releases.length === 0) {
@@ -23,33 +24,38 @@ export const showAddToBacklog = async (
 		return;
 	}
 
-	let initialValue: string | undefined;
-	if (preselectedRelease) {
-		initialValue = getReleaseTitle(app, preselectedRelease);
+	let selected: TFile | null | undefined = null;
+	if (skipPicker && preselectedRelease) {
+		selected = preselectedRelease;
 	} else {
-		const activeFile = app.workspace.activeEditor?.file;
-		if (activeFile) {
-			const metadata = app.metadataCache.getFileCache(activeFile);
-			const categories = metadata?.frontmatter?.categories;
-			const isMusicRelease =
-				categories &&
-				Array.isArray(categories) &&
-				categories.includes("[[Music Release]]");
-			if (isMusicRelease) {
-				initialValue = getReleaseTitle(app, activeFile);
+		let initialValue: string | undefined;
+		if (preselectedRelease) {
+			initialValue = getReleaseTitle(app, preselectedRelease);
+		} else {
+			const activeFile = app.workspace.activeEditor?.file;
+			if (activeFile) {
+				const metadata = app.metadataCache.getFileCache(activeFile);
+				const categories = metadata?.frontmatter?.categories;
+				const isMusicRelease =
+					categories &&
+					Array.isArray(categories) &&
+					categories.includes("[[Music Release]]");
+				if (isMusicRelease) {
+					initialValue = getReleaseTitle(app, activeFile);
+				}
 			}
 		}
-	}
 
-	const selected = await ConductorSelectorModal.show(app, {
-		items: releases,
-		placeholder: "Select a music release...",
-		initialValue,
-		getText: (file) => getReleaseTitle(app, file),
-		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
-		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
-		groupings: [getMusicReleaseArtistGrouping(app)],
-	});
+		selected = await ConductorSelectorModal.show(app, {
+			items: releases,
+			placeholder: "Select a music release...",
+			initialValue,
+			getText: (file) => getReleaseTitle(app, file),
+			getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
+			sortItems: (a, b) => compareReleasesByTitle(app, a, b),
+			groupings: [getMusicReleaseArtistGrouping(app)],
+		});
+	}
 	if (!selected) return;
 
 	const { value, cancelled } = await TextInputModal.show(app, {

@@ -168,6 +168,17 @@ export function getReleaseRating(app: App, file: TFile): number | null {
 	return typeof rating === "number" ? rating : null;
 }
 
+export function getReleaseInRotation(app: App, file: TFile): boolean {
+	return (
+		app.metadataCache.getFileCache(file)?.frontmatter?.["in-rotation"] === true
+	);
+}
+
+// Music Releases currently marked as in rotation, sorted by title.
+export function getMusicReleasesInRotation(app: App): TFile[] {
+	return getMusicReleases(app).filter((file) => getReleaseInRotation(app, file));
+}
+
 // Date-times of every listen recorded for the release, newest first. Each value
 // is the raw "date-time" frontmatter string (e.g. "2026-09-16 16:07:15").
 export function getListenDatesForRelease(
