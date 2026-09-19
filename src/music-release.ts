@@ -61,10 +61,13 @@ export function getMusicReleases(app: App): TFile[] {
 	return releases;
 }
 
-// Search fields for the picker: the release title and its artists are matched
-// independently, so a query must be satisfied within a single field.
+// Search fields for the picker: the release title and each individual artist
+// are matched independently, so a query must be satisfied within a single
+// field rather than spanning across them.
 export function getMusicReleaseSearchFields(app: App, file: TFile): string[] {
-	return [getReleaseTitle(app, file), getArtists(app, file)].filter(Boolean);
+	return [getReleaseTitle(app, file), ...getArtistNames(app, file)].filter(
+		Boolean,
+	);
 }
 
 // Grouping of releases under non-selectable artist headers. Releases with
