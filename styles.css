@@ -71,11 +71,26 @@ If your plugin does not need CSS, delete this file.
 	gap: 2px;
 }
 
-/* Line holding the multi-select checkbox and the title */
+/* Line holding the multi-select checkbox, the title and any right-aligned
+   title meta. The title shrinks so the right meta always stays visible. */
 .conductor-suggest-title-row {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+}
+
+.conductor-suggest-title {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Single meta value rendered right-aligned on the title line (e.g. rating
+   stars), pushed to the far right of the row. */
+.conductor-suggest-title-meta {
+	margin-left: auto;
+	flex-shrink: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
 }
 
 /* Cover rows scale title/meta up to match the larger thumbnail (image grew
@@ -86,6 +101,12 @@ If your plugin does not need CSS, delete this file.
 }
 
 .conductor-suggest-row:has(.conductor-suggest-cover) .conductor-suggest-meta {
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+.conductor-suggest-row:has(.conductor-suggest-cover)
+	.conductor-suggest-title-meta {
 	font-size: 17px;
 	line-height: 1.3;
 }
@@ -142,7 +163,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .conductor-suggest-selected .conductor-suggest-meta,
-.conductor-suggest-selected .conductor-suggest-meta-value {
+.conductor-suggest-selected .conductor-suggest-meta-value,
+.conductor-suggest-selected .conductor-suggest-title-meta {
 	color: color-mix(in srgb, var(--text-on-accent) 85%, transparent);
 }
 

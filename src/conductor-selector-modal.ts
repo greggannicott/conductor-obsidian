@@ -46,6 +46,9 @@ export type ConductorSelectorOptions<T> = {
 	// omitted for bare values). Takes precedence over getSubtext when it
 	// returns one or more entries.
 	getMeta?: (item: T) => ConductorSelectorMeta[] | null;
+	// Optional single meta value rendered right-aligned on the title line
+	// (e.g. a rating shown as stars), independent of getMeta.
+	getTitleRightMeta?: (item: T) => string | null;
 	// Optional trailing badges rendered at the end of the row (e.g. emojis).
 	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
@@ -254,6 +257,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			cls: "conductor-suggest-title",
 			text: this.options.getText(item.item),
 		});
+
+		const titleMeta = this.options.getTitleRightMeta?.(item.item);
+		if (titleMeta) {
+			titleRow.createSpan({
+				cls: "conductor-suggest-title-meta",
+				text: titleMeta,
+			});
+		}
 
 		const meta = this.options.getMeta?.(item.item);
 		if (meta && meta.length > 0) {

@@ -9,6 +9,7 @@ import {
 	getReleaseCover,
 	getReleaseMeta,
 	getReleaseRating,
+	getReleaseRatingStars,
 	getReleaseTitle,
 } from "src/music-release";
 
@@ -40,6 +41,7 @@ export const showRateRelease = async (app: App): Promise<void> => {
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		getCover: (file) => getReleaseCover(app, file),
 		getMeta: (file) => getReleaseMeta(app, file),
+		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});

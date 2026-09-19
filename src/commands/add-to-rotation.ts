@@ -10,6 +10,7 @@ import {
 	getReleaseCover,
 	getReleaseInRotation,
 	getReleaseMeta,
+	getReleaseRatingStars,
 	getReleaseTitle,
 } from "src/music-release";
 
@@ -35,6 +36,7 @@ export const showAddToRotation = async (app: App): Promise<void> => {
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		getCover: (file) => getReleaseCover(app, file),
 		getMeta: (file) => getReleaseMeta(app, file),
+		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});
@@ -66,6 +68,7 @@ export async function showRemoveFromRotation(
 		getText: (file) => getReleaseTitle(app, file),
 		getCover: (file) => getReleaseCover(app, file),
 		getMeta: (file) => getReleaseMeta(app, file),
+		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 	});

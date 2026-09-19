@@ -176,17 +176,22 @@ export function getReleaseCover(app: App, file: TFile): string | null {
 	return typeof cover === "string" && cover.trim() ? cover.trim() : null;
 }
 
-// Meta lines for a release picker row: artists (no label), rating as stars
-// (no label), then "Released <year>". Empty entries are omitted.
+// Meta lines for a release picker row: artists (no label) then "Released
+// <year>". The rating lives on the title line via getReleaseRatingStars.
 export function getReleaseMeta(app: App, file: TFile): ConductorSelectorMeta[] {
 	const meta: ConductorSelectorMeta[] = [];
 	const artists = getArtists(app, file);
 	if (artists) meta.push({ value: artists });
-	const rating = getReleaseRating(app, file);
-	if (rating && rating > 0) meta.push({ value: "★".repeat(rating) });
 	const year = getReleaseYear(app, file);
 	if (year) meta.push({ label: "Released", value: String(year) });
 	return meta;
+}
+
+// The release's rating rendered as stars, for the right-aligned slot on the
+// title line. Null when the release is unrated.
+export function getReleaseRatingStars(app: App, file: TFile): string | null {
+	const rating = getReleaseRating(app, file);
+	return rating && rating > 0 ? "★".repeat(rating) : null;
 }
 
 // The release year from frontmatter. Values are wikilinks (e.g. "[[2006]]");
