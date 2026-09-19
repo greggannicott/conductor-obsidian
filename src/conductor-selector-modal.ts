@@ -20,6 +20,12 @@ function truncateMetaValue(value: string): string {
 	return truncateText(value, META_VALUE_MAX_LENGTH);
 }
 
+// Match strength of a query against a search field: 0 when the query equals
+// the whole field, otherwise 1 for a fuzzy match. Lower is stronger.
+function getMatchTier(query: string, field: string): number {
+	return query.toLowerCase() === field.trim().toLowerCase() ? 0 : 1;
+}
+
 export type ConductorSelectorGrouping<T> = {
 	id: string;
 	label: string;
@@ -60,6 +66,10 @@ export type ConductorSelectorOptions<T> = {
 	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
 	sortItems?: (a: T, b: T) => number;
+	// While searching, rank grouped results (and their group headers) by match
+	// relevance — exact field matches first, then fuzzy score — instead of the
+	// deterministic order. No query keeps the deterministic order. Off by default.
+	rankGroupsByRelevance?: boolean;
 	// The first grouping is the default (active on open). By convention the
 	// caller orders the array accordingly.
 	groupings?: ConductorSelectorGrouping<T>[];
@@ -175,6 +185,9 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 	getSuggestions(query: string): ConductorSelectorEntry<T>[] {
 		const q = query.trim();
 		let items = [...(this.options.items ?? [])];
+		// Match relevance per item (lower tier is a stronger match), used to
+		// rank grouped results while searching.
+		const relevance = new Map<T, { tier: number; score: number }>();
 
 		if (q.length > 0) {
 			const search = prepareFuzzySearch(q);
@@ -185,12 +198,23 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			items = items
 				.map((item) => {
 					let best: NonNullable<ReturnType<typeof search>> | null = null;
+					let bestTier = 1;
 					for (const field of getSearchTexts(item)) {
 						if (!field.trim()) continue;
 						const result = search(field);
-						if (result && (!best || result.score > best.score)) {
+						if (!result) continue;
+						const tier = getMatchTier(q, field);
+						if (
+							!best ||
+							tier < bestTier ||
+							(tier === bestTier && result.score > best.score)
+						) {
 							best = result;
+							bestTier = tier;
 						}
+					}
+					if (best) {
+						relevance.set(item, { tier: bestTier, score: best.score });
 					}
 					return { item, best };
 				})
@@ -207,13 +231,60 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			return items.map((item) => ({ kind: "item" as const, item }));
 		}
 
-		// Grouped views keep a deterministic order rather than fuzzy rank.
-		if (this.options.sortItems) {
+		const searching = q.length > 0;
+
+		const relevanceOf = (item: T): { tier: number; score: number } =>
+			relevance.get(item) ?? { tier: 1, score: 0 };
+
+		const compareItemsByRelevance = (a: T, b: T): number => {
+			const ra = relevanceOf(a);
+			const rb = relevanceOf(b);
+			if (ra.tier !== rb.tier) return ra.tier - rb.tier;
+			if (ra.score !== rb.score) return rb.score - ra.score;
+			return this.options.sortItems?.(a, b) ?? 0;
+		};
+
+		const groupBestRelevance = (
+			groupItems: T[],
+		): { tier: number; score: number } => {
+			let best = { tier: 1, score: -Infinity };
+			for (const item of groupItems) {
+				const r = relevanceOf(item);
+				if (r.tier < best.tier || (r.tier === best.tier && r.score > best.score)) {
+					best = r;
+				}
+			}
+			return best;
+		};
+
+		// Grouped views keep a deterministic order rather than fuzzy rank,
+		// unless the picker opts into ranking by match relevance while
+		// searching (rankGroupsByRelevance).
+		if (searching && this.options.rankGroupsByRelevance) {
+			items.sort(compareItemsByRelevance);
+		} else if (this.options.sortItems) {
 			items.sort(this.options.sortItems);
 		}
 
+		const groups = grouping.buildGroups(items);
+
+		if (searching && this.options.rankGroupsByRelevance) {
+			// Move the group containing the strongest match to the top; keep
+			// the deterministic header order as a tiebreaker.
+			const originalOrder = new Map(groups.map((g, i) => [g, i]));
+			const rankedGroups = [...groups].sort((a, b) => {
+				const aBest = groupBestRelevance(a.items);
+				const bBest = groupBestRelevance(b.items);
+				if (aBest.tier !== bBest.tier) return aBest.tier - bBest.tier;
+				if (aBest.score !== bBest.score) return bBest.score - aBest.score;
+				return (originalOrder.get(a) ?? 0) - (originalOrder.get(b) ?? 0);
+			});
+			groups.length = 0;
+			groups.push(...rankedGroups);
+		}
+
 		const entries: ConductorSelectorEntry<T>[] = [];
-		for (const group of grouping.buildGroups(items)) {
+		for (const group of groups) {
 			if (group.items.length === 0) continue;
 			entries.push({ kind: "header", title: group.header });
 			for (const item of group.items) {

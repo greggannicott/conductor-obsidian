@@ -31,6 +31,7 @@ export function showMusicReleasePicker(
 		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
+		rankGroupsByRelevance: true,
 		...overrides,
 	});
 }
