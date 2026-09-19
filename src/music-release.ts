@@ -70,9 +70,32 @@ export function getMusicReleaseSearchFields(app: App, file: TFile): string[] {
 	);
 }
 
-// Grouping of releases under non-selectable artist headers. Releases with
-// multiple artists appear under each artist; releases without a known artist
-// fall under "Unknown Artist".
+const GROUP_HEADER_MAX_LENGTH = 60;
+const GROUP_HEADER_LEAD_ARTISTS = 3;
+
+function truncateGroupHeader(text: string, maxLength: number): string {
+	if (text.length <= maxLength) return text;
+	return text.slice(0, Math.max(1, maxLength - 3)).trimEnd() + "...";
+}
+
+// A group heading listing a release's artists, e.g. "Gustav Mahler, BBC
+// Scottish Symphony Orchestra, Edinburgh Festival Chorus +2 more", truncated to
+// a sensible length.
+function formatArtistGroupHeader(artists: string[]): string {
+	if (artists.length === 1) return artists[0];
+	const shown = artists.slice(0, GROUP_HEADER_LEAD_ARTISTS).join(", ");
+	const tail =
+		artists.length > GROUP_HEADER_LEAD_ARTISTS
+			? ` +${artists.length - GROUP_HEADER_LEAD_ARTISTS} more`
+			: "";
+	if ((shown + tail).length <= GROUP_HEADER_MAX_LENGTH) return shown + tail;
+	const budget = Math.max(1, GROUP_HEADER_MAX_LENGTH - tail.length);
+	return truncateGroupHeader(shown, budget) + tail;
+}
+
+// Grouping of releases under a single non-selectable header per artist line-up.
+// A release appears exactly once, under a header listing all of its artists
+// (truncated); releases without a known artist fall under "Unknown Artist".
 export function getMusicReleaseArtistGrouping(
 	app: App,
 ): ConductorSelectorGrouping<TFile> {
@@ -82,16 +105,20 @@ export function getMusicReleaseArtistGrouping(
 		buildGroups: (releases) => {
 			const buckets = new Map<string, TFile[]>();
 			for (const release of releases) {
-				const artists = getArtistNames(app, release);
-				const names = artists.length > 0 ? artists : ["Unknown Artist"];
-				for (const name of names) {
-					if (!buckets.has(name)) buckets.set(name, []);
-					buckets.get(name)!.push(release);
-				}
+				const names = [...new Set(getArtistNames(app, release))];
+				const key = names.length > 0 ? names.join(", ") : "Unknown Artist";
+				if (!buckets.has(key)) buckets.set(key, []);
+				buckets.get(key)!.push(release);
 			}
 			return [...buckets.entries()]
-				.sort(([artistA], [artistB]) => artistA.localeCompare(artistB))
-				.map(([header, items]) => ({ header, items }));
+				.map(([key, items]) => ({
+					header:
+						key === "Unknown Artist"
+							? key
+							: formatArtistGroupHeader(key.split(", ")),
+					items,
+				}))
+				.sort((a, b) => a.header.localeCompare(b.header));
 		},
 	};
 }
