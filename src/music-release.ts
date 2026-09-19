@@ -1,5 +1,8 @@
 import { App, TFile, parseFrontMatterStringArray } from "obsidian";
-import type { ConductorSelectorGrouping } from "src/conductor-selector-modal";
+import type {
+	ConductorSelectorGrouping,
+	ConductorSelectorMeta,
+} from "src/conductor-selector-modal";
 import {
 	getFilesWithCategory,
 	isFileCategory,
@@ -166,6 +169,33 @@ export function getRateableRelease(app: App, file: TFile): TFile | null {
 export function getReleaseRating(app: App, file: TFile): number | null {
 	const rating = app.metadataCache.getFileCache(file)?.frontmatter?.rating;
 	return typeof rating === "number" ? rating : null;
+}
+
+export function getReleaseCover(app: App, file: TFile): string | null {
+	const cover = app.metadataCache.getFileCache(file)?.frontmatter?.cover;
+	return typeof cover === "string" && cover.trim() ? cover.trim() : null;
+}
+
+// Meta lines for a release picker row: artists (no label), rating as stars
+// (no label), then "Released <year>". Empty entries are omitted.
+export function getReleaseMeta(app: App, file: TFile): ConductorSelectorMeta[] {
+	const meta: ConductorSelectorMeta[] = [];
+	const artists = getArtists(app, file);
+	if (artists) meta.push({ value: artists });
+	const rating = getReleaseRating(app, file);
+	if (rating && rating > 0) meta.push({ value: "★".repeat(rating) });
+	const year = getReleaseYear(app, file);
+	if (year) meta.push({ label: "Released", value: String(year) });
+	return meta;
+}
+
+// The release year from frontmatter. Values are wikilinks (e.g. "[[2006]]");
+// anything that isn't a four-digit year resolves to null.
+export function getReleaseYear(app: App, file: TFile): number | null {
+	const raw = app.metadataCache.getFileCache(file)?.frontmatter?.year;
+	if (raw === undefined || raw === null) return null;
+	const digits = String(raw).replace(/^\[\[|\]\]$/g, "").trim();
+	return /^\d{4}$/.test(digits) ? parseInt(digits, 10) : null;
 }
 
 export function getReleaseInRotation(app: App, file: TFile): boolean {

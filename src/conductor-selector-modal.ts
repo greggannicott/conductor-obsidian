@@ -1,5 +1,21 @@
 import { App, prepareFuzzySearch, SuggestModal } from "obsidian";
 
+// A single key/value pair rendered beneath a suggestion's title. Omit `label`
+// to display just the value.
+export type ConductorSelectorMeta = {
+	label?: string;
+	value: string;
+};
+
+const META_VALUE_MAX_LENGTH = 40;
+
+// Display-only truncation of meta values (searching always uses the full
+// value from getSearchTexts/getSearchText, never the rendered string).
+function truncateMetaValue(value: string): string {
+	if (value.length <= META_VALUE_MAX_LENGTH) return value;
+	return value.slice(0, META_VALUE_MAX_LENGTH - 3) + "...";
+}
+
 export type ConductorSelectorGrouping<T> = {
 	id: string;
 	label: string;
@@ -23,6 +39,13 @@ export type ConductorSelectorOptions<T> = {
 	getSearchTexts?: (item: T) => string[];
 	// Optional muted second line rendered beneath the text.
 	getSubtext?: (item: T) => string | null;
+	// Optional cover image URL rendered as a thumbnail on the left of the row.
+	// When absent the row renders without the image.
+	getCover?: (item: T) => string | null;
+	// Optional meta key/value pairs rendered beneath the title (labels may be
+	// omitted for bare values). Takes precedence over getSubtext when it
+	// returns one or more entries.
+	getMeta?: (item: T) => ConductorSelectorMeta[] | null;
 	// Optional trailing badges rendered at the end of the row (e.g. emojis).
 	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
@@ -205,20 +228,53 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 		const row = el.createDiv({ cls: "conductor-suggest-row" });
 
+		const cover = this.options.getCover?.(item.item);
+		if (cover) {
+			const img = row.createEl("img", { cls: "conductor-suggest-cover" });
+			img.src = cover;
+			img.loading = "lazy";
+		}
+
+		// Title plus supporting lines live in a column next to the cover so
+		// the whole row grows as one block.
+		const body = row.createDiv({ cls: "conductor-suggest-body" });
+
+		// Multi-select checkbox sits on the title line, right before the title,
+		// rather than floating on the far left of the row.
+		const titleRow = body.createDiv({ cls: "conductor-suggest-title-row" });
 		if (this.multiSelect) {
 			const isSelected = this.selectedItems.has(item.item);
-			row.createSpan({
+			titleRow.createSpan({
 				cls: "conductor-suggest-check",
 				text: isSelected ? "☑" : "☐",
 			});
 			if (isSelected) el.addClass("conductor-suggest-selected");
 		}
+		titleRow.createSpan({
+			cls: "conductor-suggest-title",
+			text: this.options.getText(item.item),
+		});
 
-		row.createSpan({ text: this.options.getText(item.item) });
-
-		const subtext = this.options.getSubtext?.(item.item);
-		if (subtext) {
-			el.createDiv({ text: subtext, cls: "conductor-suggest-subtext" });
+		const meta = this.options.getMeta?.(item.item);
+		if (meta && meta.length > 0) {
+			const metaEl = body.createDiv({ cls: "conductor-suggest-meta" });
+			for (const entry of meta) {
+				if (entry.label) {
+					metaEl.createSpan({
+						cls: "conductor-suggest-meta-label",
+						text: entry.label,
+					});
+				}
+				metaEl.createSpan({
+					cls: "conductor-suggest-meta-value",
+					text: truncateMetaValue(entry.value),
+				});
+			}
+		} else {
+			const subtext = this.options.getSubtext?.(item.item);
+			if (subtext) {
+				body.createDiv({ text: subtext, cls: "conductor-suggest-subtext" });
+			}
 		}
 
 		const badges = this.options.getBadges?.(item.item);

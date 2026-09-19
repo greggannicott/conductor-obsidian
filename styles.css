@@ -51,15 +51,103 @@ If your plugin does not need CSS, delete this file.
 	gap: 8px;
 }
 
+/* Cover thumbnail on the left of a suggestion row */
+.conductor-suggest-cover {
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
+	border-radius: var(--radius-s);
+	flex-shrink: 0;
+	align-self: flex-start;
+	background-color: var(--background-modifier-border);
+}
+
+/* Title + meta column that sits next to the cover thumbnail */
+.conductor-suggest-body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+/* Line holding the multi-select checkbox and the title */
+.conductor-suggest-title-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Cover rows scale title/meta up to match the larger thumbnail (image grew
+   48px -> 64px, so text scales by the same 4/3 factor). */
+.conductor-suggest-row:has(.conductor-suggest-cover) .conductor-suggest-title {
+	font-size: 21px;
+	line-height: 1.3;
+}
+
+.conductor-suggest-row:has(.conductor-suggest-cover) .conductor-suggest-meta {
+	font-size: 17px;
+	line-height: 1.3;
+}
+
+/* Meta key/value pairs beneath the title */
+.conductor-suggest-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 8px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.conductor-suggest-meta-label {
+	color: var(--text-faint);
+	font-weight: 500;
+}
+
+.conductor-suggest-meta-value {
+	color: var(--text-muted);
+}
+
 .conductor-suggest-check {
-	width: 16px;
+	width: 20px;
 	text-align: center;
+	font-size: 18px;
+	line-height: 1;
 	flex-shrink: 0;
 	align-self: center;
 }
 
 .conductor-suggest-selected {
 	background-color: var(--interactive-accent-hover);
+}
+
+/* Combined selected + current (hover) state: darker purple so the selection
+   stays visible under the default highlight background. */
+.conductor-suggest-selected.is-selected {
+	background-color: color-mix(
+		in srgb,
+		var(--interactive-accent) 70%,
+		black
+	);
+}
+
+/* Selected rows sit on an accent background: lift title/meta text to the
+   on-accent color (label dimmed) so it stays readable on purple. */
+/* Selected rows sit on an accent background: lift title/meta/checkbox text to
+   the on-accent color (label dimmed) so it stays readable on purple. */
+.conductor-suggest-selected .conductor-suggest-check,
+.conductor-suggest-selected .conductor-suggest-title {
+	color: var(--text-on-accent);
+}
+
+.conductor-suggest-selected .conductor-suggest-meta,
+.conductor-suggest-selected .conductor-suggest-meta-value {
+	color: color-mix(in srgb, var(--text-on-accent) 85%, transparent);
+}
+
+.conductor-suggest-selected .conductor-suggest-meta-label {
+	color: color-mix(in srgb, var(--text-on-accent) 65%, transparent);
 }
 
 /* Trailing badges in suggestion rows (e.g. priority/status emojis) */

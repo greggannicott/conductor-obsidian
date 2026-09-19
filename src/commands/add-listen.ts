@@ -9,7 +9,9 @@ import {
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
 	getMusicReleases,
+	getReleaseCover,
 	getReleaseFile,
+	getReleaseMeta,
 	getReleaseTitle,
 } from "src/music-release";
 import {
@@ -82,6 +84,8 @@ export const showAddListen = async (app: App): Promise<void> => {
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
+		getCover: (file) => getReleaseCover(app, file),
+		getMeta: (file) => getReleaseMeta(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});

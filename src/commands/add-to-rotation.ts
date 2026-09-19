@@ -2,13 +2,14 @@ import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import {
 	compareReleasesByTitle,
-	getArtists,
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
 	getMusicReleases,
 	getMusicReleasesInRotation,
 	getRateableRelease,
+	getReleaseCover,
 	getReleaseInRotation,
+	getReleaseMeta,
 	getReleaseTitle,
 } from "src/music-release";
 
@@ -32,6 +33,8 @@ export const showAddToRotation = async (app: App): Promise<void> => {
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
+		getCover: (file) => getReleaseCover(app, file),
+		getMeta: (file) => getReleaseMeta(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 		groupings: [getMusicReleaseArtistGrouping(app)],
 	});
@@ -61,7 +64,8 @@ export async function showRemoveFromRotation(
 		items: inRotation,
 		placeholder: "Select a release to remove from rotation...",
 		getText: (file) => getReleaseTitle(app, file),
-		getSubtext: (file) => getArtists(app, file) || null,
+		getCover: (file) => getReleaseCover(app, file),
+		getMeta: (file) => getReleaseMeta(app, file),
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 	});

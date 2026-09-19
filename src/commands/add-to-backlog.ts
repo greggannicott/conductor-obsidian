@@ -7,6 +7,8 @@ import {
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
 	getMusicReleases,
+	getReleaseCover,
+	getReleaseMeta,
 	getReleaseTitle,
 } from "src/music-release";
 import { BacklogItemStatus } from "src/backlog";
@@ -52,6 +54,8 @@ export const showAddToBacklog = async (
 			initialValue,
 			getText: (file) => getReleaseTitle(app, file),
 			getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
+			getCover: (file) => getReleaseCover(app, file),
+			getMeta: (file) => getReleaseMeta(app, file),
 			sortItems: (a, b) => compareReleasesByTitle(app, a, b),
 			groupings: [getMusicReleaseArtistGrouping(app)],
 		});
