@@ -3,6 +3,7 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
 import {
+	MUSIC_RELEASE_TITLE_MAX_LENGTH,
 	compareReleasesByTitle,
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
@@ -54,6 +55,7 @@ export const showAddToBacklog = async (
 			placeholder: "Select a music release...",
 			initialValue,
 			getText: (file) => getReleaseTitle(app, file),
+			titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,
 			getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 			getCover: (file) => getReleaseCover(app, file),
 			getMeta: (file) => getReleaseMeta(app, file),

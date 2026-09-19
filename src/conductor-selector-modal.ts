@@ -9,11 +9,15 @@ export type ConductorSelectorMeta = {
 
 const META_VALUE_MAX_LENGTH = 40;
 
-// Display-only truncation of meta values (searching always uses the full
-// value from getSearchTexts/getSearchText, never the rendered string).
+// Display-only truncation of a value (searching always uses the full text from
+// getSearchTexts/getSearchText, never the rendered string).
+function truncateText(value: string, maxLength: number): string {
+	if (value.length <= maxLength) return value;
+	return value.slice(0, maxLength - 3) + "...";
+}
+
 function truncateMetaValue(value: string): string {
-	if (value.length <= META_VALUE_MAX_LENGTH) return value;
-	return value.slice(0, META_VALUE_MAX_LENGTH - 3) + "...";
+	return truncateText(value, META_VALUE_MAX_LENGTH);
 }
 
 export type ConductorSelectorGrouping<T> = {
@@ -33,6 +37,9 @@ export type ConductorSelectorOptions<T> = {
 	getText: (item: T) => string;
 	// Text the query is matched against; defaults to getText.
 	getSearchText?: (item: T) => string;
+	// Maximum length used to truncate the displayed title with an ellipsis.
+	// Searching always uses the full text from getText/getSearchText*.
+	titleMaxLength?: number;
 	// Alternative to getSearchText: fields matched independently, so a query
 	// must be satisfied within a single field rather than spanning across them.
 	// The item matches when any field matches; the best score wins for ranking.
@@ -255,7 +262,9 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		}
 		titleRow.createSpan({
 			cls: "conductor-suggest-title",
-			text: this.options.getText(item.item),
+			text: this.options.titleMaxLength
+				? truncateText(this.options.getText(item.item), this.options.titleMaxLength)
+				: this.options.getText(item.item),
 		});
 
 		const titleMeta = this.options.getTitleRightMeta?.(item.item);

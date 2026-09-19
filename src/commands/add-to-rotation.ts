@@ -1,6 +1,7 @@
 import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import {
+	MUSIC_RELEASE_TITLE_MAX_LENGTH,
 	compareReleasesByTitle,
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
@@ -33,6 +34,7 @@ export const showAddToRotation = async (app: App): Promise<void> => {
 		placeholder: "Select a music release to add to rotation...",
 		initialValue,
 		getText: (file) => getReleaseTitle(app, file),
+			titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,
 		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
 		getCover: (file) => getReleaseCover(app, file),
 		getMeta: (file) => getReleaseMeta(app, file),
@@ -66,6 +68,7 @@ export async function showRemoveFromRotation(
 		items: inRotation,
 		placeholder: "Select a release to remove from rotation...",
 		getText: (file) => getReleaseTitle(app, file),
+			titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,
 		getCover: (file) => getReleaseCover(app, file),
 		getMeta: (file) => getReleaseMeta(app, file),
 		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),

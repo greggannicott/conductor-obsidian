@@ -9,6 +9,9 @@ import {
 	isFileType,
 } from "./utilities";
 
+// Display truncation length for release titles in pickers.
+export const MUSIC_RELEASE_TITLE_MAX_LENGTH = 120;
+
 export function getReleaseTitle(app: App, file: TFile): string {
 	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 	const title = frontmatter?.title;
