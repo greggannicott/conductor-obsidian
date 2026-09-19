@@ -29,6 +29,7 @@ import { showAddListen } from "./commands/add-listen";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
 import { showAddToRotation } from "./commands/add-to-rotation";
+import { openMusicRelease } from "./commands/open-music-release";
 import { isActiveFileMusicRelease } from "./music-release";
 import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
@@ -376,6 +377,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-to-rotation",
 			name: "Add to Rotation",
 			callback: () => void showAddToRotation(this.app),
+		});
+
+		this.addCommand({
+			id: "open-music-release",
+			name: "Open Music Release",
+			callback: () => void openMusicRelease(this.app),
 		});
 
 		this.addCheckedCommand(

@@ -2,15 +2,9 @@ import { App, Notice, TFile, moment } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { TextInputModal } from "src/text-input-modal";
 import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
+import { showMusicReleasePicker } from "../choose-music-release-modal";
 import {
-	MUSIC_RELEASE_TITLE_MAX_LENGTH,
-	compareReleasesByTitle,
-	getMusicReleaseArtistGrouping,
-	getMusicReleaseSearchFields,
 	getMusicReleases,
-	getReleaseCover,
-	getReleaseMeta,
-	getReleaseRatingStars,
 	getReleaseTitle,
 } from "src/music-release";
 import { BacklogItemStatus } from "src/backlog";
@@ -50,18 +44,9 @@ export const showAddToBacklog = async (
 			}
 		}
 
-		selected = await ConductorSelectorModal.show(app, {
+		selected = await showMusicReleasePicker(app, {
 			items: releases,
-			placeholder: "Select a music release...",
 			initialValue,
-			getText: (file) => getReleaseTitle(app, file),
-			titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,
-			getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
-			getCover: (file) => getReleaseCover(app, file),
-			getMeta: (file) => getReleaseMeta(app, file),
-			getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
-			sortItems: (a, b) => compareReleasesByTitle(app, a, b),
-			groupings: [getMusicReleaseArtistGrouping(app)],
 		});
 	}
 	if (!selected) return;

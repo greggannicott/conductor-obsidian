@@ -1,16 +1,10 @@
 import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
+import { showMusicReleasePicker } from "../choose-music-release-modal";
 import {
-	MUSIC_RELEASE_TITLE_MAX_LENGTH,
-	compareReleasesByTitle,
-	getMusicReleaseArtistGrouping,
-	getMusicReleaseSearchFields,
 	getMusicReleases,
 	getRateableRelease,
-	getReleaseCover,
-	getReleaseMeta,
 	getReleaseRating,
-	getReleaseRatingStars,
 	getReleaseTitle,
 } from "src/music-release";
 
@@ -34,19 +28,7 @@ export const showRateRelease = async (app: App): Promise<void> => {
 		if (release) initialValue = getReleaseTitle(app, release);
 	}
 
-	const selected = await ConductorSelectorModal.show(app, {
-		items: releases,
-		placeholder: "Select a music release...",
-		initialValue,
-		getText: (file) => getReleaseTitle(app, file),
-			titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,
-		getSearchTexts: (file) => getMusicReleaseSearchFields(app, file),
-		getCover: (file) => getReleaseCover(app, file),
-		getMeta: (file) => getReleaseMeta(app, file),
-		getTitleRightMeta: (file) => getReleaseRatingStars(app, file),
-		sortItems: (a, b) => compareReleasesByTitle(app, a, b),
-		groupings: [getMusicReleaseArtistGrouping(app)],
-	});
+	const selected = await showMusicReleasePicker(app, { initialValue });
 	if (!selected) return;
 	await showRatingOptions(app, selected);
 };
