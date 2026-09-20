@@ -81,7 +81,18 @@ export function getAllCategories(app: App): string[] {
 		if (cats) {
 			for (const cat of cats) {
 				const stripped = cat.replace(/^\[\[|\]\]$/g, "").trim();
-				if (stripped) categories.add(stripped);
+				// Ignore nil-ish placeholder values (e.g. "<nil>" written by
+				// data imports) so they never surface as categories.
+				if (
+					!stripped ||
+					stripped === "<nil>" ||
+					stripped === "null" ||
+					stripped === "nil" ||
+					stripped === "~"
+				) {
+					continue;
+				}
+				categories.add(stripped);
 			}
 		}
 	}
