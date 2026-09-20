@@ -1,8 +1,19 @@
-import { App, Notice } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { buildCategoryNoteSelector } from "src/category-config";
 import { showMusicReleasePicker } from "../choose-music-release-modal";
+import { showMoviePicker } from "../choose-movie-modal";
 import { getAllCategories, getFilesWithCategory } from "src/utilities";
+
+// Runs a note picker and opens the chosen file, if any.
+const openWithPicker = async (
+	app: App,
+	pick: (app: App) => Promise<TFile | null>,
+): Promise<void> => {
+	const file = await pick(app);
+	if (!file) return;
+	await app.workspace.getLeaf(false).openFile(file);
+};
 
 export const openNoteByCategory = async (app: App): Promise<void> => {
 	const categories = getAllCategories(app);
@@ -21,9 +32,12 @@ export const openNoteByCategory = async (app: App): Promise<void> => {
 	if (!category) return;
 
 	if (category === "Music Release") {
-		const release = await showMusicReleasePicker(app);
-		if (!release) return;
-		await app.workspace.getLeaf(false).openFile(release);
+		await openWithPicker(app, showMusicReleasePicker);
+		return;
+	}
+
+	if (category === "Movie") {
+		await openWithPicker(app, showMoviePicker);
 		return;
 	}
 
