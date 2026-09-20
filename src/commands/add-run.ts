@@ -218,6 +218,17 @@ export const addRun = async (app: App): Promise<void> => {
 		return;
 	}
 
+	const vo2MaxPrompt = await TextInputModal.show(app, {
+		title: "VO2 Max",
+		placeholder: "49.2",
+	});
+	if (vo2MaxPrompt.cancelled) return;
+	const vo2Max = vo2MaxPrompt.value.trim();
+	if (!vo2Max || !/^\d+(\.\d+)?$/.test(vo2Max)) {
+		new Notice("VO2 Max must be a number (e.g. 49.2)");
+		return;
+	}
+
 	const fileName = `${date} - ${runType}.md`;
 	const filePath = getUniqueFilePath(app, sanitizeFileName(fileName));
 
@@ -252,6 +263,7 @@ export const addRun = async (app: App): Promise<void> => {
 		for (let i = 0; i < zoneTimesInSeconds.length; i++) {
 			fm[`time-in-zone-${i + 1}-in-seconds`] = zoneTimesInSeconds[i];
 		}
+		fm["vo2-max"] = parseFloat(vo2Max);
 	});
 
 	await app.workspace.getLeaf(false).openFile(file);
