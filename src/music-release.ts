@@ -209,14 +209,17 @@ export function getReleaseCover(app: App, file: TFile): string | null {
 	return typeof cover === "string" && cover.trim() ? cover.trim() : null;
 }
 
-// Meta lines for a release picker row: artists (no label) then "Released
-// <year>". The rating lives on the title line via getReleaseRatingStars.
+// Meta lines for a release picker row: artists (no label), then "Released
+// <year>" and the run length when known. The rating lives on the title line
+// via getReleaseRatingStars.
 export function getReleaseMeta(app: App, file: TFile): ConductorSelectorMeta[] {
 	const meta: ConductorSelectorMeta[] = [];
 	const artists = getArtists(app, file);
 	if (artists) meta.push({ value: artists });
 	const year = getReleaseYear(app, file);
 	if (year) meta.push({ label: "Released", value: String(year) });
+	const duration = getReleaseDuration(app, file);
+	if (duration) meta.push({ label: "Duration", value: duration });
 	return meta;
 }
 
@@ -234,6 +237,21 @@ export function getReleaseYear(app: App, file: TFile): number | null {
 	if (raw === undefined || raw === null) return null;
 	const digits = String(raw).replace(/^\[\[|\]\]$/g, "").trim();
 	return /^\d{4}$/.test(digits) ? parseInt(digits, 10) : null;
+}
+
+// The release's run length from frontmatter, an HH:MM:SS value (e.g.
+// "00:40:08"), rendered as "40m" / "1h 6m" / "1h". Null when missing or
+// unparseable.
+export function getReleaseDuration(app: App, file: TFile): string | null {
+	const raw = app.metadataCache.getFileCache(file)?.frontmatter?.duration;
+	if (typeof raw !== "string") return null;
+	const match = /^(?:(\d+):)?(\d{1,2}):(\d{2})$/.exec(raw.trim());
+	if (!match) return null;
+	const hours = match[1] ? parseInt(match[1], 10) : 0;
+	const minutes = parseInt(match[2], 10);
+	if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+	if (hours > 0) return `${hours}h`;
+	return `${minutes}m`;
 }
 
 export function getReleaseInRotation(app: App, file: TFile): boolean {
