@@ -58,7 +58,19 @@ export function getMovieSearchFields(app: App, file: TFile): string[] {
 
 export function getMovieCover(app: App, file: TFile): string | null {
 	const cover = app.metadataCache.getFileCache(file)?.frontmatter?.cover;
-	return typeof cover === "string" && cover.trim() ? cover.trim() : null;
+	if (typeof cover !== "string" || !cover.trim()) return null;
+	const value = cover.trim();
+	if (/^https?:\/\//i.test(value)) return value;
+	// Local image referred to by a wikilink (e.g. "[[A Big Bold Beautiful
+	// Journey.png]]"), resolved relative to the note and served as a vault
+	// resource so the picker can render it.
+	const wikilink = value.match(/^\[\[([^\]]+)\]\]$/);
+	if (wikilink) {
+		const name = wikilink[1].split("|")[0].trim();
+		const target = app.metadataCache.getFirstLinkpathDest(name, file.path);
+		if (target) return app.vault.getResourcePath(target);
+	}
+	return null;
 }
 
 export function getMovieRating(app: App, file: TFile): number | null {
