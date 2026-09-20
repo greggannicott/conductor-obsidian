@@ -1,6 +1,7 @@
 import { App, Notice } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { buildCategoryNoteSelector } from "src/category-config";
+import { showMusicReleasePicker } from "../choose-music-release-modal";
 import { getAllCategories, getFilesWithCategory } from "src/utilities";
 
 export const openNoteByCategory = async (app: App): Promise<void> => {
@@ -18,6 +19,13 @@ export const openNoteByCategory = async (app: App): Promise<void> => {
 		sortItems: (a, b) => a.localeCompare(b),
 	});
 	if (!category) return;
+
+	if (category === "Music Release") {
+		const release = await showMusicReleasePicker(app);
+		if (!release) return;
+		await app.workspace.getLeaf(false).openFile(release);
+		return;
+	}
 
 	const files = getFilesWithCategory(app, category);
 	if (files.length === 0) {
