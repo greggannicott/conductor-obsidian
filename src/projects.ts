@@ -68,6 +68,38 @@ export const outstandingProjectTypes: ProjectStatus[] = [
 	ProjectStatus.InProgress,
 ];
 
+// Rank projects for the standard picker ordering: active bands first, then
+// alphabetical by name. Unknown/missing statuses sort last.
+const PROJECT_STATUS_RANK: Record<ProjectStatus, number> = {
+	[ProjectStatus.InProgress]: 0,
+	[ProjectStatus.ToDo]: 1,
+	[ProjectStatus.Done]: 2,
+	[ProjectStatus.Abandoned]: 3,
+	[ProjectStatus.WontDo]: 4,
+};
+
+export function compareProjects(a: Project, b: Project): number {
+	const rankA = PROJECT_STATUS_RANK[a.status] ?? 5;
+	const rankB = PROJECT_STATUS_RANK[b.status] ?? 5;
+	if (rankA !== rankB) return rankA - rankB;
+	return a.name.localeCompare(b.name);
+}
+
+// Fields matched independently by the picker, so a query must be satisfied
+// within a single field rather than spanning across them.
+export function getProjectSearchFields(project: Project): string[] {
+	const fields = [
+		project.context,
+		project.name,
+		project.jiraId,
+		...(project.parents?.map((parent) => parent.name) ?? []),
+	];
+	if (project.status) {
+		fields.push(project.status.replace(/^\d+ - /, ""));
+	}
+	return fields.filter(Boolean);
+}
+
 // The the project that is currently active.
 // A project is active if the focussed file is a project, or if a task belonging to the project.
 export function getActiveProject(app: App): Project | null {
