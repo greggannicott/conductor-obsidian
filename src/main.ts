@@ -10,7 +10,7 @@ import {
 	convertNoteToTask,
 	isNoteConvertible,
 } from "./commands/convert-note-to-task";
-import { showCreateTaskFlow, showCreateTaskForAnyProjectFlow } from "./commands/create-task";
+import { showCreateTaskFlow } from "./commands/create-task";
 import {
 	setActiveTaskStatus,
 	setActiveProjectStatus,
@@ -137,12 +137,6 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: () => void showCreateTaskFlow(this.app),
-		});
-
-		this.addCommand({
-			id: "create-new-task-for-any-project",
-			name: "Create New Task For Any Project",
-			callback: () => void showCreateTaskForAnyProjectFlow(this.app),
 		});
 
 		this.addCommand({

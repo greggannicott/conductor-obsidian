@@ -11,21 +11,11 @@ import {
 
 export const showCreateTaskFlow = async (app: App): Promise<void> => {
 	const activeProject = getActiveProject(app);
-
-	if (activeProject) {
-		await displayTaskNameInput(app, activeProject);
-		return;
-	}
-
-	const project = await showProjectSelector(app, getProjects(app));
-	if (!project) return;
-	await displayTaskNameInput(app, project);
-};
-
-export const showCreateTaskForAnyProjectFlow = async (
-	app: App,
-): Promise<void> => {
-	const project = await showProjectSelector(app, getProjects(app));
+	const project = await showProjectSelector(
+		app,
+		getProjects(app),
+		activeProject?.name,
+	);
 	if (!project) return;
 	await displayTaskNameInput(app, project);
 };

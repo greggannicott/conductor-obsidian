@@ -5,10 +5,12 @@ import { Project } from "./projects";
 export function showProjectSelector(
 	app: App,
 	projects: Project[],
+	initialValue?: string,
 ): Promise<Project | null> {
 	return ConductorSelectorModal.show(app, {
 		items: projects ?? [],
 		placeholder: "Select a project...",
+		initialValue,
 		getText: (project) => `${project.context} -> ${project.name}`,
 		getSearchText: (project) =>
 			`${project.context} -> ${project.name} ${project.jiraId}`,
