@@ -103,12 +103,17 @@ export const openInProgressTaskFromInProgressProject = async (
 	app: App,
 ): Promise<void> => {
 	const projectFilter: ProjectFilters = {
-		statusFilter: {
-			statusIs: [ProjectStatus.InProgress],
-		},
-		ongoingFilter: {
-			ongoingIs: false,
-		},
+		or: [
+			{
+				ongoingIs: true,
+				statusIsNot: [
+					ProjectStatus.Done,
+					ProjectStatus.Abandoned,
+					ProjectStatus.WontDo,
+				],
+			},
+			{ statusIs: [ProjectStatus.InProgress] },
+		],
 	};
 	const inProgressProjects = getProjects(app, projectFilter);
 
