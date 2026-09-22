@@ -1,7 +1,14 @@
 import { App, Notice } from "obsidian";
 import { showProjectSelector } from "src/choose-project-modal";
 import { TextInputModal, TextInputKeybinding } from "src/text-input-modal";
-import { getProjects, getActiveProject, Project } from "src/projects";
+import {
+	getProjects,
+	getActiveProject,
+	outstandingProjectTypes,
+	Project,
+	ProjectFilters,
+	ProjectStatus,
+} from "src/projects";
 import {
 	createNewTask,
 	getTaskCreationDetails,
@@ -11,9 +18,23 @@ import {
 
 export const showCreateTaskFlow = async (app: App): Promise<void> => {
 	const activeProject = getActiveProject(app);
+	const filter: ProjectFilters = {
+		or: [
+			{
+				ongoingIs: true,
+				statusIsNot: [
+					ProjectStatus.Done,
+					ProjectStatus.Abandoned,
+					ProjectStatus.WontDo,
+				],
+			},
+			{ statusIs: outstandingProjectTypes },
+		],
+	};
+	const projects = getProjects(app, filter);
 	const project = await showProjectSelector(
 		app,
-		getProjects(app),
+		projects,
 		activeProject?.name,
 	);
 	if (!project) return;
