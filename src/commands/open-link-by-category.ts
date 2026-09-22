@@ -3,6 +3,8 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { buildCategoryNoteSelector } from "src/category-config";
 import { showMusicReleasePicker } from "../choose-music-release-modal";
 import { showMoviePicker } from "../choose-movie-modal";
+import { showProjectSelector } from "../choose-project-modal";
+import { getProjects } from "src/projects";
 import { getAllCategories, getFilesWithCategory } from "src/utilities";
 
 // Runs a note picker and opens the chosen file, if any.
@@ -38,6 +40,13 @@ export const openNoteByCategory = async (app: App): Promise<void> => {
 
 	if (category === "Movie") {
 		await openWithPicker(app, showMoviePicker);
+		return;
+	}
+
+	if (category === "Project") {
+		const project = await showProjectSelector(app, getProjects(app));
+		if (!project) return;
+		await app.workspace.getLeaf(false).openFile(project.file);
 		return;
 	}
 
