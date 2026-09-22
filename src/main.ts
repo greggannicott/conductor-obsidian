@@ -23,6 +23,7 @@ import { createJournalNoteForExperiment } from "./commands/create-journal-note-f
 import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
+import { openRandom } from "./commands/open-random";
 import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
@@ -470,6 +471,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-note-by-category",
 			name: "Open Note by Category",
 			callback: () => void openNoteByCategory(this.app),
+		});
+
+		this.addCommand({
+			id: "open-random",
+			name: "Open Random...",
+			callback: () => void openRandom(this.app),
 		});
 
 		this.registerEvent(
