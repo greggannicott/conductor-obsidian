@@ -134,7 +134,7 @@ export const openInProgressTaskFromInProgressProject = async (
 	}
 
 	const task = await showTaskSelector(app, tasks, {
-		initialGroupMode: "priority",
+		groupModes: ["priority", "project"],
 	});
 	if (!task) return;
 	await openTaskFile(app, task);

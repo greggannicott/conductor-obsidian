@@ -12,9 +12,11 @@ import {
 	STATUS_EMOJI,
 } from "./tasks";
 
-type GroupMode = "priority" | "status";
+type GroupMode = "priority" | "status" | "project";
 export type ShowTaskSelectorOptions = {
 	initialGroupMode?: GroupMode;
+	// Which groupings are registered and in what order; the first is the default.
+	groupModes?: GroupMode[];
 };
 
 // Order in which status buckets are displayed; To Do is kept last so
@@ -97,16 +99,47 @@ export function showTaskSelector(
 		},
 	};
 
+	const projectGrouping: ConductorSelectorGrouping<Task> = {
+		id: "project",
+		label: "Group by Project",
+		toggleKey: "j",
+		buildGroups: (items) => {
+			const buckets = new Map<string, Task[]>();
+			for (const task of items) {
+				const parent = task.parents?.[0];
+				const header = parent
+					? parent.jiraId
+						? `${parent.context} -> ${parent.jiraId}: ${parent.name}`
+						: `${parent.context} -> ${parent.name}`
+					: "Unknown Project";
+				if (!buckets.has(header)) buckets.set(header, []);
+				buckets.get(header)!.push(task);
+			}
+			return [...buckets.entries()]
+				.sort(([headerA], [headerB]) => headerA.localeCompare(headerB))
+				.map(([header, bucket]) => ({ header, items: bucket }));
+		},
+	};
+
 	// First grouping is always the default; order follows the requested mode.
-	const groupings =
-		options?.initialGroupMode === "status"
-			? [statusGrouping, priorityGrouping]
-			: [priorityGrouping, statusGrouping];
+	const groupingById: Record<GroupMode, ConductorSelectorGrouping<Task>> = {
+		priority: priorityGrouping,
+		status: statusGrouping,
+		project: projectGrouping,
+	};
+	const modes: GroupMode[] =
+		options?.groupModes ??
+		(options?.initialGroupMode === "status"
+			? ["status", "priority"]
+			: ["priority", "status"]);
+	const groupings = modes.map((mode) => groupingById[mode]);
 
 	return ConductorSelectorModal.show<Task>(app, {
 		items: validTasks,
 		placeholder: "Select a task...",
-		getText: getTaskText,
+		getText: (task, ctx) =>
+			ctx?.activeGrouping === "project" ? task.name : getTaskText(task),
+		getSearchText: getTaskText,
 		sortItems: byName,
 		groupings,
 	});
