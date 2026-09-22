@@ -13,6 +13,7 @@ export const openRandom = async (app: App): Promise<void> => {
 	const options: { title: string; category: string }[] = [
 		{ title: "Journal Entry", category: "Journal" },
 		{ title: "Musing", category: "Musing" },
+		{ title: "Quote", category: "Quote" },
 	];
 
 	const option = await ConductorSelectorModal.show(app, {
