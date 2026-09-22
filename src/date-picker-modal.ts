@@ -172,7 +172,7 @@ export class DatePickerModal extends Modal {
 		return new Promise((resolve) => {
 			const modal = new DatePickerModal(
 				app,
-				defaultDate ?? moment().subtract(1, "day"),
+				defaultDate ?? moment(),
 			);
 			modal.resolve = resolve;
 			modal.open();
