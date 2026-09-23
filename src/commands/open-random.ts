@@ -7,6 +7,7 @@ type OpenRandomOption = {
 	category?: string;
 	tag?: string;
 	highRating?: boolean;
+	all?: boolean;
 };
 
 const pickRandom = <T,>(items: T[]): T =>
@@ -45,30 +46,59 @@ const getOptionFiles = (app: App, option: OpenRandomOption): TFile[] => {
 	throw new Error("OpenRandomOption has no matcher");
 };
 
-export const openRandom = async (app: App): Promise<void> => {
-	const options: OpenRandomOption[] = [
-		{ title: "Journal Entry", category: "Journal" },
-		{ title: "Musing", category: "Musing" },
-		{ title: "Quote", category: "Quote" },
-		{ title: "Wisdom Note", category: "Wisdom" },
-		{ title: "Goal", category: "Goal" },
-		{ title: "Habit", category: "Habit" },
-		{ title: "Identity", category: "Identity" },
-		{ title: "List", category: "List" },
-		{ title: "Note Containing a Review", tag: "review" },
-		{ title: "Note With a High Rating", highRating: true },
-		{ title: "Person", category: "Person" },
-		{ title: "Slogan", category: "Slogan" },
-	];
+// Picks a random non-empty pool from every option, then a random note within
+// it, so the chosen "type" can be reported.
+const pickRandomOptionFile = (
+	app: App,
+): { option: OpenRandomOption; file: TFile } | null => {
+	const pools = OPTIONS.filter((option) => !option.all)
+		.map((option) => ({ option, files: getOptionFiles(app, option) }))
+		.filter((pool) => pool.files.length > 0);
+	if (pools.length === 0) return null;
+	const pool = pickRandom(pools);
+	return { option: pool.option, file: pickRandom(pool.files) };
+};
 
+const OPTIONS: OpenRandomOption[] = [
+	{ title: "All of the Below", all: true },
+	{ title: "Journal Entry", category: "Journal" },
+	{ title: "Musing", category: "Musing" },
+	{ title: "Quote", category: "Quote" },
+	{ title: "Wisdom Note", category: "Wisdom" },
+	{ title: "Goal", category: "Goal" },
+	{ title: "Habit", category: "Habit" },
+	{ title: "Identity", category: "Identity" },
+	{ title: "List", category: "List" },
+	{ title: "Note Containing a Review", tag: "review" },
+	{ title: "Note With a High Rating", highRating: true },
+	{ title: "Person", category: "Person" },
+	{ title: "Slogan", category: "Slogan" },
+];
+
+export const openRandom = async (app: App): Promise<void> => {
 	const option = await ConductorSelectorModal.show(app, {
-		items: options,
+		items: OPTIONS,
 		placeholder: "Select what to open...",
 		emptyText: "No options available",
 		getText: (o) => o.title,
-		sortItems: (a, b) => a.title.localeCompare(b.title),
+		sortItems: (a, b) => {
+			if (a.all) return -1;
+			if (b.all) return 1;
+			return a.title.localeCompare(b.title);
+		},
 	});
 	if (!option) return;
+
+	if (option.all) {
+		const result = pickRandomOptionFile(app);
+		if (!result) {
+			new Notice(`No notes found for "${option.title}"`);
+			return;
+		}
+		new Notice(`Opening a Random ${result.option.title}...`);
+		await openRandomFile(app, result.file);
+		return;
+	}
 
 	const files = getOptionFiles(app, option);
 	if (files.length === 0) {
