@@ -20,6 +20,7 @@ const RUN_TYPES = [
 	"Time Trial Run",
 	"Goal Pace Run",
 	"Threshold Run",
+	"Tempo Run",
 	"Park Run",
 	"Race",
 ] as const;
