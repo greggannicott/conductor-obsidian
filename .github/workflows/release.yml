@@ -32,3 +32,34 @@ jobs:
                   gh release create "$tag" \
                     --title="$tag" \
                     main.js manifest.json styles.css
+
+            - name: Verify release assets
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  tag="${GITHUB_REF#refs/tags/}"
+                  max_attempts=3
+                  attempt=1
+
+                  while [ "$attempt" -le "$max_attempts" ]; do
+                    count=$(gh release view "$tag" --json assets -q '.assets | length')
+
+                    if [ "$count" -ge 3 ]; then
+                      echo "Release $tag has $count assets, all good."
+                      exit 0
+                    fi
+
+                    echo "Attempt $attempt/$max_attempts: release $tag only has $count assets, re-uploading..."
+                    gh release upload "$tag" main.js manifest.json styles.css --clobber
+
+                    attempt=$((attempt + 1))
+                  done
+
+                  count=$(gh release view "$tag" --json assets -q '.assets | length')
+                  if [ "$count" -ge 3 ]; then
+                    echo "Release $tag has $count assets, all good."
+                    exit 0
+                  fi
+
+                  echo "Failed to upload all release assets for $tag after $max_attempts attempts."
+                  exit 1
