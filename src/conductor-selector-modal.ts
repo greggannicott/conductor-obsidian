@@ -239,6 +239,9 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 		const grouping = this.getActiveGrouping();
 		if (!grouping) {
+			if (q.length === 0 && this.options.sortItems) {
+				items.sort(this.options.sortItems);
+			}
 			return items.map((item) => ({ kind: "item" as const, item }));
 		}
 
