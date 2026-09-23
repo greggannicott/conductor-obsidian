@@ -32,6 +32,7 @@ import { showRateRelease } from "./commands/rate-release";
 import { showAddToRotation } from "./commands/add-to-rotation";
 import { openMusicRelease } from "./commands/open-music-release";
 import { openMovie } from "./commands/open-movie";
+import { openArtist } from "./commands/open-artist";
 import { isActiveFileMusicRelease } from "./music-release";
 import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
@@ -385,6 +386,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-movie",
 			name: "Open Movie",
 			callback: () => void openMovie(this.app),
+		});
+
+		this.addCommand({
+			id: "open-artist",
+			name: "Open Artist",
+			callback: () => void openArtist(this.app),
 		});
 
 		this.addCheckedCommand(
