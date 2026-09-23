@@ -220,7 +220,18 @@ export function getReleaseMeta(app: App, file: TFile): ConductorSelectorMeta[] {
 	if (year) meta.push({ label: "Released", value: String(year) });
 	const duration = getReleaseDuration(app, file);
 	if (duration) meta.push({ label: "Duration", value: duration });
+	const listenCount = getReleaseListenCount(app, file);
+	if (listenCount !== null) {
+		meta.push({ value: `${listenCount} Listen${listenCount === 1 ? "" : "s"}` });
+	}
 	return meta;
+}
+
+// The number of times the release has been listened to, from frontmatter, or
+// null when the release has never been listened to.
+export function getReleaseListenCount(app: App, file: TFile): number | null {
+	const listens = app.metadataCache.getFileCache(file)?.frontmatter?.listens;
+	return typeof listens === "number" && listens > 0 ? listens : null;
 }
 
 // The release's rating rendered as stars, for the right-aligned slot on the

@@ -369,7 +369,13 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		const meta = this.options.getMeta?.(item.item);
 		if (meta && meta.length > 0) {
 			const metaEl = body.createDiv({ cls: "conductor-suggest-meta" });
-			for (const entry of meta) {
+			meta.forEach((entry, index) => {
+				if (index > 0) {
+					metaEl.createSpan({
+						cls: "conductor-suggest-meta-sep",
+						text: "·",
+					});
+				}
 				if (entry.label) {
 					metaEl.createSpan({
 						cls: "conductor-suggest-meta-label",
@@ -380,7 +386,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 					cls: "conductor-suggest-meta-value",
 					text: truncateMetaValue(entry.value),
 				});
-			}
+			});
 		} else {
 			const subtext = this.options.getSubtext?.(item.item);
 			if (subtext) {

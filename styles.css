@@ -130,6 +130,10 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
+.conductor-suggest-meta-sep {
+	color: var(--text-faint);
+}
+
 .conductor-suggest-check {
 	width: 20px;
 	text-align: center;
