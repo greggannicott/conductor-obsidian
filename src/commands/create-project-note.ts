@@ -141,23 +141,15 @@ function getProjectForActiveFile(app: App): Project | null {
 		: null;
 }
 
-async function chooseProject(
+function chooseProject(
 	app: App,
 	activeProject: Project | null,
 ): Promise<Project | null> {
-	if (!activeProject) {
-		return showProjectSelector(app, getProjects(app));
-	}
-
-	return ConductorSelectorModal.show(app, {
-		items: getProjects(app),
-		placeholder: "Select a project...",
-		initialValue: activeProject.name,
-		getText: (project) => `${project.context} -> ${project.name}`,
-		getSearchText: (project) =>
-			`${project.context} -> ${project.name} ${project.jiraId}`,
-		getBadges: (project) => (project.jiraId ? [project.jiraId] : []),
-	});
+	return showProjectSelector(
+		app,
+		getProjects(app),
+		activeProject?.name,
+	);
 }
 
 function chooseProjectNoteType(app: App): Promise<ProjectNoteType | null> {

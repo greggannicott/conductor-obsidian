@@ -40,7 +40,7 @@ export type ConductorSelectorOptions<T> = {
 	emptyText?: string;
 	// Pre-fills the search input on open.
 	initialValue?: string;
-	getText: (item: T) => string;
+	getText: (item: T, ctx?: { activeGrouping: string | null }) => string;
 	// Text the query is matched against; defaults to getText.
 	getSearchText?: (item: T) => string;
 	// Maximum length used to truncate the displayed title with an ellipsis.
@@ -73,6 +73,10 @@ export type ConductorSelectorOptions<T> = {
 	// The first grouping is the default (active on open). By convention the
 	// caller orders the array accordingly.
 	groupings?: ConductorSelectorGrouping<T>[];
+	// Which grouping is active on open. When set, overrides the first-grouping
+	// default; `null` opens on the flat list. When unset the first grouping is
+	// used (existing behaviour).
+	initialGroupingId?: string | null;
 	// Multi-select mode: click or Cmd/Ctrl+Space toggles items, Enter confirms
 	// the selection set. Only meaningful via showMulti().
 	multiSelect?: boolean;
@@ -114,7 +118,10 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		this.modalEl.addClass("conductor-selector-modal");
 		this.options = options;
 		this.multiSelect = options.multiSelect ?? false;
-		this.activeGroupingId = options.groupings?.[0]?.id ?? null;
+		this.activeGroupingId =
+			options.initialGroupingId !== undefined
+				? options.initialGroupingId
+				: (options.groupings?.[0]?.id ?? null);
 		for (const item of options.initialSelection ?? []) {
 			this.selectedItems.add(item);
 		}
@@ -155,10 +162,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 					g.toggleKey &&
 					e.key.toLowerCase() === g.toggleKey.toLowerCase(),
 			);
-			if (!grouping || grouping.id === this.activeGroupingId) return;
+			if (!grouping) return;
 
 			e.preventDefault();
-			this.activeGroupingId = grouping.id;
+			// Toggling the active grouping returns to the flat list.
+			this.activeGroupingId =
+				grouping.id === this.activeGroupingId
+					? null
+					: grouping.id;
 			this.updateInstructions();
 			this.inputEl.dispatchEvent(new Event("input"));
 		};
@@ -331,11 +342,17 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			});
 			if (isSelected) el.addClass("conductor-suggest-selected");
 		}
+		const displayText = (item: T): string => {
+			const text = this.options.getText(item, {
+				activeGrouping: this.getActiveGrouping()?.id ?? null,
+			});
+			return this.options.titleMaxLength
+				? truncateText(text, this.options.titleMaxLength)
+				: text;
+		};
 		titleRow.createSpan({
 			cls: "conductor-suggest-title",
-			text: this.options.titleMaxLength
-				? truncateText(this.options.getText(item.item), this.options.titleMaxLength)
-				: this.options.getText(item.item),
+			text: displayText(item.item),
 		});
 
 		const titleMeta = this.options.getTitleRightMeta?.(item.item);

@@ -16,18 +16,39 @@ export type Project = {
 	repoDirectoryName: string;
 };
 
+export type ProjectFilterCondition = {
+	ongoingIs?: boolean;
+	statusIs?: ProjectStatus[];
+	statusIsNot?: ProjectStatus[];
+};
+
 export type ProjectFilters = {
-	statusFilter?: StatusFilter;
-	ongoingFilter?: OngoingFilter;
+	statusFilter?: Pick<ProjectFilterCondition, "statusIs">;
+	ongoingFilter?: Pick<ProjectFilterCondition, "ongoingIs">;
+	or?: ProjectFilterCondition[];
 };
 
-type StatusFilter = {
-	statusIs: ProjectStatus[];
-};
-
-type OngoingFilter = {
-	ongoingIs: boolean;
-};
+export function matchesFilter(
+	project: Project,
+	condition: ProjectFilterCondition,
+): boolean {
+	if (
+		condition.ongoingIs !== undefined &&
+		project.ongoing !== condition.ongoingIs
+	) {
+		return false;
+	}
+	if (condition.statusIs && !condition.statusIs.includes(project.status)) {
+		return false;
+	}
+	if (
+		condition.statusIsNot &&
+		condition.statusIsNot.includes(project.status)
+	) {
+		return false;
+	}
+	return true;
+}
 
 export enum Context {
 	Personal = "Personal",
@@ -46,6 +67,38 @@ export const outstandingProjectTypes: ProjectStatus[] = [
 	ProjectStatus.ToDo,
 	ProjectStatus.InProgress,
 ];
+
+// Rank projects for the standard picker ordering: active bands first, then
+// alphabetical by name. Unknown/missing statuses sort last.
+const PROJECT_STATUS_RANK: Record<ProjectStatus, number> = {
+	[ProjectStatus.InProgress]: 0,
+	[ProjectStatus.ToDo]: 1,
+	[ProjectStatus.Done]: 2,
+	[ProjectStatus.Abandoned]: 3,
+	[ProjectStatus.WontDo]: 4,
+};
+
+export function compareProjects(a: Project, b: Project): number {
+	const rankA = PROJECT_STATUS_RANK[a.status] ?? 5;
+	const rankB = PROJECT_STATUS_RANK[b.status] ?? 5;
+	if (rankA !== rankB) return rankA - rankB;
+	return a.name.localeCompare(b.name);
+}
+
+// Fields matched independently by the picker, so a query must be satisfied
+// within a single field rather than spanning across them.
+export function getProjectSearchFields(project: Project): string[] {
+	const fields = [
+		project.context,
+		project.name,
+		project.jiraId,
+		...(project.parents?.map((parent) => parent.name) ?? []),
+	];
+	if (project.status) {
+		fields.push(project.status.replace(/^\d+ - /, ""));
+	}
+	return fields.filter(Boolean);
+}
 
 // The the project that is currently active.
 // A project is active if the focussed file is a project, or if a task belonging to the project.
@@ -113,12 +166,17 @@ export function getProjects(app: App, filter?: ProjectFilters): Project[] {
 	if (filter) {
 		if (filter.statusFilter) {
 			projects = projects.filter((p) =>
-				filter.statusFilter?.statusIs?.includes(p.status),
+				matchesFilter(p, filter.statusFilter as ProjectFilterCondition),
 			);
 		}
 		if (filter.ongoingFilter) {
-			projects = projects.filter(
-				(p) => p.ongoing === filter.ongoingFilter?.ongoingIs,
+			projects = projects.filter((p) =>
+				matchesFilter(p, filter.ongoingFilter as ProjectFilterCondition),
+			);
+		}
+		if (filter.or) {
+			projects = projects.filter((p) =>
+				filter.or!.some((condition) => matchesFilter(p, condition)),
 			);
 		}
 	}
