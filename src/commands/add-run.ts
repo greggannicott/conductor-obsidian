@@ -23,6 +23,15 @@ function getRunTypes(app: App): TFile[] {
 	});
 }
 
+function getRunTypeFromFile(app: App, file: TFile): string | null {
+	const raw = app.metadataCache.getFileCache(file)?.frontmatter?.["run-type"];
+	if (raw == null) return null;
+	const value = Array.isArray(raw) ? raw[0] : raw;
+	if (typeof value !== "string") return null;
+	const stripped = value.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+	return stripped || null;
+}
+
 function getLastKnownWeight(app: App): number | null {
 	const weeklyNoteKey = (basename: string): number => {
 		const match = basename.match(/^(\d{4})-W(\d{1,2})$/);
@@ -86,14 +95,6 @@ function findRunNoteOnDate(app: App, date: string): TFile | null {
 }
 
 export const addRun = async (app: App): Promise<void> => {
-	const runTypeFile = await ConductorSelectorModal.show(app, {
-		items: getRunTypes(app),
-		placeholder: "Select run type...",
-		getText: (file) => file.basename,
-	});
-	if (!runTypeFile) return;
-	const runType = runTypeFile.basename;
-
 	const usedRunningPlan = await ConfirmModal.show(app, {
 		title: "Running Plan",
 		message: "Was a running plan used for this run?",
@@ -101,6 +102,7 @@ export const addRun = async (app: App): Promise<void> => {
 	});
 
 	let runningPlan: string | null = null;
+	let initialRunType: string | undefined;
 	if (usedRunningPlan) {
 		const runningPlanFile = await ConductorSelectorModal.show(app, {
 			items: getFilesWithCategory(app, "Running Plan"),
@@ -112,7 +114,18 @@ export const addRun = async (app: App): Promise<void> => {
 			return;
 		}
 		runningPlan = `[[${runningPlanFile.basename}]]`;
+		const runTypeFromPlan = getRunTypeFromFile(app, runningPlanFile);
+		if (runTypeFromPlan) initialRunType = runTypeFromPlan;
 	}
+
+	const runTypeFile = await ConductorSelectorModal.show(app, {
+		items: getRunTypes(app),
+		placeholder: "Select run type...",
+		getText: (file) => file.basename,
+		initialValue: initialRunType,
+	});
+	if (!runTypeFile) return;
+	const runType = runTypeFile.basename;
 
 	let targetPace: string | null = null;
 	if (runType === "Goal Pace Run") {
