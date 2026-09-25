@@ -15,25 +15,13 @@ import {
 	sanitizeFileName,
 } from "src/utilities";
 
-const RUN_TYPES = [
-	"Open Run",
-	"Zone 2",
-	"Interval Run",
-	"Pyramid Interval Run",
-	"Progression Run",
-	"Time Trial Run",
-	"Goal Pace Run",
-	"Threshold Run",
-	"Tempo Run",
-	"Park Run",
-	"Race",
-] as const;
-
-type RunType = (typeof RUN_TYPES)[number];
-
-const RUN_TYPE_TO_WIKILINK: Record<string, string> = {
-	"Zone 2": "Zone 2 Run",
-};
+function getRunTypes(app: App): TFile[] {
+	return getFilesWithCategory(app, "Run Type").sort((a, b) => {
+		if (a.basename === "Open Run") return -1;
+		if (b.basename === "Open Run") return 1;
+		return a.basename.localeCompare(b.basename);
+	});
+}
 
 function getLastKnownWeight(app: App): number | null {
 	const weeklyNoteKey = (basename: string): number => {
@@ -98,12 +86,13 @@ function findRunNoteOnDate(app: App, date: string): TFile | null {
 }
 
 export const addRun = async (app: App): Promise<void> => {
-	const runType = await ConductorSelectorModal.show(app, {
-		items: [...RUN_TYPES],
+	const runTypeFile = await ConductorSelectorModal.show(app, {
+		items: getRunTypes(app),
 		placeholder: "Select run type...",
-		getText: (type) => type,
+		getText: (file) => file.basename,
 	});
-	if (!runType) return;
+	if (!runTypeFile) return;
+	const runType = runTypeFile.basename;
 
 	const usedRunningPlan = await ConfirmModal.show(app, {
 		title: "Running Plan",
@@ -271,7 +260,7 @@ export const addRun = async (app: App): Promise<void> => {
 		: workoutSeconds;
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
-		fm["run-type"] = `[[${RUN_TYPE_TO_WIKILINK[runType] ?? runType}]]`;
+		fm["run-type"] = `[[${runType}]]`;
 		if (runningPlan !== null) {
 			fm["running-plan"] = runningPlan;
 		}
