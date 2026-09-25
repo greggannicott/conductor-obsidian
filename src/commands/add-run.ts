@@ -9,7 +9,11 @@ import { TextInputModal } from "src/text-input-modal";
 import { DatePickerModal } from "src/date-picker-modal";
 import { ZoneTimesModal } from "src/zone-times-modal";
 import { ConfirmModal } from "src/confirm-modal";
-import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
+import {
+	createFileFromTemplate,
+	getFilesWithCategory,
+	sanitizeFileName,
+} from "src/utilities";
 
 const RUN_TYPES = [
 	"Open Run",
@@ -100,6 +104,26 @@ export const addRun = async (app: App): Promise<void> => {
 		getText: (type) => type,
 	});
 	if (!runType) return;
+
+	const usedRunningPlan = await ConfirmModal.show(app, {
+		title: "Running Plan",
+		message: "Was a running plan used for this run?",
+		confirmLabel: "Yes",
+	});
+
+	let runningPlan: string | null = null;
+	if (usedRunningPlan) {
+		const runningPlanFile = await ConductorSelectorModal.show(app, {
+			items: getFilesWithCategory(app, "Running Plan"),
+			placeholder: "Select a running plan...",
+			getText: (file) => file.basename,
+		});
+		if (!runningPlanFile) {
+			new Notice("A running plan must be selected");
+			return;
+		}
+		runningPlan = `[[${runningPlanFile.basename}]]`;
+	}
 
 	let targetPace: string | null = null;
 	if (runType === "Goal Pace Run") {
@@ -248,6 +272,9 @@ export const addRun = async (app: App): Promise<void> => {
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${RUN_TYPE_TO_WIKILINK[runType] ?? runType}]]`;
+		if (runningPlan !== null) {
+			fm["running-plan"] = runningPlan;
+		}
 		if (targetPace !== null) {
 			fm["target-pace"] = parseFloat(targetPace);
 		}
