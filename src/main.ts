@@ -27,6 +27,7 @@ import { openRandom } from "./commands/open-random";
 import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
+import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
 import { showAddToRotation } from "./commands/add-to-rotation";
@@ -356,6 +357,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-listen",
 			name: "Record Listen",
 			callback: () => void showAddListen(this.app),
+		});
+
+		this.addCommand({
+			id: "add-viewing",
+			name: "Record Viewing",
+			callback: () => void showAddViewing(this.app),
 		});
 
 		this.addCommand({

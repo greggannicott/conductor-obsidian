@@ -40,6 +40,7 @@ export type ConductorSelectorOptions<T> = {
 	emptyText?: string;
 	// Pre-fills the search input on open.
 	initialValue?: string;
+	defaultItem?: T;
 	getText: (item: T, ctx?: { activeGrouping: string | null }) => string;
 	// Text the query is matched against; defaults to getText.
 	getSearchText?: (item: T) => string;
@@ -445,6 +446,19 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				return;
 			}
 			this.confirmMultiSelection(evt, item.item);
+			return;
+		}
+
+		if (
+			!(evt instanceof MouseEvent) &&
+			this.inputEl.value.trim().length === 0 &&
+			this.options.defaultItem !== undefined &&
+			item.item === this.firstRenderedItem()
+		) {
+			this.resolveSelection = null;
+			this.options.onSelect?.(this.options.defaultItem);
+			evt.preventDefault();
+			this.close();
 			return;
 		}
 

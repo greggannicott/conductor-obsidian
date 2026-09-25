@@ -19,6 +19,7 @@ import {
 	isFileCategory,
 } from "../utilities";
 import { addListen } from "../commands/add-listen";
+import { addViewing } from "../commands/add-viewing";
 import { showAddToBacklog } from "../commands/add-to-backlog";
 import {
 	getRateableRelease,
@@ -155,6 +156,18 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 				item.setTitle("Add '#reflected' Tag");
 				item.onClick(() => {
 					addTag(app, file, "reflected");
+				});
+			});
+		}
+
+		const isMovie =
+			file.extension === "md" && isFileCategory(app, file, "Movie");
+
+		if (isMovie) {
+			menu.addItem((item) => {
+				item.setTitle("Record Viewing");
+				item.onClick(() => {
+					void addViewing(app, file);
 				});
 			});
 		}
