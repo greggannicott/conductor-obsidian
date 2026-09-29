@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Notice, TFile } from "obsidian";
+import { App, Editor, Notice, TFile } from "obsidian";
 import { showProjectSelector } from "src/choose-project-modal";
 import { TextInputModal } from "src/text-input-modal";
 import {
@@ -15,6 +15,7 @@ import {
 	vaultFileExists,
 	Category,
 } from "src/utilities";
+import { TemplateVars } from "src/template-vars";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 
 const PROJECT_NOTE_TYPES = [
@@ -62,7 +63,8 @@ export async function createProjectNote(app: App): Promise<void> {
 		value: title,
 	});
 	if (displayResult.cancelled) return;
-	const displayText = displayResult.value;
+	// '|' and the ']]' terminator would break the wikilink built from this.
+	const displayText = displayResult.value.replace(/\|/g, "").replace(/]]/g, "]");
 
 	const requiresContent =
 		noteType === "Code Sample" ||
@@ -74,12 +76,22 @@ export async function createProjectNote(app: App): Promise<void> {
 	if (requiresContent && noteContentContext === null) return;
 
 	const filePath = getUniqueProjectNotePath(app, project.context, title);
+	const templateVars = buildTemplateVars({
+		project,
+		noteType,
+		title,
+		displayText,
+		selectedText,
+		noteContentContext,
+	});
+
 	let note: TFile | null;
 	try {
 		note = await createFileFromTemplate(
 			app,
 			filePath,
 			`Project Notes/${noteType}`,
+			templateVars,
 		);
 	} catch (error) {
 		console.error(error);
@@ -99,26 +111,60 @@ export async function createProjectNote(app: App): Promise<void> {
 		frontmatter.parents = [`[[${project.name}]]`];
 	});
 
-	if (noteContentContext) {
-		await app.vault.process(
-			note,
-			(data) =>
-				data +
-				buildCodeBlock(noteContentContext.language, noteContentContext.content),
-		);
-	}
-
 	const link = createProjectNoteLink(note, displayText);
 	if (editor) {
 		insertProjectNoteLink(editor, link, Boolean(selectedText));
+	} else {
+		await app.workspace.getLeaf(false).openFile(note);
+	}
+}
+
+// The vocabulary a `Project Notes/*` template can reference. Keys with no
+// value are omitted so the placeholder stays literal, matching the
+// unknown-name behaviour.
+function buildTemplateVars(input: {
+	project: Project;
+	noteType: ProjectNoteType;
+	title: string;
+	displayText: string;
+	selectedText: string;
+	noteContentContext: NoteContentContext | null;
+}): TemplateVars {
+	const { project, noteType, title, displayText, selectedText } = input;
+	const vars: TemplateVars = {
+		title,
+		link_text: displayText,
+		project: project.name,
+		project_path: project.path,
+		context: project.context,
+		note_type: noteType,
+	};
+
+	// No selection means the value was never collected, so it stays literal.
+	if (selectedText) vars.selected_text = selectedText;
+
+	// Content and language were explicitly submitted, so an empty string here
+	// is a real value and should substitute to nothing rather than survive
+	// as a literal placeholder in the note.
+	if (input.noteContentContext) {
+		const { language, content } = input.noteContentContext;
+		if (language !== null) vars.language = language;
+		vars.content = content;
 	}
 
-	if (!noteContentContext || !editor) {
-		await app.workspace.getLeaf(false).openFile(note);
-		if (noteContentContext) {
-			selectContentInNote(app, noteContentContext.content);
-		}
+	const optional: Array<[string, string | undefined | null]> = [
+		["jira_id", project.jiraId],
+		["branch", project.branch],
+		["project_id", project.projectId],
+		["repo_directory_name", project.repoDirectoryName],
+		["status", project.status],
+		["ongoing", project.ongoing ? "true" : null],
+	];
+	for (const [key, value] of optional) {
+		if (value) vars[key] = value;
 	}
+
+	return vars;
 }
 
 function getProjectForActiveFile(app: App): Project | null {
@@ -200,8 +246,13 @@ async function gatherNoteContentContext(
 	app: App,
 	noteType: ProjectNoteType,
 ): Promise<NoteContentContext | null> {
-	const language =
-		noteType === "Code Sample" ? await chooseCodeLanguage(app) : null;
+	let language: string | null = null;
+	if (noteType === "Code Sample") {
+		language = await chooseCodeLanguage(app);
+		// Cancelling the language picker cancels the whole flow, the same as
+		// cancelling the content prompt does.
+		if (language === null) return null;
+	}
 	const clipboardText = await readClipboardText();
 	const result = await TextInputModal.show(app, {
 		title: "Content",
@@ -262,38 +313,5 @@ async function readClipboardText(): Promise<string> {
 		return await navigator.clipboard.readText();
 	} catch {
 		return "";
-	}
-}
-
-function buildCodeBlock(language: string | null, code: string): string {
-	const lang = language ?? "";
-	return `\`\`\`${lang}\n${code.trimEnd()}\n\`\`\``;
-}
-
-function selectContentInNote(app: App, content: string): void {
-	const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-	if (!editor) return;
-
-	const lines = editor.getValue().split("\n");
-	const fenceIndex = lines.findIndex((line) => line.startsWith("```"));
-	if (fenceIndex === -1) return;
-
-	const codeStart = fenceIndex + 1;
-	let closeFenceIndex = codeStart;
-	while (
-		closeFenceIndex < lines.length &&
-		!lines[closeFenceIndex].startsWith("```")
-	) {
-		closeFenceIndex += 1;
-	}
-	if (closeFenceIndex >= lines.length) return;
-
-	if (content === "") {
-		editor.setCursor({ line: codeStart, ch: 0 });
-	} else {
-		editor.setSelection(
-			{ line: codeStart, ch: 0 },
-			{ line: closeFenceIndex, ch: 0 },
-		);
 	}
 }

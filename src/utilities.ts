@@ -6,6 +6,10 @@ import {
 	STATUS_EMOJI,
 } from "./tasks";
 import { ProjectStatus } from "./projects";
+import {
+	substituteTemplateBody,
+	TemplateVars,
+} from "./template-vars";
 
 export const enum Category {
 	Unknown,
@@ -17,6 +21,7 @@ export async function createFileFromTemplate(
 	app: App,
 	newFilePath: string,
 	templateName: string,
+	substitutions?: TemplateVars,
 ): Promise<TFile | null> {
 	const templatesFolder = "_templates";
 	const template = app.vault.getFileByPath(
@@ -24,7 +29,10 @@ export async function createFileFromTemplate(
 	);
 	if (template) {
 		const content = await app.vault.read(template);
-		await app.vault.create(newFilePath, content);
+		await app.vault.create(
+			newFilePath,
+			substitutions ? substituteTemplateBody(content, substitutions) : content,
+		);
 		return app.vault.getFileByPath(newFilePath);
 	} else {
 		console.error(
@@ -46,7 +54,12 @@ export function vaultFileExists(app: App, path: string): boolean {
 }
 
 export function sanitizeFileName(name: string): string {
-	return name.replace(/[:\\/*?"<>|]/g, "").trim();
+	// Newlines and tabs collapse to single spaces, since a multi-line editor
+	// selection can otherwise carry them straight into the filename.
+	return name
+		.replace(/[:\\/*?"<>|]/g, "")
+		.replace(/\s+/g, " ")
+		.trim();
 }
 
 export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {
