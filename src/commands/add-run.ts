@@ -15,6 +15,10 @@ import {
 	sanitizeFileName,
 } from "src/utilities";
 
+// Shown as the VO2 Max prompt's placeholder when the vault has no recorded
+// value yet.
+const DEFAULT_VO2_MAX = 42;
+
 function getRunTypes(app: App): TFile[] {
 	return getFilesWithCategory(app, "Run Type").sort((a, b) => {
 		if (a.basename === "Open Run") return -1;
@@ -74,24 +78,69 @@ function getUniqueFilePath(app: App, basePath: string): string {
 	return filePath;
 }
 
+function isRunNote(app: App, file: TFile): boolean {
+	if (file.path.startsWith("_templates/")) return false;
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	if (!frontmatter) return false;
+	const types = parseFrontMatterStringArray(frontmatter, "type") ?? [];
+	return types.some(
+		(type) =>
+			type
+				.replace(/^\[\[|\]\]$/g, "")
+				.split("|")[0]
+				.trim()
+				.toLowerCase() === "run",
+	);
+}
+
 function findRunNoteOnDate(app: App, date: string): TFile | null {
 	return (
-		app.vault.getMarkdownFiles().find((file) => {
-			if (file.path.startsWith("_templates/")) return false;
-			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-			if (!frontmatter) return false;
-			if (String(frontmatter["date-of-event"]) !== date) return false;
-			const types = parseFrontMatterStringArray(frontmatter, "type") ?? [];
-			return types.some(
-				(type) =>
-					type
-						.replace(/^\[\[|\]\]$/g, "")
-						.split("|")[0]
-						.trim()
-						.toLowerCase() === "run",
-			);
-		}) ?? null
+		app.vault.getMarkdownFiles().find(
+			(file) => isRunNote(app, file) && dateOfEventDay(app, file) === date,
+		) ?? null
 	);
+}
+
+// js-yaml (and therefore Obsidian) parses an unquoted YAML date into a Date at
+// UTC midnight. Extract the calendar day using UTC components: local components
+// land on the previous day in negative-offset timezones.
+function dateOfEventDay(app: App, file: TFile): string | null {
+	const raw = app.metadataCache.getFileCache(file)?.frontmatter?.[
+		"date-of-event"
+	];
+	if (raw instanceof Date) return raw.toISOString().slice(0, 10);
+	if (typeof raw !== "string") return null;
+	const day = raw.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+	if (day) return day;
+	const parsed = Date.parse(raw);
+	return Number.isNaN(parsed) ? null : new Date(parsed).toISOString().slice(0, 10);
+}
+
+// Finite sentinel for notes with no usable date, so comparator subtraction stays
+// numeric (Number.NEGATIVE_INFINITY minus itself is NaN).
+const NO_DATE = Number.MIN_SAFE_INTEGER;
+
+function runNoteTimestamp(app: App, file: TFile): number {
+	const day = dateOfEventDay(app, file);
+	if (!day) return NO_DATE;
+	const parsed = Date.parse(`${day}T00:00:00Z`);
+	return Number.isNaN(parsed) ? NO_DATE : parsed;
+}
+
+function getLastKnownVo2Max(app: App): number | null {
+	const runs = app.vault
+		.getMarkdownFiles()
+		.filter((file) => isRunNote(app, file))
+		.sort((a, b) => runNoteTimestamp(app, b) - runNoteTimestamp(app, a));
+
+	for (const note of runs) {
+		const frontmatter = app.metadataCache.getFileCache(note)?.frontmatter;
+		const vo2Max = frontmatter?.["vo2-max"];
+		if (vo2Max == null || vo2Max === "") continue;
+		const parsed = Number(vo2Max);
+		if (Number.isFinite(parsed) && parsed > 0) return parsed;
+	}
+	return null;
 }
 
 export const addRun = async (app: App): Promise<void> => {
@@ -245,9 +294,10 @@ export const addRun = async (app: App): Promise<void> => {
 		return;
 	}
 
+	const lastKnownVo2Max = getLastKnownVo2Max(app);
 	const vo2MaxPrompt = await TextInputModal.show(app, {
 		title: "VO2 Max",
-		placeholder: "49.2",
+		placeholder: String(lastKnownVo2Max ?? DEFAULT_VO2_MAX),
 	});
 	if (vo2MaxPrompt.cancelled) return;
 	const vo2Max = vo2MaxPrompt.value.trim();
