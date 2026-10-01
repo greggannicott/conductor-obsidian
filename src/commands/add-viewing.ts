@@ -3,7 +3,7 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { DatePickerModal } from "src/date-picker-modal";
 import { showMoviePicker } from "../choose-movie-modal";
 import { getMovieRating, getMovieTitle, getMovies } from "src/movie";
-import { RATING_OPTIONS, getRatingLabel } from "./rate-release";
+import { RATING_OPTIONS, getRatingChoiceLabel } from "./rate-release";
 import {
 	addTag,
 	createFileFromTemplate,
@@ -57,7 +57,7 @@ async function askRating(
 		defaultItem: defaultRating,
 		placeholder: "Select a rating...",
 		getText: (rating) =>
-			rating === 0 ? "No rating" : getRatingLabel(rating),
+			rating === 0 ? "No rating" : getRatingChoiceLabel(rating),
 		getBadges: (rating) =>
 			rating === defaultRating ? ["✓"] : [],
 	});

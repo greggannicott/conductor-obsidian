@@ -14,6 +14,13 @@ export function getRatingLabel(rating: number): string {
 	return "★".repeat(rating);
 }
 
+// The label for a row in a rating picker. Prefixed with the number so the
+// rating can be typed straight into the filter, and so the rows read as a
+// scale rather than a list of similar-looking stars.
+export function getRatingChoiceLabel(rating: number): string {
+	return `${rating} - ${getRatingLabel(rating)}`;
+}
+
 export const showRateRelease = async (app: App): Promise<void> => {
 	const releases = getMusicReleases(app);
 	if (releases.length === 0) {
@@ -39,7 +46,7 @@ async function showRatingOptions(app: App, release: TFile): Promise<void> {
 	const choice = await ConductorSelectorModal.show(app, {
 		items: [...choices],
 		placeholder: "Select a rating...",
-		getText: (c) => (c === 0 ? "Clear" : getRatingLabel(c)),
+		getText: (c) => (c === 0 ? "Clear" : getRatingChoiceLabel(c)),
 		getBadges: (c) => (c !== 0 && c === current ? ["✓"] : []),
 	});
 	if (choice === null) return;
