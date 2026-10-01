@@ -377,6 +377,14 @@ export default class ConductorObsidian extends Plugin {
 			callback: () => void showRateRelease(this.app),
 		});
 
+		// Alias for "rate-music-release": searching for "rating" does not
+		// fuzzy-match "Rate", so this is the name people reach for instead.
+		this.addCommand({
+			id: "add-rating-to-music-release",
+			name: "Add Rating to Music Release",
+			callback: () => void showRateRelease(this.app),
+		});
+
 		this.addCommand({
 			id: "add-to-rotation",
 			name: "Add to Rotation",
