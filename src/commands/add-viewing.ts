@@ -5,6 +5,7 @@ import { showMoviePicker } from "../choose-movie-modal";
 import { getMovieRating, getMovieTitle, getMovies } from "src/movie";
 import { RATING_OPTIONS, getRatingLabel } from "./rate-release";
 import {
+	addTag,
 	createFileFromTemplate,
 	isFileCategory,
 	sanitizeFileName,
@@ -123,6 +124,10 @@ export const addViewing = async (app: App, file: TFile): Promise<void> => {
 		fm["watched"] = true;
 		fm["rating"] = rating;
 	});
+
+	// The viewing is logged; writing the review is not. Tag the movie so it
+	// sits in the inbox until that is done.
+	await addTag(app, file, "inbox");
 
 	// Land on the movie note rather than the viewing note: a movie is the
 	// focus while watching, and the review that follows is written there.
