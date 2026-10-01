@@ -12,6 +12,7 @@ import {
 } from "src/music-release";
 import {
 	getBacklogItemReleaseName,
+	getLatestBacklogReasonForRelease,
 	markBacklogItemsListened,
 } from "src/backlog";
 
@@ -126,9 +127,16 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 		getText: (item) => item.replace(/^\[\[|\]\]$/g, "").trim(),
 	});
 
+	// Must be resolved before markBacklogItemsListened below, which flips
+	// "To Listen" items to "Listened" and empties the candidate set.
+	const backlogReason = getLatestBacklogReasonForRelease(app, file.basename);
+
 	const { value, cancelled } = await TextInputModal.show(app, {
-		title: "Notes",
+		title: backlogReason
+			? `Notes (from ${backlogReason.source.basename})`
+			: "Notes",
 		placeholder: "Anything noteworthy about this listen? (optional)",
+		value: backlogReason?.reason,
 		multiline: true,
 	});
 	const trimmedNotes = cancelled ? "" : value.trim();

@@ -61,6 +61,48 @@ export function getBacklogItemReleaseName(app: App, file: TFile): string | null 
 	return getLinkedReleaseName(app, file);
 }
 
+// The reason recorded for wanting to listen. Empty strings count as absent:
+// add-to-backlog writes `reason-comment: ""` when the prompt is left blank.
+export function getBacklogItemReason(
+	app: App,
+	file: TFile,
+): string | undefined {
+	const reason = getFrontmatterString(app, file, "reason-comment")?.trim();
+	return reason ? reason : undefined;
+}
+
+function dateAddedValue(app: App, file: TFile): number {
+	const date = getFrontmatterString(app, file, "date-added");
+	if (!date) return 0;
+	const value = moment(date, "YYYY-MM-DDTHH:mm:ss").valueOf();
+	return Number.isFinite(value) ? value : 0;
+}
+
+// The most recent "To Listen" backlog item for the release that records a
+// reason, so a listen can inherit it. Undefined when no unresolved item for
+// the release carries one.
+export function getLatestBacklogReasonForRelease(
+	app: App,
+	releaseName: string,
+): { reason: string; source: TFile } | undefined {
+	const candidates = getBacklogItemsForRelease(app, releaseName)
+		.filter(
+			(file) => getBacklogItemStatus(app, file) === BacklogItemStatus.ToListen,
+		)
+		.map((file) => ({ source: file, reason: getBacklogItemReason(app, file) }))
+		.filter(
+			(candidate): candidate is { source: TFile; reason: string } =>
+				candidate.reason !== undefined,
+		)
+		.sort(
+			(a, b) =>
+				dateAddedValue(app, b.source) - dateAddedValue(app, a.source) ||
+				b.source.basename.localeCompare(a.source.basename),
+		);
+
+	return candidates[0];
+}
+
 export async function setBacklogItemStatus(
 	app: App,
 	file: TFile,
