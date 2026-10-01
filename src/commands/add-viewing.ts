@@ -124,5 +124,8 @@ export const addViewing = async (app: App, file: TFile): Promise<void> => {
 		fm["rating"] = rating;
 	});
 
+	// Land on the movie note rather than the viewing note: a movie is the
+	// focus while watching, and the review that follows is written there.
+	await app.workspace.getLeaf(false).openFile(file);
 	new Notice(`Created viewing note: ${viewingFile.basename}`);
 };
