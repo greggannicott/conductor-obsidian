@@ -1,76 +1,11 @@
-import { App, Notice, TFile } from "obsidian";
-import { ConductorSelectorModal } from "src/conductor-selector-modal";
-import { buildCategoryNoteSelector } from "src/category-config";
-import { showMusicReleasePicker } from "../choose-music-release-modal";
-import { showMoviePicker } from "../choose-movie-modal";
-import { showArtistPicker } from "../choose-artist-modal";
-import { showProjectSelector } from "../choose-project-modal";
-import { getProjects } from "src/projects";
-import { getAllCategories, getFilesWithCategory } from "src/utilities";
-
-// Runs a note picker and opens the chosen file, if any.
-const openWithPicker = async (
-	app: App,
-	pick: (app: App) => Promise<TFile | null>,
-): Promise<void> => {
-	const file = await pick(app);
-	if (!file) return;
-	await app.workspace.getLeaf(false).openFile(file);
-};
+import { App } from "obsidian";
+import { selectNoteByCategory } from "src/choose-note-by-category-modal";
 
 export const openNoteByCategory = async (app: App): Promise<void> => {
-	const categories = getAllCategories(app);
-	if (categories.length === 0) {
-		new Notice("No categories found");
-		return;
-	}
-
-	const category = await ConductorSelectorModal.show(app, {
-		items: categories,
-		placeholder: "Select a category...",
-		emptyText: "No categories found",
-		getText: (cat) => cat,
-		sortItems: (a, b) => a.localeCompare(b),
+	const selected = await selectNoteByCategory(app, {
+		currentFile: app.workspace.activeEditor?.file,
 	});
-	if (!category) return;
+	if (!selected) return;
 
-	if (category === "Music Release") {
-		await openWithPicker(app, showMusicReleasePicker);
-		return;
-	}
-
-	if (category === "Movie") {
-		await openWithPicker(app, showMoviePicker);
-		return;
-	}
-
-	if (category === "Artist") {
-		await openWithPicker(app, showArtistPicker);
-		return;
-	}
-
-	if (category === "Project") {
-		const project = await showProjectSelector(app, getProjects(app));
-		if (!project) return;
-		await app.workspace.getLeaf(false).openFile(project.file);
-		return;
-	}
-
-	const files = getFilesWithCategory(app, category);
-	if (files.length === 0) {
-		new Notice(`No notes found for category "${category}"`);
-		return;
-	}
-
-	const currentFile = app.workspace.activeEditor?.file;
-	const selectorOptions = buildCategoryNoteSelector(
-		app,
-		category,
-		files,
-		currentFile,
-	);
-	const file = await ConductorSelectorModal.show(app, selectorOptions);
-	if (!file) return;
-
-	await app.workspace.getLeaf(false).openFile(file);
+	await app.workspace.getLeaf(false).openFile(selected.file);
 };

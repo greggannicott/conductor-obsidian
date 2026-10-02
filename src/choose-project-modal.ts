@@ -2,6 +2,7 @@ import { App } from "obsidian";
 import type {
 	ConductorSelectorGrouping,
 	ConductorSelectorMeta,
+	ConductorSelectorOptions,
 } from "./conductor-selector-modal";
 import { ConductorSelectorModal } from "./conductor-selector-modal";
 import {
@@ -85,18 +86,19 @@ const contextGrouping: ConductorSelectorGrouping<Project> = {
 	},
 };
 
-// The standard project picker: active-first, alphabetical ordering, a jira id
-// prefixed onto the name when present, and a single context/status/ongoing
-// meta line. Opens on the flat list; Cmd+S groups by status (ongoing projects
-// under their own "Ongoing" header) and Cmd+C groups by context. No covers -
-// projects don't have any. Callers pass `initialValue` to prefill the search
-// input (selected on open so it is easy to replace).
-export function showProjectSelector(
+// The standard project picker options: active-first, alphabetical ordering, a
+// jira id prefixed onto the name when present, and a single
+// context/status/ongoing meta line. Opens on the flat list; Cmd+S groups by
+// status (ongoing projects under their own "Ongoing" header) and Cmd+C groups
+// by context. No covers - projects don't have any. Callers pass
+// `initialValue` to prefill the search input (selected on open so it is easy to
+// replace).
+export function projectSelectorOptions(
 	app: App,
 	projects: Project[],
 	initialValue?: string,
-): Promise<Project | null> {
-	return ConductorSelectorModal.show(app, {
+): ConductorSelectorOptions<Project> {
+	return {
 		items: [...(projects ?? [])].sort(compareProjects),
 		placeholder: "Select a project...",
 		initialValue,
@@ -110,5 +112,16 @@ export function showProjectSelector(
 		sortItems: compareProjects,
 		groupings: [statusGrouping, contextGrouping],
 		initialGroupingId: null,
-	});
+	};
+}
+
+export function showProjectSelector(
+	app: App,
+	projects: Project[],
+	initialValue?: string,
+): Promise<Project | null> {
+	return ConductorSelectorModal.show(
+		app,
+		projectSelectorOptions(app, projects, initialValue),
+	);
 }

@@ -13,14 +13,14 @@ import {
 	getReleaseTitle,
 } from "./music-release";
 
-// The standard music release picker: all releases grouped by artist, with cover
-// art, meta and rating. Callers override items, placeholder, initialValue or
-// any other option via `overrides`.
-export function showMusicReleasePicker(
+// The standard music release picker options: all releases grouped by artist,
+// with cover art, meta and rating. Callers override items, placeholder,
+// initialValue or any other option via `overrides`.
+export function musicReleasePickerOptions(
 	app: App,
 	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
-): Promise<TFile | null> {
-	return ConductorSelectorModal.show(app, {
+): ConductorSelectorOptions<TFile> {
+	return {
 		items: getMusicReleases(app),
 		placeholder: "Select a music release...",
 		getText: (file) => getReleaseTitle(app, file),
@@ -33,5 +33,15 @@ export function showMusicReleasePicker(
 		groupings: [getMusicReleaseArtistGrouping(app)],
 		rankGroupsByRelevance: true,
 		...overrides,
-	});
+	};
+}
+
+export function showMusicReleasePicker(
+	app: App,
+	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
+): Promise<TFile | null> {
+	return ConductorSelectorModal.show(
+		app,
+		musicReleasePickerOptions(app, overrides),
+	);
 }

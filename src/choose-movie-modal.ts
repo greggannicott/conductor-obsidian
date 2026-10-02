@@ -12,14 +12,14 @@ import {
 	getMovieTitle,
 } from "./movie";
 
-// The standard movie picker: all movies ungrouped, with cover art, meta
-// (year, duration, watched) and a rating on the right. Callers override items,
-// placeholder, initialValue or any other option via `overrides`.
-export function showMoviePicker(
+// The standard movie picker options: all movies ungrouped, with cover art,
+// meta (year, duration, watched) and a rating on the right. Callers override
+// items, placeholder, initialValue or any other option via `overrides`.
+export function moviePickerOptions(
 	app: App,
 	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
-): Promise<TFile | null> {
-	return ConductorSelectorModal.show(app, {
+): ConductorSelectorOptions<TFile> {
+	return {
 		items: getMovies(app),
 		placeholder: "Select a movie...",
 		getText: (file) => getMovieTitle(app, file),
@@ -30,5 +30,12 @@ export function showMoviePicker(
 		getTitleRightMeta: (file) => getMovieRatingStars(app, file),
 		sortItems: (a, b) => compareMoviesByTitle(app, a, b),
 		...overrides,
-	});
+	};
+}
+
+export function showMoviePicker(
+	app: App,
+	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
+): Promise<TFile | null> {
+	return ConductorSelectorModal.show(app, moviePickerOptions(app, overrides));
 }

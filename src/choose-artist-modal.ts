@@ -11,15 +11,15 @@ import {
 	getArtistTitle,
 } from "./artists";
 
-// The standard artist picker: all artists ungrouped, with cover art, search
-// across aliases and groups, and a meta line stating whether the artist is a
-// band or a musician. Callers override items, placeholder, initialValue or any
-// other option via `overrides`.
-export function showArtistPicker(
+// The standard artist picker options: all artists ungrouped, with cover art,
+// search across aliases and groups, and a meta line stating whether the artist
+// is a band or a musician. Callers override items, placeholder, initialValue or
+// any other option via `overrides`.
+export function artistPickerOptions(
 	app: App,
 	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
-): Promise<TFile | null> {
-	return ConductorSelectorModal.show(app, {
+): ConductorSelectorOptions<TFile> {
+	return {
 		items: getArtists(app),
 		placeholder: "Select an artist...",
 		getText: (file) => getArtistTitle(app, file),
@@ -29,5 +29,12 @@ export function showArtistPicker(
 		getMeta: (file) => getArtistMeta(app, file),
 		sortItems: (a, b) => compareArtistsByTitle(app, a, b),
 		...overrides,
-	});
+	};
+}
+
+export function showArtistPicker(
+	app: App,
+	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
+): Promise<TFile | null> {
+	return ConductorSelectorModal.show(app, artistPickerOptions(app, overrides));
 }
