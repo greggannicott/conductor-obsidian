@@ -208,6 +208,17 @@ export const addRun = async (app: App): Promise<void> => {
 		if (!proceed) return;
 	}
 
+	const runningFormEffortPrompt = await TextInputModal.show(app, {
+		title: "Running Form Effort (1-5)",
+		placeholder: "3",
+	});
+	if (runningFormEffortPrompt.cancelled) return;
+	const runningFormEffort = runningFormEffortPrompt.value.trim();
+	if (!/^[1-5]$/.test(runningFormEffort)) {
+		new Notice("Running form effort must be a number from 1 to 5");
+		return;
+	}
+
 	const workoutTimePrompt = await TextInputModal.show(app, {
 		title: "Workout Time",
 		placeholder: "HH:MM:SS",
@@ -331,6 +342,7 @@ export const addRun = async (app: App): Promise<void> => {
 			fm["target-pace"] = parseFloat(targetPace);
 		}
 		fm["date-of-event"] = date;
+		fm["running-form-effort"] = parseInt(runningFormEffort, 10);
 		fm["distance"] = parseFloat(distance);
 		fm["elevation-gain"] = parseFloat(elevationGain);
 		fm["workout-time-in-seconds"] = workoutSeconds;
