@@ -300,7 +300,9 @@ export function fileHasTag(app: App, file: TFile, tagName: string): boolean {
 		app.metadataCache.getFileCache(file)?.frontmatter,
 		"tags",
 	);
-	return tags?.includes(tagName) ?? false;
+	// Tags may be written with a leading "#" (e.g. `- "#topic"`), which
+	// Obsidian preserves in the frontmatter, so compare without it.
+	return tags?.some((tag) => tag.replace(/^#/, "") === tagName) ?? false;
 }
 
 export function hasActiveFileTag(app: App, tagName: string): boolean {

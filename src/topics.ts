@@ -46,7 +46,9 @@ function isTopicFile(app: App, file: TFile): boolean {
 	if (file.path.startsWith("_templates/")) return false;
 	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 	const tags = parseFrontMatterStringArray(frontmatter, "tags");
-	return tags?.includes("topic") ?? false;
+	// Tags may be written with a leading "#" (e.g. `- "#topic"`), which
+	// Obsidian preserves in the frontmatter, so compare without it.
+	return tags?.some((tag) => tag.replace(/^#/, "") === "topic") ?? false;
 }
 
 function linkResolvesToFile(

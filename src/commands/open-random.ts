@@ -1,6 +1,6 @@
-import { App, Notice, TFile, parseFrontMatterStringArray } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
-import { getFilesWithCategory } from "src/utilities";
+import { fileHasTag, getFilesWithCategory } from "src/utilities";
 
 type OpenRandomOption = {
 	title: string;
@@ -22,10 +22,8 @@ const openRandomFile = async (app: App, file: TFile): Promise<void> => {
 const getFilesWithTag = (app: App, tagName: string): TFile[] =>
 	app.vault.getMarkdownFiles().filter((file) => {
 		if (file.path.startsWith("_templates/")) return false;
+		if (fileHasTag(app, file, tagName)) return true;
 		const cache = app.metadataCache.getFileCache(file);
-		const frontmatterTags =
-			parseFrontMatterStringArray(cache?.frontmatter, "tags") ?? [];
-		if (frontmatterTags.includes(tagName)) return true;
 		return (cache?.tags ?? []).some((t) => t.tag === `#${tagName}`);
 	});
 
