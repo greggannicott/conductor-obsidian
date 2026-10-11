@@ -57,8 +57,7 @@ export type ConductorSelectorOptions<T> = {
 	// When absent the row renders without the image.
 	getCover?: (item: T) => string | null;
 	// Optional meta key/value pairs rendered beneath the title (labels may be
-	// omitted for bare values). Takes precedence over getSubtext when it
-	// returns one or more entries.
+	// omitted for bare values).
 	getMeta?: (item: T) => ConductorSelectorMeta[] | null;
 	// Optional single meta value rendered right-aligned on the title line
 	// (e.g. a rating shown as stars), independent of getMeta.
@@ -388,11 +387,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 					text: truncateMetaValue(entry.value),
 				});
 			});
-		} else {
-			const subtext = this.options.getSubtext?.(item.item);
-			if (subtext) {
-				body.createDiv({ text: subtext, cls: "conductor-suggest-subtext" });
-			}
+		}
+
+		const subtext = this.options.getSubtext?.(item.item);
+		if (subtext) {
+			body.createDiv({
+				text: subtext,
+				cls: "conductor-suggest-subtext",
+			});
 		}
 
 		const badges = this.options.getBadges?.(item.item);

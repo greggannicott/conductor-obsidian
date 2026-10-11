@@ -288,6 +288,13 @@ export function getMusicReleasesInRotation(app: App): TFile[] {
 	return getMusicReleases(app).filter((file) => getReleaseInRotation(app, file));
 }
 
+// Listen notes (from the listen note's "notes" frontmatter), if present.
+export function getListenNotes(app: App, file: TFile): string | null {
+	const notes =
+		app.metadataCache.getFileCache(file)?.frontmatter?.notes;
+	return typeof notes === "string" && notes.trim() ? notes.trim() : null;
+}
+
 // True for a listen note: a Consumption note of type Listen.
 export function isListenFile(app: App, file: TFile): boolean {
 	if (file.path.startsWith("_templates/")) return false;

@@ -4,6 +4,7 @@ import { ConductorSelectorModal } from "./conductor-selector-modal";
 import {
 	MUSIC_RELEASE_TITLE_MAX_LENGTH,
 	getListenDayGrouping,
+	getListenNotes,
 	getMusicReleaseSearchFields,
 	getRecentListens,
 	getReleaseCover,
@@ -50,6 +51,7 @@ export function recentListenPickerOptions(
 			const release = releaseFor(app, listen);
 			return release ? getReleaseRatingStars(app, release) : null;
 		},
+		getSubtext: (listen) => getListenNotes(app, listen),
 		groupings: [getListenDayGrouping(app)],
 		...overrides,
 	};
