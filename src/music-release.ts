@@ -1,4 +1,4 @@
-import { App, TFile, parseFrontMatterStringArray } from "obsidian";
+import { App, TFile, moment, parseFrontMatterStringArray } from "obsidian";
 import type {
 	ConductorSelectorGrouping,
 	ConductorSelectorMeta,
@@ -288,6 +288,25 @@ export function getMusicReleasesInRotation(app: App): TFile[] {
 	return getMusicReleases(app).filter((file) => getReleaseInRotation(app, file));
 }
 
+// True for a listen note: a Consumption note of type Listen.
+export function isListenFile(app: App, file: TFile): boolean {
+	if (file.path.startsWith("_templates/")) return false;
+	return (
+		isFileCategory(app, file, "Consumption") &&
+		isFileType(app, file, "Listen")
+	);
+}
+
+// The moment a listen was recorded, from the note's "date-time" frontmatter
+// (e.g. "2026-09-16 16:07:15").
+export function getListenDateTime(app: App, file: TFile): string | null {
+	const dateTime =
+		app.metadataCache.getFileCache(file)?.frontmatter?.["date-time"];
+	return typeof dateTime === "string" && dateTime.trim()
+		? dateTime.trim()
+		: null;
+}
+
 // Date-times of every listen recorded for the release, newest first. Each value
 // is the raw "date-time" frontmatter string (e.g. "2026-09-16 16:07:15").
 export function getListenDatesForRelease(
@@ -297,26 +316,73 @@ export function getListenDatesForRelease(
 	return app.vault
 		.getMarkdownFiles()
 		.filter((file) => {
-			if (file.path.startsWith("_templates/")) return false;
+			if (!isListenFile(app, file)) return false;
 			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-			const categories = parseFrontMatterStringArray(
-				frontmatter,
-				"categories",
-			);
-			if (!categories?.includes("[[Consumption]]")) return false;
-			const types = parseFrontMatterStringArray(frontmatter, "type");
-			if (!types?.includes("[[Listen]]")) return false;
 			const musicRelease = parseFrontMatterStringArray(
 				frontmatter,
 				"music-release",
 			);
 			return musicRelease?.includes(`[[${releaseName}]]`) ?? false;
 		})
-		.map((file) => {
-			const dateTime =
-				app.metadataCache.getFileCache(file)?.frontmatter?.["date-time"];
-			return typeof dateTime === "string" ? dateTime : "";
-		})
+		.map((file) => getListenDateTime(app, file) ?? "")
 		.filter(Boolean)
 		.sort((a, b) => b.localeCompare(a));
+}
+
+// How many listens the recent-listens picker lists.
+export const RECENT_LISTEN_LIMIT = 20;
+
+// The most recently recorded listens (a listen note whose release can still be
+// resolved), newest first and capped at `limit`.
+export function getRecentListens(
+	app: App,
+	limit: number = RECENT_LISTEN_LIMIT,
+): TFile[] {
+	return app.vault
+		.getMarkdownFiles()
+		.filter((file) => isListenFile(app, file))
+		.map((file) => ({ file, dateTime: getListenDateTime(app, file) }))
+		.filter(
+			(entry): entry is { file: TFile; dateTime: string } =>
+				entry.dateTime !== null &&
+				getReleaseFromFile(app, entry.file) !== null,
+		)
+		.sort((a, b) => b.dateTime.localeCompare(a.dateTime))
+		.slice(0, limit)
+		.map((entry) => entry.file);
+}
+
+// The day ("YYYY-MM-DD") a listen belongs to, from its recorded date-time.
+function getListenDay(app: App, file: TFile): string | null {
+	const dateTime = getListenDateTime(app, file);
+	return dateTime ? dateTime.slice(0, 10) : null;
+}
+
+// A day heading for a group of listens, e.g. "Wednesday 16th September 2026".
+// The weekday is spelled out so the day is recognisable at a glance.
+function formatListenDayHeader(day: string): string {
+	const parsed = moment(day, "YYYY-MM-DD");
+	return parsed.isValid() ? parsed.format("dddd Do MMMM YYYY") : day;
+}
+
+// Grouping of recent listens under a header per calendar day. Items are
+// expected newest-first, so days appear newest-first too.
+export function getListenDayGrouping(app: App): ConductorSelectorGrouping<TFile> {
+	return {
+		id: "day",
+		label: "Group by Day",
+		buildGroups: (listens) => {
+			const buckets = new Map<string, TFile[]>();
+			for (const listen of listens) {
+				const day = getListenDay(app, listen);
+				if (!day) continue;
+				if (!buckets.has(day)) buckets.set(day, []);
+				buckets.get(day)!.push(listen);
+			}
+			return [...buckets.entries()].map(([day, items]) => ({
+				header: formatListenDayHeader(day),
+				items,
+			}));
+		},
+	};
 }
