@@ -112,6 +112,52 @@ export function getAllCategories(app: App): string[] {
 	return [...categories].sort();
 }
 
+// Display name for a note: its `title` frontmatter when set, else the basename.
+// Titles are the safe display form — a basename carries the uniqueness escaping
+// the vault needs (e.g. the note "ACDC" for the artist "AC/DC").
+export function getNoteTitle(app: App, file: TFile): string {
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const title = frontmatter?.title;
+	return typeof title === "string" && title.trim()
+		? title.trim()
+		: file.basename;
+}
+
+// Bare names from a frontmatter array field holding wikilinks or plain strings.
+// Wikilink wrappers (e.g. "[[The Velvet Underground]]") and display-text
+// suffixes (e.g. "[[X|Y]]" yields "X") are stripped, so either form resolves to
+// a name that can be looked up as a linkpath.
+export function getLinkedNames(
+	app: App,
+	file: TFile,
+	field: string,
+): string[] {
+	const value = app.metadataCache.getFileCache(file)?.frontmatter?.[field];
+	if (!Array.isArray(value)) return [];
+	return value
+		.map((name) =>
+			String(name)
+				.replace(/^\[\[|\]\]$/g, "")
+				.split("|")[0]
+				.trim(),
+		)
+		.filter(Boolean);
+}
+
+// The same names as display titles: each is resolved to its note and rendered
+// title-first, so a note's `title` is preferred over its basename. A name that
+// doesn't resolve to a note falls back to the text as written.
+export function getLinkedNamesAsTitles(
+	app: App,
+	file: TFile,
+	field: string,
+): string[] {
+	return getLinkedNames(app, file, field).map((name) => {
+		const target = app.metadataCache.getFirstLinkpathDest(name, file.path);
+		return target ? getNoteTitle(app, target) : name;
+	});
+}
+
 export function getPeople(app: App): TFile[] {
 	return getFilesWithCategory(app, "Person");
 }

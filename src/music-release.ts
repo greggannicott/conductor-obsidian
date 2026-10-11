@@ -5,6 +5,9 @@ import type {
 } from "src/conductor-selector-modal";
 import {
 	getFilesWithCategory,
+	getLinkedNames,
+	getLinkedNamesAsTitles,
+	getNoteTitle,
 	isFileCategory,
 	isFileType,
 } from "./utilities";
@@ -12,21 +15,23 @@ import {
 // Display truncation length for release titles in pickers.
 export const MUSIC_RELEASE_TITLE_MAX_LENGTH = 120;
 
+// The release title, preferring the note's `title` over its basename.
 export function getReleaseTitle(app: App, file: TFile): string {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const title = frontmatter?.title;
-	return typeof title === "string" && title.trim()
-		? title.trim()
-		: file.basename;
+	return getNoteTitle(app, file);
 }
 
+// The release's artists as display names: each `artists` entry is resolved to
+// its artist note and rendered title-first, so the artist's `title` is shown
+// rather than the file name that had to be made unique (e.g. "R.E.M." for the
+// note "REM").
 export function getArtistNames(app: App, file: TFile): string[] {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const artists = frontmatter?.artists;
-	if (!Array.isArray(artists)) return [];
-	return artists
-		.map((artist) => String(artist).replace(/^\[\[|\]\]$/g, "").trim())
-		.filter(Boolean);
+	return getLinkedNamesAsTitles(app, file, "artists");
+}
+
+// The release's artists as written in frontmatter (i.e. the artist notes' file
+// names). Kept for search only, so a query matches either form.
+export function getArtistLinkNames(app: App, file: TFile): string[] {
+	return getLinkedNames(app, file, "artists");
 }
 
 export function getArtists(app: App, file: TFile): string {
@@ -63,11 +68,17 @@ export function getMusicReleases(app: App): TFile[] {
 
 // Search fields for the picker: the release title and each individual artist
 // are matched independently, so a query must be satisfied within a single
-// field rather than spanning across them.
+// field rather than spanning across them. Artists contribute both their
+// display name and the name as written in frontmatter, so searching "REM"
+// still finds "R.E.M.".
 export function getMusicReleaseSearchFields(app: App, file: TFile): string[] {
-	return [getReleaseTitle(app, file), ...getArtistNames(app, file)].filter(
-		Boolean,
-	);
+	return [
+		...new Set([
+			getReleaseTitle(app, file),
+			...getArtistNames(app, file),
+			...getArtistLinkNames(app, file),
+		]),
+	].filter(Boolean);
 }
 
 const GROUP_HEADER_MAX_LENGTH = 60;
@@ -95,7 +106,8 @@ function formatArtistGroupHeader(artists: string[]): string {
 
 // Grouping of releases under a single non-selectable header per artist line-up.
 // A release appears exactly once, under a header listing all of its artists
-// (truncated); releases without a known artist fall under "Unknown Artist".
+// (truncated, using their display titles); releases without a known artist fall
+// under "Unknown Artist".
 export function getMusicReleaseArtistGrouping(
 	app: App,
 ): ConductorSelectorGrouping<TFile> {

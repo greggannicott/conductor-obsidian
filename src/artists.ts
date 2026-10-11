@@ -1,16 +1,18 @@
 import { App, TFile, parseFrontMatterStringArray } from "obsidian";
 import type { ConductorSelectorMeta } from "src/conductor-selector-modal";
-import { getFilesWithCategory } from "./utilities";
+import {
+	getFilesWithCategory,
+	getLinkedNames,
+	getLinkedNamesAsTitles,
+	getNoteTitle,
+} from "./utilities";
 
 // Display truncation length for artist names in pickers.
 export const ARTIST_TITLE_MAX_LENGTH = 120;
 
+// The artist's name, preferring the note's `title` over its basename.
 export function getArtistTitle(app: App, file: TFile): string {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const title = frontmatter?.title;
-	return typeof title === "string" && title.trim()
-		? title.trim()
-		: file.basename;
+	return getNoteTitle(app, file);
 }
 
 export function compareArtistsByTitle(app: App, a: TFile, b: TFile): number {
@@ -29,40 +31,28 @@ export function getArtists(app: App): TFile[] {
 	return artists;
 }
 
-// Names from a frontmatter string array. Wikilink wrappers (e.g.
-// "[[The Velvet Underground]]") and display-text suffixes are stripped so both
-// wikilinks and plain strings resolve to a bare name.
-function getNames(app: App, file: TFile, field: string): string[] {
-	const value = app.metadataCache.getFileCache(file)?.frontmatter?.[field];
-	if (!Array.isArray(value)) return [];
-	return value
-		.map((name) =>
-			String(name)
-				.replace(/^\[\[|\]\]$/g, "")
-				.split("|")[0]
-				.trim(),
-		)
-		.filter(Boolean);
-}
-
 export function getArtistAliases(app: App, file: TFile): string[] {
-	return getNames(app, file, "aliases");
+	return getLinkedNames(app, file, "aliases");
 }
 
 // Groups/collectives the artist belongs to (e.g. Lou Reed's "The Velvet
 // Underground").
 export function getArtistGroups(app: App, file: TFile): string[] {
-	return getNames(app, file, "groups");
+	return getLinkedNames(app, file, "groups");
 }
 
 // Search fields for the picker: the artist name, each alias and each group are
 // matched independently, so a query must be satisfied within a single field
-// rather than spanning across them.
+// rather than spanning across them. Groups contribute both their display name
+// and the name as written in frontmatter.
 export function getArtistSearchFields(app: App, file: TFile): string[] {
 	return [
-		getArtistTitle(app, file),
-		...getArtistAliases(app, file),
-		...getArtistGroups(app, file),
+		...new Set([
+			getArtistTitle(app, file),
+			...getArtistAliases(app, file),
+			...getArtistGroups(app, file),
+			...getLinkedNamesAsTitles(app, file, "groups"),
+		]),
 	].filter(Boolean);
 }
 

@@ -1,16 +1,18 @@
 import { App, TFile } from "obsidian";
 import type { ConductorSelectorMeta } from "src/conductor-selector-modal";
-import { getFilesWithCategory } from "./utilities";
+import {
+	getFilesWithCategory,
+	getLinkedNames,
+	getLinkedNamesAsTitles,
+	getNoteTitle,
+} from "./utilities";
 
 // Display truncation length for movie titles in pickers.
 export const MOVIE_TITLE_MAX_LENGTH = 120;
 
+// The movie title, preferring the note's `title` over its basename.
 export function getMovieTitle(app: App, file: TFile): string {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const title = frontmatter?.title;
-	return typeof title === "string" && title.trim()
-		? title.trim()
-		: file.basename;
+	return getNoteTitle(app, file);
 }
 
 export function compareMoviesByTitle(app: App, a: TFile, b: TFile): number {
@@ -29,30 +31,30 @@ export function getMovies(app: App): TFile[] {
 	return movies;
 }
 
+// Directors/actors as display names: each frontmatter entry is resolved to its
+// person note and rendered title-first, so the person's `title` is shown rather
+// than the file name that had to be made unique.
 export function getDirectors(app: App, file: TFile): string[] {
-	return getPeopleNames(app, file, "director");
+	return getLinkedNamesAsTitles(app, file, "director");
 }
 
 export function getActors(app: App, file: TFile): string[] {
-	return getPeopleNames(app, file, "actors");
-}
-
-function getPeopleNames(app: App, file: TFile, field: string): string[] {
-	const value = app.metadataCache.getFileCache(file)?.frontmatter?.[field];
-	if (!Array.isArray(value)) return [];
-	return value
-		.map((name) => String(name).replace(/^\[\[|\]\]$/g, "").trim())
-		.filter(Boolean);
+	return getLinkedNamesAsTitles(app, file, "actors");
 }
 
 // Search fields for the picker: the movie title and each individual director
 // and actor are matched independently, so a query must be satisfied within a
-// single field rather than spanning across them.
+// single field rather than spanning across them. People contribute both their
+// display name and the name as written in frontmatter.
 export function getMovieSearchFields(app: App, file: TFile): string[] {
 	return [
-		getMovieTitle(app, file),
-		...getDirectors(app, file),
-		...getActors(app, file),
+		...new Set([
+			getMovieTitle(app, file),
+			...getDirectors(app, file),
+			...getActors(app, file),
+			...getLinkedNames(app, file, "director"),
+			...getLinkedNames(app, file, "actors"),
+		]),
 	].filter(Boolean);
 }
 
