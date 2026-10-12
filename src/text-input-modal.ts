@@ -10,6 +10,8 @@ export type TextInputKeybinding = {
 export type TextInputModalConfiguration = {
 	title: string;
 	placeholder?: string;
+	// Optional explanatory text shown beneath the input.
+	description?: string;
 	// Optional initial value, pre-selected so typing replaces it.
 	value?: string;
 	// Render a multi-line textarea instead of a single-line input.
@@ -69,6 +71,13 @@ export class TextInputModal extends Modal {
 
 		if (config.value) {
 			this.input.value = config.value;
+		}
+
+		if (config.description) {
+			this.contentEl.createEl("div", {
+				cls: "text-input-description",
+				text: config.description,
+			});
 		}
 
 		const promptInstructions = this.contentEl.createEl("div", {

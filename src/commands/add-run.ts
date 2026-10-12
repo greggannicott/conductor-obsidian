@@ -222,6 +222,7 @@ export const addRun = async (app: App): Promise<void> => {
 	const workoutTimePrompt = await TextInputModal.show(app, {
 		title: "Workout Time",
 		placeholder: "HH:MM:SS",
+		description: "Time spent actually running.",
 	});
 	if (workoutTimePrompt.cancelled) return;
 	const workoutTime = workoutTimePrompt.value.trim();
@@ -233,11 +234,24 @@ export const addRun = async (app: App): Promise<void> => {
 	const elapsedTimePrompt = await TextInputModal.show(app, {
 		title: "Elapsed Time",
 		placeholder: "HH:MM:SS (defaults to workout time)",
+		description: "Time spent including pauses.",
 	});
 	if (elapsedTimePrompt.cancelled) return;
 	const elapsedTime = elapsedTimePrompt.value.trim();
 	if (elapsedTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(elapsedTime)) {
 		new Notice("Elapsed time must be in HH:MM:SS format");
+		return;
+	}
+
+	const targetTimePrompt = await TextInputModal.show(app, {
+		title: "Target Time",
+		placeholder: "HH:MM:SS (optional)",
+		description: "Time spent achieving goal of run.",
+	});
+	if (targetTimePrompt.cancelled) return;
+	const targetTime = targetTimePrompt.value.trim();
+	if (targetTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(targetTime)) {
+		new Notice("Target time must be in HH:MM:SS format");
 		return;
 	}
 
@@ -332,6 +346,7 @@ export const addRun = async (app: App): Promise<void> => {
 	const elapsedSeconds = elapsedTime
 		? parseTimeToSeconds(elapsedTime)
 		: workoutSeconds;
+	const targetSeconds = targetTime ? parseTimeToSeconds(targetTime) : null;
 
 	await app.fileManager.processFrontMatter(file, (fm) => {
 		fm["run-type"] = `[[${runType}]]`;
@@ -347,6 +362,9 @@ export const addRun = async (app: App): Promise<void> => {
 		fm["elevation-gain"] = parseFloat(elevationGain);
 		fm["workout-time-in-seconds"] = workoutSeconds;
 		fm["elapsed-time-in-seconds"] = elapsedSeconds;
+		if (targetSeconds !== null) {
+			fm["target-time-in-seconds"] = targetSeconds;
+		}
 		fm["average-pace"] = parseFloat(pace);
 		fm["average-heart-rate"] = parseInt(heartRate, 10);
 		if (lastKnownWeight !== null) {
