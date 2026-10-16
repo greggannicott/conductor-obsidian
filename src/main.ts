@@ -24,7 +24,11 @@ import { createJournalNoteForProblem } from "./commands/create-journal-note-for-
 import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
-import { openRandom, openRandomAnything } from "./commands/open-random";
+import {
+	openRandom,
+	openRandomAnything,
+	repeatLastOpenRandom,
+} from "./commands/open-random";
 import { addRun } from "./commands/add-run";
 import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
@@ -78,6 +82,7 @@ import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links
 
 interface ConductorSettings {
 	linearBaseUrl?: string;
+	lastOpenRandomOption?: string;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
@@ -512,13 +517,21 @@ export default class ConductorObsidian extends Plugin {
 		this.addCommand({
 			id: "open-random",
 			name: "Open Random...",
-			callback: () => void openRandom(this.app),
+			callback: () => void openRandom(this.app, this.openRandomMemory),
 		});
 
 		this.addCommand({
 			id: "open-random-anything",
 			name: "Open Random... Anything",
-			callback: () => void openRandomAnything(this.app),
+			callback: () =>
+				void openRandomAnything(this.app, this.openRandomMemory),
+		});
+
+		this.addCommand({
+			id: "repeat-last-open-random",
+			name: "Repeat Last Open Random...",
+			callback: () =>
+				void repeatLastOpenRandom(this.app, this.openRandomMemory),
 		});
 
 		this.registerEvent(
@@ -585,5 +598,17 @@ export default class ConductorObsidian extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	// Shared by the Open Random commands so both record (and can repeat)
+	// whichever option was used last.
+	private get openRandomMemory() {
+		return {
+			getLast: () => this.settings.lastOpenRandomOption,
+			setLast: async (title: string) => {
+				this.settings.lastOpenRandomOption = title;
+				await this.saveSettings();
+			},
+		};
 	}
 }
