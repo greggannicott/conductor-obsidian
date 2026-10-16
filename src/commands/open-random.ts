@@ -58,7 +58,7 @@ const pickRandomOptionFile = (
 };
 
 const OPTIONS: OpenRandomOption[] = [
-	{ title: "All of the Below", all: true },
+	{ title: "Anything", all: true },
 	{ title: "Journal Entry", category: "Journal" },
 	{ title: "Musing", category: "Musing" },
 	{ title: "Quote", category: "Quote" },
@@ -72,6 +72,18 @@ const OPTIONS: OpenRandomOption[] = [
 	{ title: "Person", category: "Person" },
 	{ title: "Slogan", category: "Slogan" },
 ];
+
+// Shared by the "Anything" option and the "Open Random... Anything"
+// command: pick a random non-empty pool, then a random note within it.
+export const openRandomAnything = async (app: App): Promise<void> => {
+	const result = pickRandomOptionFile(app);
+	if (!result) {
+		new Notice(`No notes found for "Anything"`);
+		return;
+	}
+	new Notice(`Opening a Random ${result.option.title}...`);
+	await openRandomFile(app, result.file);
+};
 
 export const openRandom = async (app: App): Promise<void> => {
 	const option = await ConductorSelectorModal.show(app, {
@@ -88,13 +100,7 @@ export const openRandom = async (app: App): Promise<void> => {
 	if (!option) return;
 
 	if (option.all) {
-		const result = pickRandomOptionFile(app);
-		if (!result) {
-			new Notice(`No notes found for "${option.title}"`);
-			return;
-		}
-		new Notice(`Opening a Random ${result.option.title}...`);
-		await openRandomFile(app, result.file);
+		await openRandomAnything(app);
 		return;
 	}
 
