@@ -70,7 +70,6 @@ const OPTIONS: OpenRandomOption[] = [
 	{ title: "Note Containing a Review", tag: "review" },
 	{ title: "Note With a High Rating", highRating: true },
 	{ title: "Person", category: "Person" },
-	{ title: "Slogan", category: "Slogan" },
 ];
 
 export const openRandom = async (app: App): Promise<void> => {
