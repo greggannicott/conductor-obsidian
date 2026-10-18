@@ -10,6 +10,13 @@ type OpenRandomOption = {
 	all?: boolean;
 };
 
+// Persists which option was used last, so "Repeat Last Open Random..."
+// knows what to repeat.
+export type OpenRandomMemory = {
+	getLast: () => string | undefined;
+	setLast: (title: string) => Promise<void>;
+};
+
 const pickRandom = <T,>(items: T[]): T =>
 	items[Math.floor(Math.random() * items.length)];
 
@@ -57,8 +64,10 @@ const pickRandomOptionFile = (
 	return { option: pool.option, file: pickRandom(pool.files) };
 };
 
+const ANYTHING_TITLE = "Anything";
+
 const OPTIONS: OpenRandomOption[] = [
-	{ title: "All of the Below", all: true },
+	{ title: ANYTHING_TITLE, all: true },
 	{ title: "Journal Entry", category: "Journal" },
 	{ title: "Musing", category: "Musing" },
 	{ title: "Quote", category: "Quote" },
@@ -72,7 +81,50 @@ const OPTIONS: OpenRandomOption[] = [
 	{ title: "Person", category: "Person" },
 ];
 
-export const openRandom = async (app: App): Promise<void> => {
+// Opens a random note from the given option's pool, recording the option so
+// "Repeat Last Open Random..." can repeat it.
+const runOption = async (
+	app: App,
+	option: OpenRandomOption,
+	memory: OpenRandomMemory,
+): Promise<void> => {
+	if (option.all) {
+		await openRandomAnything(app, memory);
+		return;
+	}
+
+	await memory.setLast(option.title);
+
+	const files = getOptionFiles(app, option);
+	if (files.length === 0) {
+		new Notice(`No notes found for "${option.title}"`);
+		return;
+	}
+
+	await openRandomFile(app, pickRandom(files));
+};
+
+// Shared by the "Anything" option and the "Open Random... Anything"
+// command: pick a random non-empty pool, then a random note within it.
+export const openRandomAnything = async (
+	app: App,
+	memory: OpenRandomMemory,
+): Promise<void> => {
+	await memory.setLast(ANYTHING_TITLE);
+
+	const result = pickRandomOptionFile(app);
+	if (!result) {
+		new Notice(`No notes found for "${ANYTHING_TITLE}"`);
+		return;
+	}
+	new Notice(`Opening a Random ${result.option.title}...`);
+	await openRandomFile(app, result.file);
+};
+
+export const openRandom = async (
+	app: App,
+	memory: OpenRandomMemory,
+): Promise<void> => {
 	const option = await ConductorSelectorModal.show(app, {
 		items: OPTIONS,
 		placeholder: "Select what to open...",
@@ -86,22 +138,27 @@ export const openRandom = async (app: App): Promise<void> => {
 	});
 	if (!option) return;
 
-	if (option.all) {
-		const result = pickRandomOptionFile(app);
-		if (!result) {
-			new Notice(`No notes found for "${option.title}"`);
-			return;
-		}
-		new Notice(`Opening a Random ${result.option.title}...`);
-		await openRandomFile(app, result.file);
+	await runOption(app, option, memory);
+};
+
+// Repeats whichever option was used last by either "Open Random..." or
+// "Open Random... Anything". A stored "Anything" repeats the Anything
+// behaviour; a stored category repeats that category.
+export const repeatLastOpenRandom = async (
+	app: App,
+	memory: OpenRandomMemory,
+): Promise<void> => {
+	const title = memory.getLast();
+	if (!title) {
+		new Notice("No previous Open Random... to repeat");
 		return;
 	}
 
-	const files = getOptionFiles(app, option);
-	if (files.length === 0) {
-		new Notice(`No notes found for "${option.title}"`);
+	const option = OPTIONS.find((o) => o.title === title);
+	if (!option) {
+		new Notice(`Unknown Open Random option "${title}"`);
 		return;
 	}
 
-	await openRandomFile(app, pickRandom(files));
+	await runOption(app, option, memory);
 };
