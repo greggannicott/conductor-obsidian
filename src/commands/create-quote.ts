@@ -4,7 +4,7 @@ import { ComboModal } from "src/combo-modal";
 import { ConfirmModal } from "src/confirm-modal";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { SelectionRange } from "src/editor-utils";
-import { createFileFromTemplate, addTag, getPeople, sanitizeFileName } from "src/utilities";
+import { createFileFromTemplate, getPeople, sanitizeFileName } from "src/utilities";
 
 // How the selected text in the source note is rewritten once the quote note
 // exists. Offered after the filename is known, so every option can be built
@@ -145,8 +145,6 @@ export const createQuote = async (app: App): Promise<void> => {
 			fm["attributed-to"] = `[[${person}]]`;
 		});
 
-		await addTag(app, file, "inbox");
-
 		new Notice(`Quote note created: ${fileName}`);
 		app.workspace.getLeaf(false).openFile(file);
 	} else {
@@ -243,8 +241,6 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 		await app.fileManager.processFrontMatter(file, (fm) => {
 			fm["attributed-to"] = `[[${person}]]`;
 		});
-
-		await addTag(app, file, "inbox");
 
 		new Notice(`Quote note created: ${fileName}`);
 
