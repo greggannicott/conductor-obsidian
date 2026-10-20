@@ -10,19 +10,22 @@ import { createFileFromTemplate, addTag, getPeople, sanitizeFileName } from "src
 // exists. Offered after the filename is known, so every option can be built
 // without touching the vault.
 export enum QuoteReplacement {
+	OriginalAsText = "original-as-text",
 	QuoteAsText = "quote-as-text",
 	TitleAsText = "title-as-text",
 	Embed = "embed",
 }
 
 const QUOTE_REPLACEMENTS: QuoteReplacement[] = [
+	QuoteReplacement.OriginalAsText,
 	QuoteReplacement.QuoteAsText,
 	QuoteReplacement.TitleAsText,
 	QuoteReplacement.Embed,
 ];
 
 const QUOTE_REPLACEMENT_LABELS: Record<QuoteReplacement, string> = {
-	[QuoteReplacement.QuoteAsText]: "Replace with link using the quote as text",
+	[QuoteReplacement.OriginalAsText]: "Replace with link using original text as text",
+	[QuoteReplacement.QuoteAsText]: "Replace with link using entered quote as text",
 	[QuoteReplacement.TitleAsText]: "Replace with link using the title as text",
 	[QuoteReplacement.Embed]: "Replace with embed",
 };
@@ -36,9 +39,12 @@ const singleLine = (text: string): string =>
 const buildReplacementText = (
 	replacement: QuoteReplacement,
 	basename: string,
+	selectedText: string,
 	quote: string,
 ): string => {
 	switch (replacement) {
+		case QuoteReplacement.OriginalAsText:
+			return `[[${basename}|${singleLine(selectedText) || basename}]]`;
 		case QuoteReplacement.QuoteAsText:
 			return `[[${basename}|${singleLine(quote) || basename}]]`;
 		case QuoteReplacement.TitleAsText:
@@ -247,7 +253,7 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 				editor,
 				selectedRange,
 				selectedText,
-				buildReplacementText(replacement, fileName, quote),
+				buildReplacementText(replacement, fileName, selectedText, quote),
 			);
 		}
 
