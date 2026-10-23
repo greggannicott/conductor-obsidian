@@ -85,6 +85,12 @@ export type ConductorSelectorOptions<T> = {
 	allowEmptySelection?: boolean;
 	// Multi-select only: items already checked when the modal opens.
 	initialSelection?: T[];
+	// Opts the picker into accepting text that matches no item. While searching,
+	// the query is offered as a final suggestion; choosing it passes the text
+	// through this factory so the caller decides how a not-yet-existing value is
+	// represented. Omitting it (the default) limits selection to `items`.
+	// Single-select only.
+	getCustomItem?: (text: string) => T;
 	onSelect?: (item: T) => void;
 };
 
@@ -96,6 +102,11 @@ type ConductorSelectorEntry<T> =
 	| {
 			kind: "item";
 			item: T;
+	  }
+	| {
+			// Text no item matches; only offered when getCustomItem is set.
+			kind: "custom";
+			text: string;
 	  };
 
 export class ConductorSelectorModal<T> extends SuggestModal<
@@ -193,19 +204,42 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		super.onClose();
 	}
 
+	// Fields the query is matched against. Each is matched independently, so a
+	// query has to be satisfied within one field rather than across them.
+	private getSearchFields(): (item: T) => string[] {
+		const getSingleText = this.options.getSearchText ?? this.options.getText;
+		return this.options.getSearchTexts ?? ((item: T) => [getSingleText(item)]);
+	}
+
+	// The "use what I typed" row, offered only when the picker opted in
+	// (getCustomItem) and the query doesn't exactly match an existing item.
+	// It goes last so matches stay ahead of it; when nothing matches it is the
+	// only row, so Enter accepts it straight away.
+	private getCustomEntry(
+		q: string,
+		allItems: T[],
+	): ConductorSelectorEntry<T> | null {
+		if (!q || this.multiSelect || !this.options.getCustomItem) return null;
+		const getSearchFields = this.getSearchFields();
+		const exists = allItems.some((item) =>
+			getSearchFields(item).some(
+				(field) => field.trim().toLowerCase() === q.toLowerCase(),
+			),
+		);
+		return exists ? null : { kind: "custom", text: q };
+	}
+
 	getSuggestions(query: string): ConductorSelectorEntry<T>[] {
 		const q = query.trim();
-		let items = [...(this.options.items ?? [])];
+		const allItems = [...(this.options.items ?? [])];
+		let items = allItems;
 		// Match relevance per item (lower tier is a stronger match), used to
 		// rank grouped results while searching.
 		const relevance = new Map<T, { tier: number; score: number }>();
 
 		if (q.length > 0) {
 			const search = prepareFuzzySearch(q);
-			const getSingleText = this.options.getSearchText ?? this.options.getText;
-			const getSearchTexts =
-				this.options.getSearchTexts ??
-				((item: T) => [getSingleText(item)]);
+			const getSearchTexts = this.getSearchFields();
 			items = items
 				.map((item) => {
 					let best: NonNullable<ReturnType<typeof search>> | null = null;
@@ -237,12 +271,19 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				.map((m) => m.item);
 		}
 
+		const customEntry = this.getCustomEntry(q, allItems);
+
 		const grouping = this.getActiveGrouping();
 		if (!grouping) {
 			if (q.length === 0 && this.options.sortItems) {
 				items.sort(this.options.sortItems);
 			}
-			return items.map((item) => ({ kind: "item" as const, item }));
+			const flatEntries: ConductorSelectorEntry<T>[] = items.map((item) => ({
+				kind: "item" as const,
+				item,
+			}));
+			if (customEntry) flatEntries.push(customEntry);
+			return flatEntries;
 		}
 
 		const searching = q.length > 0;
@@ -305,6 +346,7 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				entries.push({ kind: "item", item });
 			}
 		}
+		if (customEntry) entries.push(customEntry);
 		return entries;
 	}
 
@@ -313,6 +355,28 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			el.addClass("conductor-suggest-header");
 			el.setAttr("aria-disabled", "true");
 			el.createDiv({ text: item.title });
+			return;
+		}
+
+		if (item.kind === "custom") {
+			// Distinct from a normal row: the value doesn't exist yet, so say so
+			// rather than letting it look like a note that failed to load.
+			el.addClass("conductor-suggest-custom");
+			const customRow = el.createDiv({ cls: "conductor-suggest-row" });
+			const customBody = customRow.createDiv({
+				cls: "conductor-suggest-body",
+			});
+			const customTitleRow = customBody.createDiv({
+				cls: "conductor-suggest-title-row",
+			});
+			customTitleRow.createSpan({
+				cls: "conductor-suggest-title",
+				text: `Use “${item.text}”`,
+			});
+			customBody.createDiv({
+				cls: "conductor-suggest-subtext",
+				text: "No matching item",
+			});
 			return;
 		}
 
@@ -433,6 +497,17 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			if (this.multiSelect && !(evt instanceof MouseEvent)) {
 				this.confirmMultiSelection(evt, null);
 			}
+			return;
+		}
+
+		if (item.kind === "custom") {
+			const getCustomItem = this.options.getCustomItem;
+			if (!getCustomItem) return;
+			this.resolveSelection = null;
+			this.options.onSelect?.(getCustomItem(item.text));
+			// SuggestModal doesn't close automatically unless we do it.
+			evt.preventDefault();
+			this.close();
 			return;
 		}
 

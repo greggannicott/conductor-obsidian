@@ -1,10 +1,16 @@
-import { App, Editor, MarkdownView, Notice } from "obsidian";
+import { App, Editor, MarkdownView, Notice, TFile } from "obsidian";
 import { TextInputModal } from "src/text-input-modal";
-import { ComboModal } from "src/combo-modal";
 import { ConfirmModal } from "src/confirm-modal";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { SelectionRange } from "src/editor-utils";
-import { createFileFromTemplate, getPeople, sanitizeFileName } from "src/utilities";
+import { getPersonType } from "src/category-config";
+import {
+	createFileFromTemplate,
+	getLinkedNames,
+	getNoteTitle,
+	getPeople,
+	sanitizeFileName,
+} from "src/utilities";
 
 // How the selected text in the source note is rewritten once the quote note
 // exists. Offered after the filename is known, so every option can be built
@@ -74,8 +80,10 @@ const replaceSelection = (
 
 // Picks the `References/<person> on <about>` name, appending a counter until it
 // is free. Kept separate from note creation so the filename is known up front.
+// Both halves are sanitised: a person's name can be typed by hand, so it is no
+// more trustworthy than the quote's subject.
 const getUniqueQuoteFileName = (app: App, person: string, about: string): string => {
-	const baseFileName = `${person} on ${sanitizeFileName(about)}`;
+	const baseFileName = `${sanitizeFileName(person)} on ${sanitizeFileName(about)}`;
 	let fileName = baseFileName;
 	let counter = 1;
 
@@ -85,6 +93,77 @@ const getUniqueQuoteFileName = (app: App, person: string, about: string): string
 	}
 
 	return fileName;
+};
+
+// An attribution: a Person note from the vault, or a name typed by the user
+// that has no note yet. `name` is the text linked to and written to the
+// filename; `file` is the note behind it, when there is one.
+type PersonChoice = {
+	file: TFile | null;
+	name: string;
+};
+
+// How a person is labelled: a note's title when it has one (the basename
+// carries uniqueness escaping, so it isn't always the readable form), else the
+// name as typed.
+const describePerson = (app: App, choice: PersonChoice): string =>
+	choice.file ? getNoteTitle(app, choice.file) : choice.name;
+
+// The attribution prompt shared by both quote commands. It follows the same
+// Person conventions as the rest of the plugin (title-first, grouped by type,
+// searchable by alias and name) but additionally accepts a name that isn't in
+// the vault, so someone not yet worth their own note can still be quoted.
+const choosePerson = (app: App): Promise<PersonChoice | null> => {
+	const typeOf = (choice: PersonChoice): string =>
+		(choice.file ? getPersonType(app, choice.file) : null) ?? "Other";
+	const people: PersonChoice[] = getPeople(app).map((file) => ({
+		file,
+		name: file.basename,
+	}));
+
+	return ConductorSelectorModal.show<PersonChoice>(app, {
+		items: people,
+		placeholder: "Who said this quote?",
+		emptyText: "No people found — type a name",
+		getText: (choice) => describePerson(app, choice),
+		getSearchTexts: (choice) => [
+			describePerson(app, choice),
+			choice.name,
+			...(choice.file ? getLinkedNames(app, choice.file, "aliases") : []),
+		],
+		sortItems: (a, b) =>
+			typeOf(a).localeCompare(typeOf(b)) ||
+			describePerson(app, a).localeCompare(describePerson(app, b)),
+		groupings: [
+			{
+				id: "type",
+				label: "By Type",
+				buildGroups: (choices) => {
+					const buckets = new Map<string, PersonChoice[]>();
+					for (const choice of choices) {
+						const type = typeOf(choice);
+						if (!buckets.has(type)) buckets.set(type, []);
+						buckets.get(type)!.push(choice);
+					}
+					return [...buckets.entries()]
+						.sort(([a], [b]) => a.localeCompare(b))
+						.map(([type, bucket]) => ({
+							header: type,
+							items: bucket.sort((x, y) =>
+								describePerson(app, x).localeCompare(
+									describePerson(app, y),
+								),
+							),
+						}));
+				},
+			},
+		],
+		// While searching, the closest match should lead rather than the
+		// grouping order.
+		rankGroupsByRelevance: true,
+		// Typed text that matches nobody becomes the attribution as written.
+		getCustomItem: (text) => ({ file: null, name: text }),
+	});
 };
 
 export const createQuote = async (app: App): Promise<void> => {
@@ -99,13 +178,9 @@ export const createQuote = async (app: App): Promise<void> => {
 	});
 	if (cancelled) return;
 
-	const personItems = getPeople(app).map((f) => f.basename);
-	const person = await ComboModal.show(app, {
-		title: "Attribution",
-		placeholder: "Who said this quote?",
-		items: personItems,
-	});
-	if (!person) return;
+	const personChoice = await choosePerson(app);
+	if (!personChoice) return;
+	const person = personChoice.name;
 
 	const { value: about } = await TextInputModal.show(app, {
 		title: `${person} on...`,
@@ -179,13 +254,9 @@ export const createQuoteUsingCurrentNoteAsSource = async (
 	});
 	if (cancelled) return;
 
-	const personItems = getPeople(app).map((f) => f.basename);
-	const person = await ComboModal.show(app, {
-		title: "Attribution",
-		placeholder: "Who said this quote?",
-		items: personItems,
-	});
-	if (!person) return;
+	const personChoice = await choosePerson(app);
+	if (!personChoice) return;
+	const person = personChoice.name;
 
 	const { value: about } = await TextInputModal.show(app, {
 		title: `${person} on...`,

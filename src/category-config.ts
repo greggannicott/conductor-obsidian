@@ -167,11 +167,17 @@ function getFirstWikilinkValue(app: App, file: TFile, key: string): string | nul
 	return null;
 }
 
+// A person's type (e.g. Musician, Author), taken from the first `type`
+// wikilink. Null when the note declares none.
+export function getPersonType(app: App, file: TFile): string | null {
+	return getFirstWikilinkValue(app, file, "type");
+}
+
 const personConfig: CategoryDisplayConfig = {
 	getText: (_app, file) => file.basename,
 	sortItems: (app, a, b) => {
-		const typeA = getFirstWikilinkValue(app, a, "type") ?? "zzz";
-		const typeB = getFirstWikilinkValue(app, b, "type") ?? "zzz";
+		const typeA = getPersonType(app, a) ?? "zzz";
+		const typeB = getPersonType(app, b) ?? "zzz";
 		if (typeA !== typeB) return typeA.localeCompare(typeB);
 		return a.basename.localeCompare(b.basename);
 	},
@@ -182,7 +188,7 @@ const personConfig: CategoryDisplayConfig = {
 			buildGroups: (files) => {
 				const buckets = new Map<string, TFile[]>();
 				for (const file of files) {
-					const type = getFirstWikilinkValue(app, file, "type") ?? "Other";
+					const type = getPersonType(app, file) ?? "Other";
 					if (!buckets.has(type)) buckets.set(type, []);
 					buckets.get(type)!.push(file);
 				}

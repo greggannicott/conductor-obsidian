@@ -51,6 +51,17 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-smaller);
 }
 
+/* "Use what I typed" row: the value doesn't exist yet, so it is set apart
+   from real items rather than reading as one of them. */
+.conductor-suggest-custom .conductor-suggest-title {
+	font-style: italic;
+	color: var(--text-muted);
+}
+
+.conductor-suggest-custom.is-selected .conductor-suggest-title {
+	color: var(--text-normal);
+}
+
 /* Multi-select suggestion rows */
 .conductor-suggest-row {
 	display: flex;
