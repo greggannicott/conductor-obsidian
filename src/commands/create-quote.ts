@@ -163,6 +163,10 @@ const choosePerson = (app: App): Promise<PersonChoice | null> => {
 		rankGroupsByRelevance: true,
 		// Typed text that matches nobody becomes the attribution as written.
 		getCustomItem: (text) => ({ file: null, name: text }),
+		// Show the 10 most recent attributions when no query is entered.
+		recentKey: "quote-attribution",
+		getRecentItemId: (choice) =>
+			choice.file ? choice.file.path : `custom:${choice.name}`,
 	});
 };
 

@@ -91,8 +91,69 @@ export type ConductorSelectorOptions<T> = {
 	// represented. Omitting it (the default) limits selection to `items`.
 	// Single-select only.
 	getCustomItem?: (text: string) => T;
+	// When set, remembers the last `recentLimit` selections under this key in
+	// localStorage. While the query is empty (and no custom query is active),
+	// those recent items are shown first as a "Recent" section, deduplicated
+	// against the current items list and against each other. Off by default.
+	recentKey?: string;
+	// Stable identity used to key recent selections in storage (e.g. a note
+	// path). Defaults to JSON.stringify for objects/arrays, or String(item).
+	getRecentItemId?: (item: T) => string;
+	// Max recent items to remember/show. Defaults to 10.
+	recentLimit?: number;
 	onSelect?: (item: T) => void;
 };
+
+const RECENT_LIMIT_DEFAULT = 10;
+const RECENT_STORAGE_PREFIX = "conductor-selector-recent:";
+
+function getRecentItemIdDefault<T>(item: T): string {
+	if (typeof item === "string") return item;
+	if (typeof item === "number" || typeof item === "boolean") {
+		return String(item);
+	}
+	try {
+		return JSON.stringify(item);
+	} catch {
+		return String(item);
+	}
+}
+
+function loadRecentIds(key: string): string[] {
+	try {
+		const raw = localStorage.getItem(RECENT_STORAGE_PREFIX + key);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((id): id is string => typeof id === "string");
+	} catch {
+		return [];
+	}
+}
+
+function saveRecentIds(key: string, ids: string[]): void {
+	try {
+		localStorage.setItem(
+			RECENT_STORAGE_PREFIX + key,
+			JSON.stringify(ids),
+		);
+	} catch {
+		// Storage may be full/disabled; ignore.
+	}
+}
+
+function recordRecentSelection<T>(
+	key: string,
+	item: T,
+	getId: (item: T) => string,
+	limit: number,
+): void {
+	if (limit <= 0) return;
+	const id = getId(item);
+	const ids = loadRecentIds(key).filter((existing) => existing !== id);
+	ids.unshift(id);
+	saveRecentIds(key, ids.slice(0, limit));
+}
 
 type ConductorSelectorEntry<T> =
 	| {
@@ -123,12 +184,17 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 	private selectedItems: Set<T> = new Set();
 	private itemByElement = new WeakMap<HTMLElement, T>();
 	private suggestionListEl: HTMLElement | null = null;
+	private readonly getRecentItemId: (item: T) => string;
+	private readonly recentLimit: number;
 
 	constructor(app: App, options: ConductorSelectorOptions<T>) {
 		super(app);
 		this.modalEl.addClass("conductor-selector-modal");
 		this.options = options;
 		this.multiSelect = options.multiSelect ?? false;
+		this.getRecentItemId =
+			options.getRecentItemId ?? getRecentItemIdDefault;
+		this.recentLimit = options.recentLimit ?? RECENT_LIMIT_DEFAULT;
 		this.activeGroupingId =
 			options.initialGroupingId !== undefined
 				? options.initialGroupingId
@@ -202,6 +268,30 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			this.resolveMultiSelection = null;
 		}, 0);
 		super.onClose();
+	}
+
+	// Resolve recent items (by stored identity) from the full items list.
+	// Only used when the query is empty and recentKey is set.
+	private getRecentItems(): T[] {
+		const key = this.options.recentKey;
+		if (!key || this.multiSelect || this.recentLimit <= 0) return [];
+		const ids = loadRecentIds(key);
+		if (ids.length === 0) return [];
+		const itemById = new Map<string, T>();
+		for (const item of this.options.items ?? []) {
+			itemById.set(this.getRecentItemId(item), item);
+		}
+		const recent: T[] = [];
+		const seen = new Set<string>();
+		for (const id of ids) {
+			if (seen.has(id)) continue;
+			const item = itemById.get(id);
+			if (!item) continue;
+			recent.push(item);
+			seen.add(id);
+			if (recent.length >= this.recentLimit) break;
+		}
+		return recent;
 	}
 
 	// Fields the query is matched against. Each is matched independently, so a
@@ -282,6 +372,23 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 				kind: "item" as const,
 				item,
 			}));
+			if (q.length === 0) {
+				const recentItems = this.getRecentItems();
+				if (recentItems.length > 0) {
+					const shown = new Set(recentItems.map((item) => this.getRecentItemId(item)));
+					const entries: ConductorSelectorEntry<T>[] = [
+						{ kind: "header", title: "Recent" },
+						...recentItems.map((item) => ({ kind: "item" as const, item })),
+						{ kind: "header", title: "All" },
+						...flatEntries.filter(
+							(entry) =>
+								entry.kind !== "item" ||
+								!shown.has(this.getRecentItemId(entry.item)),
+						),
+					];
+					return entries;
+				}
+			}
 			if (customEntry) flatEntries.push(customEntry);
 			return flatEntries;
 		}
@@ -338,16 +445,37 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			groups.push(...rankedGroups);
 		}
 
-		const entries: ConductorSelectorEntry<T>[] = [];
-		for (const group of groups) {
-			if (group.items.length === 0) continue;
-			entries.push({ kind: "header", title: group.header });
-			for (const item of group.items) {
-				entries.push({ kind: "item", item });
+		const customEntry2 = this.getCustomEntry(q, allItems);
+
+		if (q.length === 0) {
+			const recentItems = this.getRecentItems();
+			if (recentItems.length > 0) {
+				const entries: ConductorSelectorEntry<T>[] = [
+					{ kind: "header", title: "Recent" },
+					...recentItems.map((item) => ({ kind: "item" as const, item })),
+				];
+				for (const group of groups) {
+					if (group.items.length === 0) continue;
+					entries.push({ kind: "header", title: group.header });
+					for (const item of group.items) {
+						entries.push({ kind: "item", item });
+					}
+				}
+				if (customEntry2) entries.push(customEntry2);
+				return entries;
 			}
 		}
-		if (customEntry) entries.push(customEntry);
-		return entries;
+
+		const groupedResult: ConductorSelectorEntry<T>[] = [];
+		for (const group of groups) {
+			if (group.items.length === 0) continue;
+			groupedResult.push({ kind: "header", title: group.header });
+			for (const item of group.items) {
+				groupedResult.push({ kind: "item", item });
+			}
+		}
+		if (customEntry2) groupedResult.push(customEntry2);
+		return groupedResult;
 	}
 
 	renderSuggestion(item: ConductorSelectorEntry<T>, el: HTMLElement): void {
@@ -504,7 +632,16 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			const getCustomItem = this.options.getCustomItem;
 			if (!getCustomItem) return;
 			this.resolveSelection = null;
-			this.options.onSelect?.(getCustomItem(item.text));
+			const customItem = getCustomItem(item.text);
+			if (this.options.recentKey) {
+				recordRecentSelection(
+					this.options.recentKey,
+					customItem,
+					this.getRecentItemId,
+					this.recentLimit,
+				);
+			}
+			this.options.onSelect?.(customItem);
 			// SuggestModal doesn't close automatically unless we do it.
 			evt.preventDefault();
 			this.close();
@@ -533,6 +670,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			item.item === this.firstRenderedItem()
 		) {
 			this.resolveSelection = null;
+			if (this.options.recentKey) {
+				recordRecentSelection(
+					this.options.recentKey,
+					this.options.defaultItem,
+					this.getRecentItemId,
+					this.recentLimit,
+				);
+			}
 			this.options.onSelect?.(this.options.defaultItem);
 			evt.preventDefault();
 			this.close();
@@ -540,6 +685,14 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		}
 
 		this.resolveSelection = null;
+		if (this.options.recentKey) {
+			recordRecentSelection(
+				this.options.recentKey,
+				item.item,
+				this.getRecentItemId,
+				this.recentLimit,
+			);
+		}
 		this.options.onSelect?.(item.item);
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
@@ -563,6 +716,16 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 
 		const resolve = this.resolveMultiSelection;
 		this.resolveMultiSelection = null;
+		if (this.options.recentKey) {
+			for (const selected of chosen) {
+				recordRecentSelection(
+					this.options.recentKey,
+					selected,
+					this.getRecentItemId,
+					this.recentLimit,
+				);
+			}
+		}
 		resolve?.(chosen);
 		// SuggestModal doesn't close automatically unless we do it.
 		evt.preventDefault();
