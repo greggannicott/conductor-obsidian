@@ -61,7 +61,10 @@ export type ConductorSelectorOptions<T> = {
 	getMeta?: (item: T) => ConductorSelectorMeta[] | null;
 	// Optional single meta value rendered right-aligned on the title line
 	// (e.g. a rating shown as stars), independent of getMeta.
-	getTitleRightMeta?: (item: T) => string | null;
+	getTitleRightMeta?: (
+		item: T,
+		ctx?: { activeGrouping: string | null },
+	) => string | null;
 	// Optional trailing badges rendered at the end of the row (e.g. emojis).
 	getBadges?: (item: T) => string[];
 	// Deterministic ordering for grouped views (applied after filtering).
@@ -550,7 +553,9 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			text: displayText(item.item),
 		});
 
-		const titleMeta = this.options.getTitleRightMeta?.(item.item);
+		const titleMeta = this.options.getTitleRightMeta?.(item.item, {
+			activeGrouping: this.activeGroupingId,
+		});
 		if (titleMeta) {
 			titleRow.createSpan({
 				cls: "conductor-suggest-title-meta",

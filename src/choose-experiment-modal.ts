@@ -18,6 +18,14 @@ const kindLabel: Record<ExperimentKind, string> = {
 	other: "Other",
 };
 
+const statusOrder: string[] = [
+	"Proposed",
+	"On Hold",
+	"Ongoing",
+	"Finished",
+	"Will Not Do",
+];
+
 // Short before long before other, then name. Applied globally so grouped
 // views inherit both the header order and the within-group order.
 const compareExperiments = (a: Experiment, b: Experiment): number => {
@@ -27,27 +35,53 @@ const compareExperiments = (a: Experiment, b: Experiment): number => {
 	return a.name.localeCompare(b.name);
 };
 
-const experimentGroupings = [
-	{
-		id: "type",
-		label: "By Type",
-		buildGroups: (experiments: Experiment[]) => {
-			const buckets = new Map<ExperimentKind, Experiment[]>();
-			for (const experiment of experiments) {
-				if (!buckets.has(experiment.kind)) {
-					buckets.set(experiment.kind, []);
-				}
-				buckets.get(experiment.kind)!.push(experiment);
+const typeGrouping = {
+	id: "type",
+	label: "Group by Type",
+	toggleKey: "t",
+	buildGroups: (experiments: Experiment[]) => {
+		const buckets = new Map<ExperimentKind, Experiment[]>();
+		for (const experiment of experiments) {
+			if (!buckets.has(experiment.kind)) {
+				buckets.set(experiment.kind, []);
 			}
-			return [...buckets.entries()]
-				.sort(([kindA], [kindB]) => kindOrder[kindA] - kindOrder[kindB])
-				.map(([kind, bucket]) => ({
-					header: kindLabel[kind],
-					items: bucket,
-				}));
-		},
+			buckets.get(experiment.kind)!.push(experiment);
+		}
+		return [...buckets.entries()]
+			.sort(([kindA], [kindB]) => kindOrder[kindA] - kindOrder[kindB])
+			.map(([kind, bucket]) => ({
+				header: kindLabel[kind],
+				items: bucket,
+			}));
 	},
-];
+};
+
+const statusGrouping = {
+	id: "status",
+	label: "Group by Status",
+	toggleKey: "s",
+	buildGroups: (experiments: Experiment[]) => {
+		const buckets = new Map<string, Experiment[]>();
+		for (const experiment of experiments) {
+			const key = experiment.status ?? "Unknown";
+			if (!buckets.has(key)) {
+				buckets.set(key, []);
+			}
+			buckets.get(key)!.push(experiment);
+		}
+		return statusOrder
+			.filter((header) => buckets.has(header))
+			.map((header) => ({ header, items: buckets.get(header)! }))
+			.concat(
+				[...buckets.keys()]
+					.filter((header) => !statusOrder.includes(header))
+					.sort((a, b) => a.localeCompare(b))
+					.map((header) => ({ header, items: buckets.get(header)! })),
+			);
+	},
+};
+
+const experimentGroupings = [typeGrouping, statusGrouping];
 
 export function showExperimentSelector(
 	app: App,
@@ -61,10 +95,17 @@ export function showExperimentSelector(
 		placeholder: "Filter experiments by name...",
 		emptyText: "No experiment notes found",
 		getText: (experiment) => experiment.name,
-		getTitleRightMeta: (experiment) => experiment.status ?? null,
+		getTitleRightMeta: (experiment, ctx) => {
+			const groupingId = ctx?.activeGrouping ?? "type";
+			if (groupingId === "status") {
+				return kindLabel[experiment.kind];
+			}
+			return experiment.status ?? null;
+		},
 		initialSelection: items.filter((e) => preselectedPaths.has(e.path)),
 		sortItems: compareExperiments,
 		groupings: experimentGroupings,
+		initialGroupingId: "type",
 	});
 }
 
@@ -81,9 +122,16 @@ export function showExperimentSelectorSingle(
 		placeholder: "Filter experiments by name...",
 		emptyText: "No experiment notes found",
 		getText: (experiment) => experiment.name,
-		getTitleRightMeta: (experiment) => experiment.status ?? null,
+		getTitleRightMeta: (experiment, ctx) => {
+			const groupingId = ctx?.activeGrouping ?? "type";
+			if (groupingId === "status") {
+				return kindLabel[experiment.kind];
+			}
+			return experiment.status ?? null;
+		},
 		initialSelection: items.filter((e) => preselectedPaths.has(e.path)),
 		sortItems: compareExperiments,
 		groupings: experimentGroupings,
+		initialGroupingId: "type",
 	});
 }
