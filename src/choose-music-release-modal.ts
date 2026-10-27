@@ -7,6 +7,7 @@ import {
 	getMusicReleaseArtistGrouping,
 	getMusicReleaseSearchFields,
 	getMusicReleases,
+	getOwnedMusicReleases,
 	getReleaseCover,
 	getReleaseMeta,
 	getReleaseRatingStars,
@@ -20,8 +21,12 @@ export function musicReleasePickerOptions(
 	app: App,
 	overrides: Partial<ConductorSelectorOptions<TFile>> = {},
 ): ConductorSelectorOptions<TFile> {
+	const defaultItems =
+		(overrides as any).ownedOnly === false
+			? getMusicReleases(app)
+			: getOwnedMusicReleases(app);
 	return {
-		items: getMusicReleases(app),
+		items: defaultItems,
 		placeholder: "Select a music release...",
 		getText: (file) => getReleaseTitle(app, file),
 		titleMaxLength: MUSIC_RELEASE_TITLE_MAX_LENGTH,

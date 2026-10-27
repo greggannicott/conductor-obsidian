@@ -59,10 +59,22 @@ export function compareReleasesByTitle(app: App, a: TFile, b: TFile): number {
 		: a.basename.localeCompare(b.basename);
 }
 
+export function isMusicReleaseOwned(app: App, file: TFile): boolean {
+	return app.metadataCache.getFileCache(file)?.frontmatter?.owned === true;
+}
+
 // All music releases in the vault, sorted by title (then basename as a tiebreaker).
 export function getMusicReleases(app: App): TFile[] {
 	const releases = getFilesWithCategory(app, "Music Release");
 	releases.sort((a, b) => compareReleasesByTitle(app, a, b));
+	return releases;
+}
+
+// Music releases owned by the user, sorted by title (then basename as a tiebreaker).
+export function getOwnedMusicReleases(app: App): TFile[] {
+	const releases = getMusicReleases(app).filter((file) =>
+		isMusicReleaseOwned(app, file),
+	);
 	return releases;
 }
 
