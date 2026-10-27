@@ -8,6 +8,7 @@ import { artistPickerOptions } from "./choose-artist-modal";
 import { moviePickerOptions } from "./choose-movie-modal";
 import { musicReleasePickerOptions } from "./choose-music-release-modal";
 import { projectSelectorOptions } from "./choose-project-modal";
+import { showExperimentSelectorSingle } from "./choose-experiment-modal";
 import { getProjects } from "./projects";
 import { getAllCategories, getFilesWithCategory } from "./utilities";
 
@@ -80,6 +81,11 @@ export async function selectNoteByCategory(
 				projectSelectorOptions(app, getProjects(app)),
 			);
 			return picked && { file: picked.item.file, label: picked.label };
+		}
+		case "Experiment": {
+			const experiment = await showExperimentSelectorSingle(app);
+			if (!experiment) return null;
+			return { file: experiment.file, label: experiment.name };
 		}
 	}
 
