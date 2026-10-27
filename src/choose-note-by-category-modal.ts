@@ -63,7 +63,7 @@ export async function selectNoteByCategory(
 		case "Music Release": {
 			const picked = await pickWithLabel(
 				app,
-				musicReleasePickerOptions(app),
+				musicReleasePickerOptions(app, { ownedOnly: false } as any),
 			);
 			return picked && { file: picked.item, label: picked.label };
 		}
