@@ -27,6 +27,28 @@ const compareExperiments = (a: Experiment, b: Experiment): number => {
 	return a.name.localeCompare(b.name);
 };
 
+const experimentGroupings = [
+	{
+		id: "type",
+		label: "By Type",
+		buildGroups: (experiments: Experiment[]) => {
+			const buckets = new Map<ExperimentKind, Experiment[]>();
+			for (const experiment of experiments) {
+				if (!buckets.has(experiment.kind)) {
+					buckets.set(experiment.kind, []);
+				}
+				buckets.get(experiment.kind)!.push(experiment);
+			}
+			return [...buckets.entries()]
+				.sort(([kindA], [kindB]) => kindOrder[kindA] - kindOrder[kindB])
+				.map(([kind, bucket]) => ({
+					header: kindLabel[kind],
+					items: bucket,
+				}));
+		},
+	},
+];
+
 export function showExperimentSelector(
 	app: App,
 	preselectedFiles: TFile[] = [],
@@ -41,26 +63,25 @@ export function showExperimentSelector(
 		getText: (experiment) => experiment.name,
 		initialSelection: items.filter((e) => preselectedPaths.has(e.path)),
 		sortItems: compareExperiments,
-		groupings: [
-			{
-				id: "type",
-				label: "By Type",
-				buildGroups: (experiments) => {
-					const buckets = new Map<ExperimentKind, Experiment[]>();
-					for (const experiment of experiments) {
-						if (!buckets.has(experiment.kind)) {
-							buckets.set(experiment.kind, []);
-						}
-						buckets.get(experiment.kind)!.push(experiment);
-					}
-					return [...buckets.entries()]
-						.sort(([kindA], [kindB]) => kindOrder[kindA] - kindOrder[kindB])
-						.map(([kind, bucket]) => ({
-							header: kindLabel[kind],
-							items: bucket,
-						}));
-				},
-			},
-		],
+		groupings: experimentGroupings,
+	});
+}
+
+export function showExperimentSelectorSingle(
+	app: App,
+	preselectedFile?: TFile,
+): Promise<Experiment | null> {
+	const items = getExperiments(app);
+	const preselectedPaths = new Set(
+		preselectedFile ? [preselectedFile.path] : [],
+	);
+	return ConductorSelectorModal.show<Experiment>(app, {
+		items,
+		placeholder: "Filter experiments by name...",
+		emptyText: "No experiment notes found",
+		getText: (experiment) => experiment.name,
+		initialSelection: items.filter((e) => preselectedPaths.has(e.path)),
+		sortItems: compareExperiments,
+		groupings: experimentGroupings,
 	});
 }

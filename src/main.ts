@@ -10,6 +10,10 @@ import {
 	convertNoteToTask,
 	isNoteConvertible,
 } from "./commands/convert-note-to-task";
+import {
+	convertJournalNoteToExperimentJournalNote,
+	isJournalNoteConvertibleToExperiment,
+} from "./commands/convert-journal-note-to-experiment-journal-note";
 import { showCreateTaskFlow } from "./commands/create-task";
 import {
 	setActiveTaskStatus,
@@ -462,6 +466,26 @@ export default class ConductorObsidian extends Plugin {
 			() => {
 				const file = this.app.workspace.activeEditor?.file;
 				if (file) void convertNoteToTask(this.app, file);
+			},
+		);
+
+		this.addCheckedCommand(
+			"convert-journal-note-to-experiment-journal-note",
+			"Convert Journal Note to Experiment Journal Note",
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				return Boolean(
+					file &&
+						isJournalNoteConvertibleToExperiment(this.app, file),
+				);
+			},
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file)
+					void convertJournalNoteToExperimentJournalNote(
+						this.app,
+						file,
+					);
 			},
 		);
 
