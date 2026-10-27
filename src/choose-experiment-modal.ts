@@ -26,12 +26,28 @@ const statusOrder: string[] = [
 	"Will Not Do",
 ];
 
+const getStatusRank = (status?: string): number => {
+	if (!status) return statusOrder.length;
+	const idx = statusOrder.indexOf(status);
+	return idx === -1 ? statusOrder.length : idx;
+};
+
 // Short before long before other, then name. Applied globally so grouped
 // views inherit both the header order and the within-group order.
 const compareExperiments = (a: Experiment, b: Experiment): number => {
 	const ka = kindOrder[a.kind];
 	const kb = kindOrder[b.kind];
 	if (ka !== kb) return ka - kb;
+	return a.name.localeCompare(b.name);
+};
+
+const compareExperimentsByStatus = (a: Experiment, b: Experiment): number => {
+	const ka = kindOrder[a.kind];
+	const kb = kindOrder[b.kind];
+	if (ka !== kb) return ka - kb;
+	const sa = getStatusRank(a.status);
+	const sb = getStatusRank(b.status);
+	if (sa !== sb) return sa - sb;
 	return a.name.localeCompare(b.name);
 };
 
@@ -51,7 +67,7 @@ const typeGrouping = {
 			.sort(([kindA], [kindB]) => kindOrder[kindA] - kindOrder[kindB])
 			.map(([kind, bucket]) => ({
 				header: kindLabel[kind],
-				items: bucket,
+				items: [...bucket].sort(compareExperimentsByStatus),
 			}));
 	},
 };
@@ -71,12 +87,18 @@ const statusGrouping = {
 		}
 		return statusOrder
 			.filter((header) => buckets.has(header))
-			.map((header) => ({ header, items: buckets.get(header)! }))
+			.map((header) => ({
+				header,
+				items: [...buckets.get(header)!].sort(compareExperiments),
+			}))
 			.concat(
 				[...buckets.keys()]
 					.filter((header) => !statusOrder.includes(header))
 					.sort((a, b) => a.localeCompare(b))
-					.map((header) => ({ header, items: buckets.get(header)! })),
+					.map((header) => ({
+						header,
+						items: [...buckets.get(header)!].sort(compareExperiments),
+					})),
 			);
 	},
 };
