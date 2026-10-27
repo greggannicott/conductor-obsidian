@@ -67,10 +67,11 @@ function getExperimentStatus(app: App, file: TFile): string | undefined {
 		return "Ongoing";
 	}
 
-	// Proposed if not started, not ended, not will-not-do
-	if (willNotDo !== true) {
-		return "Proposed";
+	// Will Not Do
+	if (willNotDo === true) {
+		return "Will Not Do";
 	}
 
-	return undefined;
+	// Proposed if not started, not ended
+	return "Proposed";
 }
