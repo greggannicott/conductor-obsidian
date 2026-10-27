@@ -111,3 +111,44 @@ else
 fi
 
 rsync "${RSYNC_ARGS[@]}" "$SOURCE_ROOT/" "$DESTINATION_ROOT/"
+
+# Disable specific plugins in the playground after reset
+DISABLED_PLUGINS=(
+  "readwise-official"
+)
+
+COMMUNITY_PLUGINS="$DESTINATION_ROOT/.obsidian/community-plugins.json"
+if (( ${#DISABLED_PLUGINS[@]} > 0 )) && [[ -f "$COMMUNITY_PLUGINS" ]]; then
+  if (( DRY_RUN )); then
+    print -r -- ""
+    print -r -- "Would disable plugins: ${DISABLED_PLUGINS[*]}"
+  else
+    # Use Python to safely edit JSON array
+    python3 - "$COMMUNITY_PLUGINS" "${DISABLED_PLUGINS[@]}" << 'PYEOF'
+import json
+import sys
+
+path = sys.argv[1]
+disabled = set(sys.argv[2:])
+
+try:
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    if isinstance(data, list):
+        new_data = [p for p in data if p not in disabled]
+        if new_data != data:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(new_data, f, indent=2)
+                f.write('\n')
+            print(f"Disabled plugins: {sorted(disabled & set(data))}")
+        else:
+            print("No plugins to disable (already disabled or not present)")
+    else:
+        print("Unexpected format in community-plugins.json", file=sys.stderr)
+        sys.exit(1)
+except Exception as e:
+    print(f"Error updating community-plugins.json: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+  fi
+fi
