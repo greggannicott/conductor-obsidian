@@ -68,6 +68,15 @@ function parseTimeToSeconds(time: string): number {
 	return hours * 3600 + minutes * 60 + seconds;
 }
 
+// Validator for TextInputModal.showValidated: accepts values matching `pattern`
+// and reports `message` otherwise.
+function requireMatch(
+	pattern: RegExp,
+	message: string,
+): (value: string) => string | null {
+	return (value) => (pattern.test(value) ? null : message);
+}
+
 function getUniqueFilePath(app: App, basePath: string): string {
 	let filePath = basePath;
 	let counter = 2;
@@ -178,16 +187,16 @@ export const addRun = async (app: App): Promise<void> => {
 
 	let targetPace: string | null = null;
 	if (runType === "Goal Pace Run") {
-		const targetPacePrompt = await TextInputModal.show(app, {
-			title: "Target Pace (/km)",
-			placeholder: "5.30",
-		});
+		const targetPacePrompt = await TextInputModal.showValidated(
+			app,
+			{
+				title: "Target Pace (/km)",
+				placeholder: "5.30",
+			},
+			requireMatch(/^\d+(\.\d+)?$/, "Target pace must be entered (e.g. 5.30)"),
+		);
 		if (targetPacePrompt.cancelled) return;
-		targetPace = targetPacePrompt.value.trim();
-		if (!targetPace) {
-			new Notice("Target pace must be entered (e.g. 5.30)");
-			return;
-		}
+		targetPace = targetPacePrompt.value;
 	}
 
 	const date = await DatePickerModal.show(app);
@@ -208,128 +217,152 @@ export const addRun = async (app: App): Promise<void> => {
 		if (!proceed) return;
 	}
 
-	const runningFormEffortPrompt = await TextInputModal.show(app, {
-		title: "Running Form Effort (1-5)",
-		placeholder: "3",
-	});
-	if (runningFormEffortPrompt.cancelled) return;
-	const runningFormEffort = runningFormEffortPrompt.value.trim();
-	if (!/^[1-5]$/.test(runningFormEffort)) {
-		new Notice("Running form effort must be a number from 1 to 5");
-		return;
-	}
-
-	const workoutTimePrompt = await TextInputModal.show(app, {
-		title: "Workout Time",
-		placeholder: "HH:MM:SS",
-		description: "Time spent actually running.",
-	});
-	if (workoutTimePrompt.cancelled) return;
-	const workoutTime = workoutTimePrompt.value.trim();
-	if (!/^\d{1,2}:\d{2}:\d{2}$/.test(workoutTime)) {
-		new Notice("Workout time must be in HH:MM:SS format");
-		return;
-	}
-
-	const elapsedTimePrompt = await TextInputModal.show(app, {
-		title: "Elapsed Time",
-		placeholder: "HH:MM:SS (defaults to workout time)",
-		description: "Time spent including pauses.",
-	});
-	if (elapsedTimePrompt.cancelled) return;
-	const elapsedTime = elapsedTimePrompt.value.trim();
-	if (elapsedTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(elapsedTime)) {
-		new Notice("Elapsed time must be in HH:MM:SS format");
-		return;
-	}
-
-	const targetTimePrompt = await TextInputModal.show(app, {
-		title: "Target Time",
-		placeholder: "HH:MM:SS (optional)",
-		description: "Time spent achieving goal of run.",
-	});
-	if (targetTimePrompt.cancelled) return;
-	const targetTime = targetTimePrompt.value.trim();
-	if (targetTime && !/^\d{1,2}:\d{2}:\d{2}$/.test(targetTime)) {
-		new Notice("Target time must be in HH:MM:SS format");
-		return;
-	}
-
-	const distancePrompt = await TextInputModal.show(app, {
-		title: "Distance (km)",
-		placeholder: "21.1",
-	});
-	if (distancePrompt.cancelled) return;
-	const distance = distancePrompt.value.trim();
-	if (!distance || !/^\d+(\.\d+)?$/.test(distance)) {
-		new Notice("Distance must be a number (e.g. 21.1)");
-		return;
-	}
-
-	const elevationGainPrompt = await TextInputModal.show(app, {
-		title: "Elevation Gain (meters)",
-		placeholder: "250 or -50",
-	});
-	if (elevationGainPrompt.cancelled) return;
-	const elevationGain = elevationGainPrompt.value.trim();
-	if (!elevationGain || !/^-?\d+(\.\d+)?$/.test(elevationGain)) {
-		new Notice("Elevation gain must be a number (e.g. 250 or -50)");
-		return;
-	}
-
-	const pacePrompt = await TextInputModal.show(app, {
-		title: "Average Pace (/km)",
-		placeholder: "5.30",
-	});
-	if (pacePrompt.cancelled) return;
-	const pace = pacePrompt.value.trim();
-	if (!pace || !/^\d+(\.\d+)?$/.test(pace)) {
-		new Notice("Average pace must be a number (e.g. 5.30)");
-		return;
-	}
-
-	const heartRatePrompt = await TextInputModal.show(app, {
-		title: "Average Heart Rate",
-		placeholder: "155",
-	});
-	if (heartRatePrompt.cancelled) return;
-	const heartRate = heartRatePrompt.value.trim();
-	if (!heartRate || !/^\d+$/.test(heartRate)) {
-		new Notice("Heart rate must be a number");
-		return;
-	}
-
-	const zoneTimes = await ZoneTimesModal.show(app);
-	if (zoneTimes.cancelled) return;
-	const zoneTimesInSeconds = zoneTimes.values.map((value) => {
-		const trimmed = value.trim();
-		if (trimmed === "0") return 0;
-		if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
-			return null;
-		}
-		return parseTimeToSeconds(trimmed);
-	});
-	const invalidZoneIndex = zoneTimesInSeconds.findIndex(
-		(seconds) => seconds === null,
+	const runningFormEffortPrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Running Form Effort (1-5)",
+			placeholder: "3",
+		},
+		requireMatch(/^[1-5]$/, "Running form effort must be a number from 1 to 5"),
 	);
-	if (invalidZoneIndex !== -1) {
-		new Notice(
-			`Time In Zone ${invalidZoneIndex + 1} must be in MM:SS or HH:MM:SS format`,
+	if (runningFormEffortPrompt.cancelled) return;
+	const runningFormEffort = runningFormEffortPrompt.value;
+
+	const workoutTimePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Workout Time",
+			placeholder: "HH:MM:SS",
+			description: "Time spent actually running.",
+		},
+		requireMatch(
+			/^\d{1,2}:\d{2}:\d{2}$/,
+			"Workout time must be in HH:MM:SS format",
+		),
+	);
+	if (workoutTimePrompt.cancelled) return;
+	const workoutTime = workoutTimePrompt.value;
+
+	const elapsedTimePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Elapsed Time",
+			placeholder: "HH:MM:SS (defaults to workout time)",
+			description: "Time spent including pauses.",
+		},
+		requireMatch(
+			/^(\d{1,2}:\d{2}:\d{2})?$/,
+			"Elapsed time must be in HH:MM:SS format, or left empty",
+		),
+	);
+	if (elapsedTimePrompt.cancelled) return;
+	const elapsedTime = elapsedTimePrompt.value;
+
+	const targetTimePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Target Time",
+			placeholder: "HH:MM:SS (optional)",
+			description: "Time spent achieving goal of run.",
+		},
+		requireMatch(
+			/^(\d{1,2}:\d{2}:\d{2})?$/,
+			"Target time must be in HH:MM:SS format, or left empty",
+		),
+	);
+	if (targetTimePrompt.cancelled) return;
+	const targetTime = targetTimePrompt.value;
+
+	const distancePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Distance (km)",
+			placeholder: "21.1",
+		},
+		requireMatch(/^\d+(\.\d+)?$/, "Distance must be a number (e.g. 21.1)"),
+	);
+	if (distancePrompt.cancelled) return;
+	const distance = distancePrompt.value;
+
+	const elevationGainPrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Elevation Gain (meters)",
+			placeholder: "250 or -50",
+		},
+		requireMatch(
+			/^-?\d+(\.\d+)?$/,
+			"Elevation gain must be a number (e.g. 250 or -50)",
+		),
+	);
+	if (elevationGainPrompt.cancelled) return;
+	const elevationGain = elevationGainPrompt.value;
+
+	const pacePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Average Pace (/km)",
+			placeholder: "5.30",
+		},
+		requireMatch(/^\d+(\.\d+)?$/, "Average pace must be a number (e.g. 5.30)"),
+	);
+	if (pacePrompt.cancelled) return;
+	const pace = pacePrompt.value;
+
+	const heartRatePrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "Average Heart Rate",
+			placeholder: "155",
+		},
+		requireMatch(/^\d+$/, "Heart rate must be a number"),
+	);
+	if (heartRatePrompt.cancelled) return;
+	const heartRate = heartRatePrompt.value;
+
+	// A blank entry means no time in that zone and is recorded as 0.
+	const parseZoneTimes = (values: string[]): (number | null)[] =>
+		values.map((value) => {
+			const trimmed = value.trim();
+			if (!trimmed || trimmed === "0") return 0;
+			if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+				return null;
+			}
+			return parseTimeToSeconds(trimmed);
+		});
+
+	let zoneValues: string[] | undefined;
+	let zoneError: string | undefined;
+	let zoneTimesInSeconds: (number | null)[] = [];
+	while (true) {
+		const zoneTimes = await ZoneTimesModal.show(app, {
+			values: zoneValues,
+			error: zoneError,
+		});
+		if (zoneTimes.cancelled) return;
+
+		zoneTimesInSeconds = parseZoneTimes(zoneTimes.values);
+		const invalidZoneIndex = zoneTimesInSeconds.findIndex(
+			(seconds) => seconds === null,
 		);
-		return;
+		if (invalidZoneIndex === -1) break;
+
+		zoneError = `Time In Zone ${invalidZoneIndex + 1} must be in MM:SS or HH:MM:SS format, or left empty`;
+		zoneValues = zoneTimes.values;
 	}
+	const zoneSeconds = zoneTimesInSeconds.map((seconds) => seconds ?? 0);
 
 	const lastKnownVo2Max = getLastKnownVo2Max(app);
-	const vo2MaxPrompt = await TextInputModal.show(app, {
-		title: "VO2 Max",
-		placeholder: String(lastKnownVo2Max ?? DEFAULT_VO2_MAX),
-	});
+	const vo2MaxPrompt = await TextInputModal.showValidated(
+		app,
+		{
+			title: "VO2 Max",
+			placeholder: String(lastKnownVo2Max ?? DEFAULT_VO2_MAX),
+		},
+		requireMatch(/^\d+(\.\d+)?$/, "VO2 Max must be a number (e.g. 49.2)"),
+	);
 	if (vo2MaxPrompt.cancelled) return;
-	const vo2Max = vo2MaxPrompt.value.trim();
-	if (!vo2Max || !/^\d+(\.\d+)?$/.test(vo2Max)) {
-		new Notice("VO2 Max must be a number (e.g. 49.2)");
-		return;
-	}
+	const vo2Max = vo2MaxPrompt.value;
 
 	const fileName = `${date} - ${runType}.md`;
 	const filePath = getUniqueFilePath(app, sanitizeFileName(fileName));
@@ -370,8 +403,8 @@ export const addRun = async (app: App): Promise<void> => {
 		if (lastKnownWeight !== null) {
 			fm["last-known-weight"] = lastKnownWeight;
 		}
-		for (let i = 0; i < zoneTimesInSeconds.length; i++) {
-			fm[`time-in-zone-${i + 1}-in-seconds`] = zoneTimesInSeconds[i];
+		for (let i = 0; i < zoneSeconds.length; i++) {
+			fm[`time-in-zone-${i + 1}-in-seconds`] = zoneSeconds[i];
 		}
 		fm["vo2-max"] = parseFloat(vo2Max);
 	});

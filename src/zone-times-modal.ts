@@ -5,15 +5,26 @@ type ZoneTimesSubmitEvent = {
 	cancelled: boolean;
 };
 
+type ZoneTimesModalConfiguration = {
+	// Previous entries, so a rejected submission can be corrected rather than
+	// retyped.
+	values?: string[];
+	// Validation message shown beneath the inputs when a previous attempt was
+	// rejected.
+	error?: string;
+};
+
 const ZONE_COUNT = 5;
 
 export class ZoneTimesModal extends Modal {
 	private resolve: (value: ZoneTimesSubmitEvent) => void;
+	private config: ZoneTimesModalConfiguration;
 	private inputs: HTMLInputElement[] = [];
 	private submitted = false;
 
-	constructor(app: App) {
+	constructor(app: App, config: ZoneTimesModalConfiguration = {}) {
 		super(app);
+		this.config = config;
 		this.modalEl.addClass("zone-times-modal");
 	}
 
@@ -34,7 +45,8 @@ export class ZoneTimesModal extends Modal {
 				cls: ["text-input", "input"],
 				attr: { type: "text" },
 			});
-			input.placeholder = "MM:SS or 0";
+			input.placeholder = "MM:SS (optional)";
+			input.value = this.config.values?.[i] ?? "";
 			this.inputs.push(input);
 
 			input.addEventListener("keydown", (e) => {
@@ -94,8 +106,15 @@ export class ZoneTimesModal extends Modal {
 
 		const hint = this.contentEl.createEl("div", {
 			cls: "zone-times-hint",
-			text: "Enter 0 for zones with no time",
+			text: "Leave blank or enter 0 for zones with no time",
 		});
+
+		if (this.config.error) {
+			this.contentEl.createEl("div", {
+				cls: "zone-times-error",
+				text: this.config.error,
+			});
+		}
 
 		this.inputs[0].focus();
 		this.inputs[0].select();
@@ -111,9 +130,12 @@ export class ZoneTimesModal extends Modal {
 		super.onClose();
 	}
 
-	static show(app: App): Promise<ZoneTimesSubmitEvent> {
+	static show(
+		app: App,
+		config: ZoneTimesModalConfiguration = {},
+	): Promise<ZoneTimesSubmitEvent> {
 		return new Promise((resolve) => {
-			const modal = new ZoneTimesModal(app);
+			const modal = new ZoneTimesModal(app, config);
 			modal.setTitle("Time In Zones");
 			modal.resolve = resolve;
 			modal.open();

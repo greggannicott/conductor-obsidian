@@ -14,6 +14,9 @@ export type TextInputModalConfiguration = {
 	description?: string;
 	// Optional initial value, pre-selected so typing replaces it.
 	value?: string;
+	// Validation message shown beneath the input when a previous attempt was
+	// rejected, so the user can see what needs correcting.
+	error?: string;
 	// Render a multi-line textarea instead of a single-line input.
 	multiline?: boolean;
 	keybindings?: TextInputKeybinding[];
@@ -77,6 +80,13 @@ export class TextInputModal extends Modal {
 			this.contentEl.createEl("div", {
 				cls: "text-input-description",
 				text: config.description,
+			});
+		}
+
+		if (config.error) {
+			this.contentEl.createEl("div", {
+				cls: "text-input-error",
+				text: config.error,
 			});
 		}
 
@@ -147,5 +157,33 @@ export class TextInputModal extends Modal {
 			modal.resolve = resolve;
 			modal.open();
 		});
+	}
+
+	// Re-shows the prompt until the value passes `validate`, keeping the rejected
+	// input so it can be corrected. `validate` returns a message to display, or
+	// null when the value is acceptable.
+	static async showValidated(
+		app: App,
+		config: TextInputModalConfiguration,
+		validate: (value: string) => string | null,
+	): Promise<{ value: string; cancelled: boolean }> {
+		let error = config.error;
+		let value = config.value;
+
+		while (true) {
+			const result = await TextInputModal.show(app, {
+				...config,
+				value,
+				error,
+			});
+			if (result.cancelled) return { value: "", cancelled: true };
+
+			const trimmed = result.value.trim();
+			const message = validate(trimmed);
+			if (message === null) return { value: trimmed, cancelled: false };
+
+			error = message;
+			value = result.value;
+		}
 	}
 }
