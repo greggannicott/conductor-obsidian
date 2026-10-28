@@ -2,14 +2,18 @@ import { App, Notice, TFile, moment } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 import { ConfirmModal } from "src/confirm-modal";
 import { TextInputModal } from "src/text-input-modal";
-import { createFileFromTemplate, sanitizeFileName } from "src/utilities";
+import {
+	copyToClipboard,
+	createFileFromTemplate,
+	sanitizeFileName,
+} from "src/utilities";
 import { showMusicReleasePicker } from "../choose-music-release-modal";
 import {
-	getArtists,
 	getFormats,
 	getListenDatesForRelease,
 	getMusicReleases,
 	getReleaseFile,
+	getReleaseSummary,
 	getReleaseTitle,
 } from "src/music-release";
 import {
@@ -40,23 +44,6 @@ function getUniqueFilePath(app: App, basePath: string): string {
 		counter++;
 	}
 	return filePath;
-}
-
-// "{artists} - {title}", with multiple artists comma-separated. Releases with
-// no known artist fall back to the title alone rather than a dangling " - ".
-function formatReleaseSummary(app: App, file: TFile): string {
-	const title = getReleaseTitle(app, file);
-	const artists = getArtists(app, file);
-	return artists ? `${artists} - ${title}` : title;
-}
-
-async function copyToClipboard(text: string): Promise<void> {
-	try {
-		await navigator.clipboard.writeText(text);
-		new Notice("Copied to clipboard");
-	} catch {
-		new Notice("Failed to copy to clipboard");
-	}
 }
 
 export const showAddListen = async (app: App): Promise<void> => {
@@ -194,7 +181,7 @@ export const addListen = async (app: App, file: TFile): Promise<void> => {
 
 	// Offers the "Artist - Title" line for pasting elsewhere. Dismissing the
 	// modal resolves false, so the default answer is no.
-	const summary = formatReleaseSummary(app, file);
+	const summary = getReleaseSummary(app, file);
 	const shouldCopy = await ConfirmModal.show(app, {
 		title: "Copy release details",
 		message: `Copy "${summary}" to the clipboard?`,

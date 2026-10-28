@@ -45,6 +45,7 @@ import { openMusicRelease } from "./commands/open-music-release";
 import { openRecentListen } from "./commands/open-recent-listen";
 import { openMovie } from "./commands/open-movie";
 import { openArtist } from "./commands/open-artist";
+import { copyArtistAndReleaseName } from "./commands/copy-artist-and-release-name";
 import { isActiveFileMusicRelease } from "./music-release";
 import { hasUnresolvedBacklogItems, markBacklogItemsSkipped } from "./backlog";
 import {
@@ -426,6 +427,13 @@ export default class ConductorObsidian extends Plugin {
 			name: "Open Artist",
 			callback: () => void openArtist(this.app),
 		});
+
+		this.addCheckedCommand(
+			"copy-artist-and-release-name",
+			"Copy Artist and Release Name",
+			() => isActiveFileMusicRelease(this.app),
+			() => void copyArtistAndReleaseName(this.app),
+		);
 
 		this.addCheckedCommand(
 			"skip-backlog-items",

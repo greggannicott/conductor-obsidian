@@ -1,4 +1,4 @@
-import { App, TFile, parseFrontMatterStringArray } from "obsidian";
+import { App, Notice, TFile, parseFrontMatterStringArray } from "obsidian";
 import {
 	TaskStatus,
 	TaskPriority,
@@ -60,6 +60,16 @@ export function sanitizeFileName(name: string): string {
 		.replace(/[:\\/*?"<>|]/g, "")
 		.replace(/\s+/g, " ")
 		.trim();
+}
+
+// Copies text to the clipboard, reporting the outcome in a notice.
+export async function copyToClipboard(text: string): Promise<void> {
+	try {
+		await navigator.clipboard.writeText(text);
+		new Notice("Copied to clipboard");
+	} catch {
+		new Notice("Failed to copy to clipboard");
+	}
 }
 
 export function getFilesFromProjectsFolderWithCategory(app: App, category: string): TFile[] {

@@ -38,6 +38,15 @@ export function getArtists(app: App, file: TFile): string {
 	return getArtistNames(app, file).join(", ");
 }
 
+// "{artists} - {title}", with multiple artists comma-separated. Releases with
+// no known artist fall back to the title alone rather than a dangling " - ".
+// This is the form copied to the clipboard when recording a listen.
+export function getReleaseSummary(app: App, file: TFile): string {
+	const title = getReleaseTitle(app, file);
+	const artists = getArtists(app, file);
+	return artists ? `${artists} - ${title}` : title;
+}
+
 export function isActiveFileMusicRelease(app: App): boolean {
 	const activeFile = app.workspace.activeEditor?.file;
 	if (!activeFile) return false;
