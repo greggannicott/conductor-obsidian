@@ -10,7 +10,7 @@ import {
 	PRIORITY_EMOJI,
 	STATUS_EMOJI,
 } from "./tasks";
-import { Context, getProjects, outstandingProjectTypes } from "./projects";
+import { Context, getOutstandingProjects } from "./projects";
 
 const contextOrder: Record<string, number> = {
 	[Context.Work]: 0,
@@ -49,16 +49,8 @@ export function showOutstandingTasksSelector(app: App): Promise<Task[]> {
 			[TaskPriority.High, TaskPriority.Medium].includes(t.priority),
 		);
 
-	const allProjects = getProjects(app);
 	const outstandingProjectNames = new Set(
-		allProjects
-			.filter((p) => {
-				const isOutstandingNonOngoing =
-					outstandingProjectTypes.includes(p.status) && !p.ongoing;
-				const isOngoing = p.ongoing;
-				return isOutstandingNonOngoing || isOngoing;
-			})
-			.map((p) => p.name),
+		getOutstandingProjects(app).map((p) => p.name),
 	);
 
 	const outstandingTasks = validTasks.filter((t) => {

@@ -183,6 +183,17 @@ export function getProjects(app: App, filter?: ProjectFilters): Project[] {
 	return projects;
 }
 
+// Projects still worth working on: an outstanding status that isn't parked as
+// ongoing, plus anything flagged ongoing regardless of status.
+export function getOutstandingProjects(app: App): Project[] {
+	return getProjects(app, {
+		or: [
+			{ statusIs: outstandingProjectTypes, ongoingIs: false },
+			{ ongoingIs: true },
+		],
+	});
+}
+
 export function getProjectFromPath(app: App, path: string): Project | null {
 	const file = app.vault.getFileByPath(path);
 	if (file) {

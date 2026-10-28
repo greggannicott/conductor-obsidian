@@ -50,6 +50,48 @@ export const getCurrentLineContent = (
 	return { lines: [line], range };
 };
 
+// Insert markdown list lines at the cursor, adapting to the current line: a
+// bare list marker or checkbox is replaced, an empty line is filled, and a
+// checkbox with content or plain text gets the lines appended below.
+export const insertListLines = (
+	editor: EditorLike,
+	lines: string[],
+): void => {
+	const cursorLine = editor.getCursor().line;
+	const line = editor.getLine(cursorLine);
+	const bareListMatch = line.match(/^(\s*)(?:- \[ \]|[-*+])\s*$/);
+	const checkboxWithContentMatch = line.match(/^(\s*)- \[ \]/);
+	const emptyLineMatch = line.match(/^\s*$/);
+
+	if (bareListMatch) {
+		const indent = bareListMatch[1];
+		const replacement = lines.map((l) => `${indent}${l}`).join("\n");
+		editor.replaceRange(
+			replacement,
+			{ line: cursorLine, ch: 0 },
+			{ line: cursorLine, ch: line.length },
+		);
+	} else if (checkboxWithContentMatch) {
+		const indent = checkboxWithContentMatch[1];
+		const insertion = lines.map((l) => `${indent}${l}`).join("\n");
+		editor.replaceRange("\n" + insertion, {
+			line: cursorLine,
+			ch: line.length,
+		});
+	} else if (emptyLineMatch) {
+		editor.replaceRange(
+			lines.join("\n"),
+			{ line: cursorLine, ch: 0 },
+			{ line: cursorLine, ch: line.length },
+		);
+	} else {
+		editor.replaceRange("\n" + lines.join("\n"), {
+			line: cursorLine,
+			ch: line.length,
+		});
+	}
+};
+
 export const replaceLinesInEditor = (
 	editor: EditorLike,
 	selectedEditorContent: SelectedEditorContent,

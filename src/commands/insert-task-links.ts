@@ -1,4 +1,5 @@
 import { App, Editor, MarkdownView, Notice } from "obsidian";
+import { insertListLines } from "src/editor-utils";
 import { showOutstandingTasksSelector } from "src/insert-task-links-modal";
 import { Task } from "src/tasks";
 
@@ -27,37 +28,5 @@ const insertTaskLinkLines = (editor: Editor, tasks: Task[]): void => {
 		return `- [[${t.name}]]`;
 	});
 
-	const cursorLine = editor.getCursor().line;
-	const line = editor.getLine(cursorLine);
-	const bareListMatch = line.match(/^(\s*)(?:- \[ \]|[-*+])\s*$/);
-	const checkboxWithContentMatch = line.match(/^(\s*)- \[ \]/);
-	const emptyLineMatch = line.match(/^\s*$/);
-
-	if (bareListMatch) {
-		const indent = bareListMatch[1];
-		const replacement = taskLinkLines.map((l) => `${indent}${l}`).join("\n");
-		editor.replaceRange(
-			replacement,
-			{ line: cursorLine, ch: 0 },
-			{ line: cursorLine, ch: line.length },
-		);
-	} else if (checkboxWithContentMatch) {
-		const indent = checkboxWithContentMatch[1];
-		const insertion = taskLinkLines.map((l) => `${indent}${l}`).join("\n");
-		editor.replaceRange("\n" + insertion, {
-			line: cursorLine,
-			ch: line.length,
-		});
-	} else if (emptyLineMatch) {
-		editor.replaceRange(
-			taskLinkLines.join("\n"),
-			{ line: cursorLine, ch: 0 },
-			{ line: cursorLine, ch: line.length },
-		);
-	} else {
-		editor.replaceRange("\n" + taskLinkLines.join("\n"), {
-			line: cursorLine,
-			ch: line.length,
-		});
-	}
+	insertListLines(editor, taskLinkLines);
 };
