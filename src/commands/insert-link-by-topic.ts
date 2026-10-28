@@ -2,6 +2,7 @@ import { App, MarkdownView, Notice } from "obsidian";
 import { showTopicSelector } from "src/choose-topic-modal";
 import { showNoteSelector } from "src/choose-note-modal";
 import { getTopics, getNotesForTopic } from "src/topics";
+import { TextInputModal } from "src/text-input-modal";
 
 export const insertLinkByTopic = async (app: App): Promise<void> => {
 	const activeView = app.workspace.getActiveViewOfType(MarkdownView);
@@ -27,6 +28,16 @@ export const insertLinkByTopic = async (app: App): Promise<void> => {
 
 	const note = await showNoteSelector(app, notes);
 	if (!note) return;
-	activeView.editor.replaceSelection(`[[${note.basename}]]`);
-	new Notice(`Inserted link to "${note.basename}"`);
+
+	const label = note.basename;
+	const prompt = await TextInputModal.show(app, {
+		title: "Text to display",
+		placeholder: "Text to display",
+		value: label,
+	});
+	if (prompt.cancelled) return;
+
+	const displayText = prompt.value.trim() || label;
+	activeView.editor.replaceSelection(`[[${note.basename}|${displayText}]]`);
+	new Notice(`Inserted link to "${displayText}"`);
 };
