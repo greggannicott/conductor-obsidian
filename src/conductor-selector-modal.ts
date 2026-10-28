@@ -448,6 +448,10 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 			groups.push(...rankedGroups);
 		}
 
+		if (searching) {
+			this.dedupeSearchedGroups(groups, q);
+		}
+
 		const customEntry2 = this.getCustomEntry(q, allItems);
 
 		if (q.length === 0) {
@@ -479,6 +483,61 @@ export class ConductorSelectorModal<T> extends SuggestModal<
 		}
 		if (customEntry2) groupedResult.push(customEntry2);
 		return groupedResult;
+	}
+
+	// A grouping can list one item under several headers (a note with two
+	// topics sits in both). While browsing that's the point, but a search
+	// should return each item once: keep it in the group whose header best
+	// matches the query — falling back to the highest-ranked group — and drop
+	// it from the rest.
+	private dedupeSearchedGroups(
+		groups: { header: string; items: T[] }[],
+		query: string,
+	): void {
+		const search = prepareFuzzySearch(query);
+		const headerRelevance = groups.map((group) => {
+			const result = search(group.header);
+			return result
+				? { tier: getMatchTier(query, group.header), score: result.score }
+				: null;
+		});
+
+		const isBetterHeaderMatch = (
+			candidate: { tier: number; score: number } | null,
+			current: { tier: number; score: number } | null,
+		): boolean => {
+			if (!candidate) return false;
+			if (!current) return true;
+			if (candidate.tier !== current.tier) {
+				return candidate.tier < current.tier;
+			}
+			return candidate.score > current.score;
+		};
+
+		const keepIn = new Map<T, number>();
+		groups.forEach((group, index) => {
+			for (const item of group.items) {
+				const kept = keepIn.get(item);
+				if (kept === undefined) {
+					keepIn.set(item, index);
+					continue;
+				}
+				if (
+					isBetterHeaderMatch(
+						headerRelevance[index],
+						headerRelevance[kept],
+					)
+				) {
+					keepIn.set(item, index);
+				}
+			}
+		});
+
+		groups.forEach((group, index) => {
+			group.items = group.items.filter(
+				(item) => keepIn.get(item) === index,
+			);
+		});
 	}
 
 	renderSuggestion(item: ConductorSelectorEntry<T>, el: HTMLElement): void {

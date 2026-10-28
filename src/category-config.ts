@@ -15,9 +15,15 @@ const JOURNAL_TITLE_PATTERN = /^(\d{4}-\d{2}-\d{2}) (\d{4})(?: - )?(.*)$/;
 type CategoryDisplayConfig = {
 	getText: (app: App, file: TFile) => string;
 	getSearchText?: (app: App, file: TFile) => string;
+	getSearchTexts?: (app: App, file: TFile) => string[];
 	getSubtext?: (app: App, file: TFile) => string | null;
+	// Right-aligned value on the title line (e.g. a rating shown as stars).
+	getTitleRightMeta?: (app: App, file: TFile) => string | null;
 	getBadges?: (app: App, file: TFile) => string[];
 	sortItems?: (app: App, a: TFile, b: TFile) => number;
+	// While searching, order groups (and items within them) by match relevance
+	// and move the strongest matching group to the top.
+	rankGroupsByRelevance?: boolean;
 	getGroupings?: (app: App) => ConductorSelectorGrouping<TFile>[];
 };
 
@@ -349,6 +355,112 @@ const backlogItemConfig: CategoryDisplayConfig = {
 	],
 };
 
+// --- Wisdom config ---
+
+const WISDOM_RATING_MAX = 5;
+const WISDOM_NO_TOPIC_HEADER = "No Topic";
+
+// Wisdom notes carry an optional 1-5 `rating` in frontmatter. Numeric strings
+// are accepted too, since frontmatter imports sometimes quote the value.
+function getWisdomRating(app: App, file: TFile): number | null {
+	const raw = app.metadataCache.getFileCache(file)?.frontmatter?.rating;
+	const value =
+		typeof raw === "number"
+			? raw
+			: typeof raw === "string"
+				? Number(raw.trim())
+				: NaN;
+	if (!Number.isFinite(value) || value <= 0) return null;
+	return Math.min(WISDOM_RATING_MAX, Math.round(value));
+}
+
+const wisdomConfig: CategoryDisplayConfig = {
+	getText: (_app, file) => file.basename,
+	// Topics are searchable as well as titles, so a note is found by what it's
+	// about and not just by the words in its name. Each is a separate field, so
+	// a query has to match one of them rather than span across them.
+	getSearchTexts: (app, file) => [
+		file.basename,
+		...getTopicNamesForNote(app, file),
+	],
+	getSubtext: (app, file) => getTopicNamesForNote(app, file).join(", ") || null,
+	getTitleRightMeta: (app, file) => {
+		const rating = getWisdomRating(app, file);
+		return rating ? "★".repeat(rating) : null;
+	},
+	sortItems: (_app, a, b) => a.basename.localeCompare(b.basename),
+	// A search should surface the strongest match first, not leave it buried in
+	// an alphabetically-ordered topic group.
+	rankGroupsByRelevance: true,
+	getGroupings: (app) => [
+		{
+			id: "topic",
+			label: "By Topic",
+			toggleKey: "t",
+			buildGroups: (files) => {
+				const buckets = new Map<string, TFile[]>();
+				for (const file of files) {
+					const topics = getTopicNamesForNote(app, file);
+					// A note is listed under every topic it has, so it stays
+					// discoverable from any of them. Untopiced notes still
+					// need somewhere to live.
+					const headers =
+						topics.length > 0 ? topics : [WISDOM_NO_TOPIC_HEADER];
+					for (const header of headers) {
+						if (!buckets.has(header)) buckets.set(header, []);
+						buckets.get(header)!.push(file);
+					}
+				}
+				return [...buckets.entries()]
+					.sort(([a], [b]) => {
+						if (a === WISDOM_NO_TOPIC_HEADER) return 1;
+						if (b === WISDOM_NO_TOPIC_HEADER) return -1;
+						return a.localeCompare(b);
+					})
+					.map(([header, bucket]) => ({
+						header,
+						items: bucket.sort((x, y) =>
+							x.basename.localeCompare(y.basename),
+						),
+					}));
+			},
+		},
+		{
+			id: "rating",
+			label: "By Rating",
+			toggleKey: "r",
+			buildGroups: (files) => {
+				const buckets = new Map<number, TFile[]>();
+				const unrated: TFile[] = [];
+				for (const file of files) {
+					const rating = getWisdomRating(app, file);
+					if (rating === null) {
+						unrated.push(file);
+						continue;
+					}
+					if (!buckets.has(rating)) buckets.set(rating, []);
+					buckets.get(rating)!.push(file);
+				}
+				const sortByTitle = (x: TFile, y: TFile) =>
+					x.basename.localeCompare(y.basename);
+				const groups = [...buckets.entries()]
+					.sort(([a], [b]) => b - a)
+					.map(([rating, bucket]) => ({
+						header: "★".repeat(rating),
+						items: bucket.sort(sortByTitle),
+					}));
+				if (unrated.length > 0) {
+					groups.push({
+						header: "Unrated",
+						items: unrated.sort(sortByTitle),
+					});
+				}
+				return groups;
+			},
+		},
+	],
+};
+
 // --- Config lookup ---
 
 const CATEGORY_CONFIGS: Record<string, CategoryDisplayConfig> = {
@@ -357,6 +469,7 @@ const CATEGORY_CONFIGS: Record<string, CategoryDisplayConfig> = {
 	Person: personConfig,
 	Event: eventConfig,
 	"Backlog Item": backlogItemConfig,
+	Wisdom: wisdomConfig,
 };
 
 function getCategoryDisplayConfig(category: string): CategoryDisplayConfig {
@@ -384,8 +497,14 @@ export function buildCategoryNoteSelector(
 		getSearchText: config.getSearchText
 			? (file) => config.getSearchText!(app, file)
 			: undefined,
+		getSearchTexts: config.getSearchTexts
+			? (file) => config.getSearchTexts!(app, file)
+			: undefined,
 		getSubtext: config.getSubtext
 			? (file) => config.getSubtext!(app, file)
+			: undefined,
+		getTitleRightMeta: config.getTitleRightMeta
+			? (file) => config.getTitleRightMeta!(app, file)
 			: undefined,
 		getBadges: config.getBadges
 			? (file) => config.getBadges!(app, file)
@@ -393,6 +512,7 @@ export function buildCategoryNoteSelector(
 		sortItems: config.sortItems
 			? (a, b) => config.sortItems!(app, a, b)
 			: undefined,
+		rankGroupsByRelevance: config.rankGroupsByRelevance,
 		groupings: config.getGroupings?.(app),
 	};
 }
