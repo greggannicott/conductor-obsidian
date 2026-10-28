@@ -79,6 +79,9 @@ const OPTIONS: OpenRandomOption[] = [
 	{ title: "Note Containing a Review", tag: "review" },
 	{ title: "Note With a High Rating", highRating: true },
 	{ title: "Person", category: "Person" },
+	// Topic pages are discovered by their tag, not a category, so this opens a
+	// random topic note rather than a note filed under a topic.
+	{ title: "Topic", tag: "topic" },
 ];
 
 // Opens a random note from the given option's pool, recording the option so
