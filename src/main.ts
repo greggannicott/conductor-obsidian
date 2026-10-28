@@ -83,7 +83,7 @@ import {
 } from "./utilities";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
-import { registerTaskLinkStrikethrough } from "./events/strikethrough-task-links";
+import { registerClosedLinkStrikethrough } from "./events/strikethrough-closed-links";
 
 interface ConductorSettings {
 	linearBaseUrl?: string;
@@ -579,7 +579,7 @@ export default class ConductorObsidian extends Plugin {
 			),
 		);
 
-		registerTaskLinkStrikethrough(this);
+		registerClosedLinkStrikethrough(this);
 	}
 
 	private addCheckedCommand(

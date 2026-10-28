@@ -30,8 +30,9 @@ If your plugin does not need CSS, delete this file.
 	margin-top: var(--size-4-2);
 }
 
-/* Links to closed tasks (Done / Abandoned / Won't Do) render with a strikethrough */
-.conductor-task-closed {
+/* Links to closed tasks and closed projects render with a strikethrough */
+.conductor-task-closed,
+.conductor-project-closed {
 	text-decoration: line-through;
 	text-decoration-thickness: 2px;
 	text-decoration-color: var(--text-muted);

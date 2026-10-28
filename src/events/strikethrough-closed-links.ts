@@ -6,33 +6,44 @@ import {
 	ViewPlugin,
 	ViewUpdate,
 } from "@codemirror/view";
-import {
-	App,
-	MarkdownView,
-	Plugin,
-	TFile,
-	editorInfoField,
-	parseFrontMatterStringArray,
-} from "obsidian";
+import { App, MarkdownView, Plugin, TFile, editorInfoField } from "obsidian";
 import { closedTaskTypes } from "../tasks";
+import { closedProjectStatuses } from "../projects";
+import { Category, getCategory } from "../utilities";
 
 const TASK_CLOSED_CLASS = "conductor-task-closed";
+const PROJECT_CLOSED_CLASS = "conductor-project-closed";
+const CLOSED_CLASSES = [TASK_CLOSED_CLASS, PROJECT_CLOSED_CLASS];
 
-function isTaskFile(app: App, file: TFile): boolean {
-	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-	const categories = parseFrontMatterStringArray(frontmatter, "categories");
-	return categories?.includes("[[Task]]") ?? false;
+function isTaskOrProjectFile(app: App, file: TFile): boolean {
+	const category = getCategory(app, file);
+	return category === Category.Task || category === Category.Project;
 }
 
-function isClosedTask(app: App, file: TFile): boolean {
-	if (!isTaskFile(app, file)) return false;
+// The class a link's target note earns, or null while it is still outstanding:
+// closed tasks are struck through, and so are closed projects that aren't
+// ongoing (an ongoing project is outstanding whatever its status).
+function getClosedLinkClass(app: App, file: TFile): string | null {
+	const category = getCategory(app, file);
 	const status = app.metadataCache.getFileCache(file)?.frontmatter?.["status"];
-	return closedTaskTypes.includes(status);
+	if (category === Category.Task) {
+		return closedTaskTypes.includes(status) ? TASK_CLOSED_CLASS : null;
+	}
+	if (category === Category.Project) {
+		const ongoing =
+			app.metadataCache.getFileCache(file)?.frontmatter?.["ongoing"] ===
+			true;
+		if (ongoing) return null;
+		return closedProjectStatuses.includes(status)
+			? PROJECT_CLOSED_CLASS
+			: null;
+	}
+	return null;
 }
 
-const WIKILINK_REGEX = /\[\[([^\[\]\n]*)\]\]/g;
+const WIKILINK_REGEX = /\[\[([^[\]]*)\]\]/g;
 
-function createTaskLinkDecorationExtension(app: App) {
+function createClosedLinkDecorationExtension(app: App) {
 	return ViewPlugin.fromClass(
 		class {
 			decorations: DecorationSet;
@@ -62,7 +73,8 @@ function createTaskLinkDecorationExtension(app: App) {
 		if (!file) return builder.finish();
 		const sourcePath = file.path;
 
-		const mark = Decoration.mark({ class: TASK_CLOSED_CLASS });
+		const taskMark = Decoration.mark({ class: TASK_CLOSED_CLASS });
+		const projectMark = Decoration.mark({ class: PROJECT_CLOSED_CLASS });
 		const doc = view.state.doc;
 
 		for (let pos = 0; pos < doc.length; ) {
@@ -77,11 +89,16 @@ function createTaskLinkDecorationExtension(app: App) {
 					targetName,
 					sourcePath,
 				);
-				if (target && isClosedTask(app, target)) {
-					const from = line.from + match.index;
-					const to = from + match[0].length;
-					builder.add(from, to, mark);
-				}
+				if (!target) continue;
+				const closedClass = getClosedLinkClass(app, target);
+				if (!closedClass) continue;
+				const from = line.from + match.index;
+				const to = from + match[0].length;
+				builder.add(
+					from,
+					to,
+					closedClass === TASK_CLOSED_CLASS ? taskMark : projectMark,
+				);
 			}
 			pos = line.to + 1;
 		}
@@ -89,11 +106,11 @@ function createTaskLinkDecorationExtension(app: App) {
 	}
 }
 
-export function registerTaskLinkStrikethrough(plugin: Plugin): void {
+export function registerClosedLinkStrikethrough(plugin: Plugin): void {
 	const app = plugin.app;
 
-	const taskLinkDecoration = createTaskLinkDecorationExtension(app);
-	plugin.registerEditorExtension(taskLinkDecoration);
+	const closedLinkDecoration = createClosedLinkDecorationExtension(app);
+	plugin.registerEditorExtension(closedLinkDecoration);
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
 		el.querySelectorAll("a.internal-link").forEach((link) => {
@@ -104,18 +121,16 @@ export function registerTaskLinkStrikethrough(plugin: Plugin): void {
 				href,
 				ctx.sourcePath,
 			);
-			const closed = target !== null && isClosedTask(app, target);
-			if (closed) {
-				link.classList.add(TASK_CLOSED_CLASS);
-			} else {
-				link.classList.remove(TASK_CLOSED_CLASS);
+			const closedClass = target ? getClosedLinkClass(app, target) : null;
+			for (const className of CLOSED_CLASSES) {
+				link.classList.toggle(className, className === closedClass);
 			}
 		});
 	});
 
 	plugin.registerEvent(
 		app.metadataCache.on("changed", (file: TFile) => {
-			if (!isTaskFile(app, file)) return;
+			if (!isTaskOrProjectFile(app, file)) return;
 
 			const refs = app.metadataCache.resolvedLinks;
 			app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
@@ -128,7 +143,7 @@ export function registerTaskLinkStrikethrough(plugin: Plugin): void {
 				const cm = (
 					view.editor as unknown as { cm?: EditorView }
 				).cm;
-				const decoration = cm?.plugin(taskLinkDecoration);
+				const decoration = cm?.plugin(closedLinkDecoration);
 				if (decoration && cm) {
 					decoration.recompute(cm);
 					cm.dispatch({});

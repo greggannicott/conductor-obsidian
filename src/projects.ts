@@ -68,6 +68,12 @@ export const outstandingProjectTypes: ProjectStatus[] = [
 	ProjectStatus.InProgress,
 ];
 
+export const closedProjectStatuses: ProjectStatus[] = [
+	ProjectStatus.Done,
+	ProjectStatus.Abandoned,
+	ProjectStatus.WontDo,
+];
+
 // Rank projects for the standard picker ordering: active bands first, then
 // alphabetical by name. Unknown/missing statuses sort last.
 const PROJECT_STATUS_RANK: Record<ProjectStatus, number> = {
