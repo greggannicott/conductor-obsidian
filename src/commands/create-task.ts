@@ -1,4 +1,6 @@
 import { App, Notice } from "obsidian";
+import type { Epic } from "src/epics";
+import { promptForOptionalEpic } from "src/choose-epic-modal";
 import { showProjectSelector } from "src/choose-project-modal";
 import { TextInputModal, TextInputKeybinding } from "src/text-input-modal";
 import {
@@ -38,12 +40,14 @@ export const showCreateTaskFlow = async (app: App): Promise<void> => {
 		activeProject?.name,
 	);
 	if (!project) return;
-	await displayTaskNameInput(app, project);
+	const epic = await promptForOptionalEpic(app, project.context);
+	await displayTaskNameInput(app, project, epic);
 };
 
 async function displayTaskNameInput(
 	app: App,
 	selectedProject: Project,
+	epic: Epic | null,
 ): Promise<void> {
 	const keybindings: TextInputKeybinding[] = [
 		{
@@ -67,12 +71,7 @@ async function displayTaskNameInput(
 	const { templateName, answer } = await getTaskCreationDetails(app, name);
 	let task: Task | null = null;
 	try {
-		task = await createNewTask(
-			app,
-			name,
-			selectedProject,
-			templateName,
-		);
+		task = await createNewTask(app, name, selectedProject, templateName, epic);
 	} catch (error) {
 		console.error(error);
 		new Notice(`Failed to create task [${name}]: ${error?.message ?? error}`);

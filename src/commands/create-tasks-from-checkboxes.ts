@@ -1,4 +1,6 @@
 import { App, Notice, moment } from "obsidian";
+import type { Epic } from "src/epics";
+import { promptForOptionalEpic } from "src/choose-epic-modal";
 import { showProjectSelector } from "src/choose-project-modal";
 import { getActiveProject, getProjects, Project } from "src/projects";
 import { createNewTask, TaskPriority, TaskStatus } from "src/tasks";
@@ -34,10 +36,13 @@ export const createNewTasksFromCheckboxes = async (app: App): Promise<void> => {
 	const selectedProject = await getSelectedProjectOrNotify(app);
 	if (!selectedProject) return;
 
+	const epic = await promptForOptionalEpic(app, selectedProject.context);
+
 	const { createdCount, replacements } = await createTasksAndReplacements(
 		app,
 		checkboxLines,
 		selectedProject,
+		epic,
 	);
 	replaceLinesInEditor(editor, selectedEditorContent, replacements);
 	showTaskCreationNotice(createdCount, selectedProject);
@@ -115,6 +120,7 @@ const createTasksAndReplacements = async (
 	app: App,
 	checkboxLines: CheckboxLine[],
 	selectedProject: Project,
+	epic: Epic | null,
 ): Promise<{ createdCount: number; replacements: LineReplacement[] }> => {
 	let createdCount = 0;
 	const replacements: LineReplacement[] = [];
@@ -124,6 +130,7 @@ const createTasksAndReplacements = async (
 			app,
 			checkboxLine,
 			selectedProject,
+			epic,
 		);
 		if (!task) continue;
 
@@ -146,11 +153,18 @@ const createTaskForCheckbox = (
 	app: App,
 	checkboxLine: CheckboxLine,
 	selectedProject: Project,
+	epic: Epic | null,
 ) => {
 	const templateName = isQuestionCheckbox(checkboxLine.text)
 		? "Question Task"
 		: "Task";
-	return createNewTask(app, checkboxLine.text, selectedProject, templateName);
+	return createNewTask(
+		app,
+		checkboxLine.text,
+		selectedProject,
+		templateName,
+		epic,
+	);
 };
 
 const isQuestionCheckbox = (checkboxText: string): boolean => {

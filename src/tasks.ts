@@ -1,4 +1,5 @@
 import { App, TFile, moment } from "obsidian";
+import type { Epic } from "./epics";
 import { Context, getProjectFromLink, Project } from "./projects";
 import { TextInputModal } from "./text-input-modal";
 import {
@@ -111,6 +112,7 @@ export async function createNewTask(
 	taskName: string,
 	selectedProject: Project,
 	templateName = "Task",
+	epic: Epic | null = null,
 ): Promise<Task | null> {
 	const uniqueFileName = getUniqueTaskFileName(
 		app,
@@ -127,6 +129,9 @@ export async function createNewTask(
 			fm["parents"] = [`[[${selectedProject.name}]]`];
 			fm["meta-last-priority-change-dt"] = createdDt;
 			fm["meta-last-status-change-dt"] = createdDt;
+			// The epic is optional, so the template's empty value is left alone
+			// when none was chosen.
+			if (epic) fm["epic"] = [`[[${epic.name}]]`];
 		});
 		const newTask = getTask(app, filePath);
 		return newTask;
