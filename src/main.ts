@@ -6,6 +6,7 @@ import {
 import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
+import { createEpic } from "./commands/create-epic";
 import {
 	convertNoteToTask,
 	isNoteConvertible,
@@ -364,6 +365,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-meeting",
 			name: "Create Meeting",
 			callback: () => void createMeeting(this.app),
+		});
+
+		this.addCommand({
+			id: "create-epic",
+			name: "Create Epic",
+			callback: () => void createEpic(this.app),
 		});
 
 		this.addCommand({
