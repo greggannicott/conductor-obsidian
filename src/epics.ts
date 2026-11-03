@@ -1,6 +1,9 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, parseFrontMatterStringArray } from "obsidian";
 import { Context, ProjectStatus } from "./projects";
-import { getFilesFromProjectsFolderWithCategory } from "./utilities";
+import {
+	getFilesFromProjectsFolderWithCategory,
+	isFileCategory,
+} from "./utilities";
 
 // Epics are categorised by "[[Epic (Category)]]" rather than "[[Epic]]":
 // the latter is the label taxonomy note.
@@ -51,6 +54,43 @@ export function getEpicFromFile(app: App, file: TFile): Epic {
 			: Context.Personal,
 		status: typeof status === "string" ? (status as ProjectStatus) : "",
 	};
+}
+
+export function isNoteEpic(app: App, file: TFile): boolean {
+	if (file.path.startsWith("_templates/")) return false;
+	return isFileCategory(app, file, EPIC_CATEGORY);
+}
+
+// The epic named by a note's `epic` frontmatter property. Tasks are the usual
+// carrier, but any note may hold the link.
+export function getEpicFromFrontmatter(
+	app: App,
+	file: TFile,
+): Epic | null {
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const links = parseFrontMatterStringArray(frontmatter, "epic") ?? [];
+	for (const link of links) {
+		const epic = getEpicFromLink(app, link, file.path);
+		if (epic) return epic;
+	}
+	return null;
+}
+
+// Resolves a frontmatter link to an epic note. Links to anything else are
+// ignored so a stale or mistyped property never preselects a non-epic.
+function getEpicFromLink(
+	app: App,
+	link: string,
+	sourcePath: string,
+): Epic | null {
+	const name = link
+		.replace(/^\[\[|\]\]$/g, "")
+		.split("|")[0]
+		.trim();
+	if (!name) return null;
+	const target = app.metadataCache.getFirstLinkpathDest(name, sourcePath);
+	if (!target || !isNoteEpic(app, target)) return null;
+	return getEpicFromFile(app, target);
 }
 
 // Every epic in the vault, whether or not it is still running.

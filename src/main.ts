@@ -27,6 +27,7 @@ import { insertProjectLink } from "./commands/insert-project-link";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 import { createJournalNoteForExperiment } from "./commands/create-journal-note-for-experiment";
 import { createJournalNoteForProblem } from "./commands/create-journal-note-for-problem";
+import { createJournalNoteForEpic } from "./commands/create-journal-note-for-epic";
 import { openNoteByTopic } from "./commands/open-note-by-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
@@ -540,6 +541,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-journal-note-for-problem",
 			name: "Create Journal Note for Problem",
 			callback: () => void createJournalNoteForProblem(this.app),
+		});
+
+		this.addCommand({
+			id: "create-journal-note-for-epic",
+			name: "Create Journal Note for Epic",
+			callback: () => void createJournalNoteForEpic(this.app),
 		});
 
 		this.addCommand({

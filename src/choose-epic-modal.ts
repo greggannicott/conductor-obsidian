@@ -5,7 +5,7 @@ import {
 	ConductorSelectorModal,
 	ConductorSelectorOptions,
 } from "./conductor-selector-modal";
-import { compareEpics, Epic, getOutstandingEpics } from "./epics";
+import { compareEpics, Epic, getEpics, getOutstandingEpics } from "./epics";
 import { Context } from "./projects";
 import { STATUS_EMOJI } from "./tasks";
 
@@ -58,6 +58,28 @@ export function showEpicSelector(
 	epics: Epic[],
 ): Promise<Epic | null> {
 	return ConductorSelectorModal.show(app, epicSelectorOptions(epics));
+}
+
+// The required "which epic?" prompt, for commands that have to attach
+// something to an epic. Every epic is offered — including closed ones — so an
+// older epic can still be picked for a retrospective. A preselected epic
+// pre-fills the search box, leaving Enter to confirm it.
+export function showEpicSelectorSingle(
+	app: App,
+	preselectedEpic: Epic | null = null,
+): Promise<Epic | null> {
+	const epics = getEpics(app);
+	// Only pre-fill when the epic is one of the offered rows: anything else
+	// would filter the list down to nothing.
+	const preselected = epics.find(
+		(epic) => epic.path === preselectedEpic?.path,
+	);
+	return ConductorSelectorModal.show(app, {
+		...epicSelectorOptions(epics),
+		placeholder: "Select an epic...",
+		emptyText: "No epics found",
+		initialValue: preselected?.name,
+	});
 }
 
 // The optional "which epic is this for?" prompt. Epics only group personal
