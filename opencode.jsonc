@@ -1,0 +1,13 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"references": {
+		"pkm": {
+			"path": "~/pkm/",
+			"description": "The PKM the plugin will ultimately be used on. Do not change.",
+		},
+		"playground-pkm": {
+			"path": "../../../",
+			"description": "A copy of the PKM this plugin will be used on.",
+		},
+	},
+}
