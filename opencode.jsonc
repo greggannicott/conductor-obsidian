@@ -3,11 +3,11 @@
 	"references": {
 		"pkm": {
 			"path": "~/pkm/",
-			"description": "The PKM the plugin will ultimately be used on. Do not change.",
+			"description": "Use when viewing the PKM this Obsidian Plugin interacts with. Production data so do not alter.",
 		},
 		"playground-pkm": {
 			"path": "../../../",
-			"description": "A copy of the PKM this plugin will be used on.",
+			"description": "Use when needing a test version of the PKM this Obsidian Plugin interacts with.",
 		},
 	},
 }
