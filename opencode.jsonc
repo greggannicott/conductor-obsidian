@@ -6,7 +6,7 @@
 			"description": "Use when viewing the PKM this Obsidian Plugin interacts with. Production data so do not alter.",
 		},
 		"playground-pkm": {
-			"path": "../../../",
+			"path": "~/code/playgrounds/obsidian-playground/",
 			"description": "Use when needing a test version of the PKM this Obsidian Plugin interacts with.",
 		},
 	},
