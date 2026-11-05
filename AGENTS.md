@@ -32,16 +32,20 @@
 - Tasks/projects are expected under `Projects/Personal/...` and `Projects/Work/...`.
 - Topic notes are detected via frontmatter `tags` containing `topic`; notes are linked to topics via a frontmatter `topics` property containing wikilinks to topic notes (see `src/topics.ts`). A note can have zero or more topics.
 
+## Adding New Selectors
+
+- Some tasks will involve creating new selectors for specific category types. These are sorted, grouped (etc) in a way specific to the category type. When this takes place, always ask the user if they want 'Open Note by Category' and 'Insert Link by Category' to use the new selector for that category type. If they choose yes, make sure it is used when that particular category is selected.
+
 ## Seeding test data from the real PKM
 
 - Paths: real PKM is `/Users/greggannicott/pkm`; test playground vault is `/Users/greggannicott/code/playgrounds/obsidian-playground` (this plugin repo sits inside it).
 - Journal notes live at the PKM root with timestamped names like `2026-08-21 1200 - title.md`. Frontmatter: `categories: ["[[Journal]]"]`, optional `tags`, and `topics:` holding wikilinks to topic notes (~584 as of Aug 2026).
 - Wikilink targets from those notes (topics, plus `[[Journal]]` itself) may sit anywhere in the PKM: usually root, but also `Projects/Personal/...` or `References/...`. Resolve them by basename, not path.
 - To seed N journals into the playground root:
-  1. Find candidates: PKM-root `.md` files (skip `_`-prefixed) whose frontmatter `categories` contains `[[Journal]]`.
-  2. Randomly sample N using a fixed seed so the selection is reproducible; prefer samples where some topics repeat (useful for testing topic grouping).
-  3. Copy each verbatim into the playground root, overwriting on name clash.
-  4. Collect every wikilink target from the sampled notes' frontmatter plus `Journal.md`; locate each `<name>.md` anywhere in the PKM and copy it flat into the playground root so all links resolve. Note some targets are project notes (`categories: [[Project]]`) and will appear in project views too.
+    1. Find candidates: PKM-root `.md` files (skip `_`-prefixed) whose frontmatter `categories` contains `[[Journal]]`.
+    2. Randomly sample N using a fixed seed so the selection is reproducible; prefer samples where some topics repeat (useful for testing topic grouping).
+    3. Copy each verbatim into the playground root, overwriting on name clash.
+    4. Collect every wikilink target from the sampled notes' frontmatter plus `Journal.md`; locate each `<name>.md` anywhere in the PKM and copy it flat into the playground root so all links resolve. Note some targets are project notes (`categories: [[Project]]`) and will appear in project views too.
 - Gotchas: filenames contain spaces/apostrophes/unicode — don't loop over them unquoted in bash; use a `python3` heredoc (`os.walk` + `shutil.copy2`) and exclude `.obsidian/`.
 
 ## Local artifacts
