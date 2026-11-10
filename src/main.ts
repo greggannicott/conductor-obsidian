@@ -42,6 +42,7 @@ import { showAddListen } from "./commands/add-listen";
 import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
+import { showRateCurrentNote } from "./commands/rate-current-note";
 import { showAddToRotation } from "./commands/add-to-rotation";
 import { openMusicRelease } from "./commands/open-music-release";
 import { openRecentListen } from "./commands/open-recent-listen";
@@ -404,6 +405,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-rating-to-music-release",
 			name: "Add Rating to Music Release",
 			callback: () => void showRateRelease(this.app),
+		});
+
+		this.addCommand({
+			id: "rate-current-note",
+			name: "Rate Current Note",
+			callback: () => void showRateCurrentNote(this.app),
 		});
 
 		this.addCommand({
