@@ -15,6 +15,10 @@ import {
 	convertJournalNoteToExperimentJournalNote,
 	isJournalNoteConvertibleToExperiment,
 } from "./commands/convert-journal-note-to-experiment-journal-note";
+import {
+	convertJournalNoteToEpicJournalNote,
+	isJournalNoteConvertibleToEpic,
+} from "./commands/convert-journal-note-to-epic-journal-note";
 import { showCreateTaskFlow } from "./commands/create-task";
 import {
 	setActiveTaskStatus,
@@ -530,6 +534,22 @@ export default class ConductorObsidian extends Plugin {
 						this.app,
 						file,
 					);
+			},
+		);
+
+		this.addCheckedCommand(
+			"convert-journal-note-to-epic-journal-note",
+			"Convert Journal Note to Epic Journal Note",
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				return Boolean(
+					file && isJournalNoteConvertibleToEpic(this.app, file),
+				);
+			},
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file)
+					void convertJournalNoteToEpicJournalNote(this.app, file);
 			},
 		);
 
