@@ -43,6 +43,7 @@ import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
 import { showRateCurrentNote } from "./commands/rate-current-note";
+import { markNoteAsConsumed } from "./commands/mark-note-as-consumed";
 import { showAddToRotation } from "./commands/add-to-rotation";
 import { openMusicRelease } from "./commands/open-music-release";
 import { openRecentListen } from "./commands/open-recent-listen";
@@ -412,6 +413,25 @@ export default class ConductorObsidian extends Plugin {
 			name: "Rate Current Note",
 			callback: () => void showRateCurrentNote(this.app),
 		});
+
+		this.addCheckedCommand(
+			"mark-note-as-consumed",
+			"Mark Note as Consumed",
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (!file) return false;
+				const frontmatter =
+					this.app.metadataCache.getFileCache(file)?.frontmatter;
+				return Boolean(
+					frontmatter &&
+						Object.prototype.hasOwnProperty.call(
+							frontmatter,
+							"consumed",
+						),
+				);
+			},
+			() => void markNoteAsConsumed(this.app),
+		);
 
 		this.addCommand({
 			id: "add-to-rotation",
