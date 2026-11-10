@@ -66,7 +66,7 @@ export function sanitizeFileName(name: string): string {
 export async function copyToClipboard(text: string): Promise<void> {
 	try {
 		await navigator.clipboard.writeText(text);
-		new Notice("Copied to clipboard");
+		new Notice(`Copied "${text}" to clipboard`);
 	} catch {
 		new Notice("Failed to copy to clipboard");
 	}
