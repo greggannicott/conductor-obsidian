@@ -9,6 +9,7 @@ import { moviePickerOptions } from "./choose-movie-modal";
 import { musicReleasePickerOptions } from "./choose-music-release-modal";
 import { projectSelectorOptions } from "./choose-project-modal";
 import { showExperimentSelectorSingle } from "./choose-experiment-modal";
+import { showEpicSelectorSingle } from "./choose-epic-modal";
 import { getProjects } from "./projects";
 import { getAllCategories, getFilesWithCategory } from "./utilities";
 
@@ -86,6 +87,11 @@ export async function selectNoteByCategory(
 			const experiment = await showExperimentSelectorSingle(app);
 			if (!experiment) return null;
 			return { file: experiment.file, label: experiment.name };
+		}
+		case "Epic (Category)": {
+			const epic = await showEpicSelectorSingle(app);
+			if (!epic) return null;
+			return { file: epic.file, label: epic.name };
 		}
 	}
 
