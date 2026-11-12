@@ -17,6 +17,7 @@ export type ShowTaskSelectorOptions = {
 	initialGroupMode?: GroupMode;
 	// Which groupings are registered and in what order; the first is the default.
 	groupModes?: GroupMode[];
+	omitProjectName?: boolean;
 };
 
 // Order in which status buckets are displayed; To Do is kept last so
@@ -138,7 +139,9 @@ export function showTaskSelector(
 		items: validTasks,
 		placeholder: "Select a task...",
 		getText: (task, ctx) =>
-			ctx?.activeGrouping === "project" ? task.name : getTaskText(task),
+			options?.omitProjectName || ctx?.activeGrouping === "project"
+				? task.name
+				: getTaskText(task),
 		getSearchText: getTaskText,
 		sortItems: byName,
 		groupings,

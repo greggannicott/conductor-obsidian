@@ -23,7 +23,7 @@ const openTaskFile = async (app: App, task: Task): Promise<void> => {
 
 export const openTask = async (app: App): Promise<void> => {
 	const activeProject = getActiveProject(app);
-	let filters: TaskFilters = {
+	const filters: TaskFilters = {
 		projectFilter: undefined,
 	};
 	if (activeProject) {
@@ -33,6 +33,7 @@ export const openTask = async (app: App): Promise<void> => {
 	}
 	const task = await showTaskSelector(app, getTasks(app, filters), {
 		initialGroupMode: "status",
+		omitProjectName: Boolean(activeProject),
 	});
 	if (!task) return;
 	await openTaskFile(app, task);
