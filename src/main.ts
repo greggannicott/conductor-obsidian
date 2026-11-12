@@ -4,6 +4,7 @@ import {
 	createNewTasksFromCheckboxes,
 } from "./commands/create-tasks-from-checkboxes";
 import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
+import { createNewInboxNote } from "./commands/create-new-inbox-note";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
 import { createEpic } from "./commands/create-epic";
@@ -277,6 +278,18 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-notes-from-bullets",
 			name: "Create Notes from Bullets",
 			callback: () => void createNewNotesFromBullets(this.app),
+		});
+
+		this.addCommand({
+			id: "create-new-inbox-note",
+			name: "Create New Inbox Note",
+			hotkeys: [
+				{
+					modifiers: ["Mod", "Ctrl", "Alt", "Shift"],
+					key: "I",
+				},
+			],
+			callback: () => void createNewInboxNote(this.app),
 		});
 
 		this.addCheckedCommand(
