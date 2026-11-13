@@ -18,6 +18,8 @@ export type ShowTaskSelectorOptions = {
 	// Which groupings are registered and in what order; the first is the default.
 	groupModes?: GroupMode[];
 	omitProjectName?: boolean;
+	// Placeholder text for the selector input.
+	placeholder?: string;
 };
 
 // Order in which status buckets are displayed; To Do is kept last so
@@ -137,7 +139,7 @@ export function showTaskSelector(
 
 	return ConductorSelectorModal.show<Task>(app, {
 		items: validTasks,
-		placeholder: "Select a task...",
+		placeholder: options?.placeholder ?? "Select a task...",
 		getText: (task, ctx) =>
 			options?.omitProjectName || ctx?.activeGrouping === "project"
 				? task.name

@@ -48,6 +48,7 @@ import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateRelease } from "./commands/rate-release";
 import { showRateCurrentNote } from "./commands/rate-current-note";
+import { answerQuestion } from "./commands/answer-question";
 import {
 	setForFocusingToTrue,
 	toggleForFocusing,
@@ -632,6 +633,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-note-by-topic",
 			name: "Open Note by Topic",
 			callback: () => openNoteByTopic(this.app),
+		});
+
+		this.addCommand({
+			id: "answer-question",
+			name: "Answer Question",
+			callback: () => void answerQuestion(this.app),
 		});
 
 		this.addCommand({
