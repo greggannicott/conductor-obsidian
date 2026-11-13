@@ -52,6 +52,7 @@ import {
 	setForFocusingToTrue,
 	toggleForFocusing,
 } from "./commands/for-focusing";
+import { chooseRandomMusicReleaseForHyperfocus } from "./commands/choose-random-music-release-for-hyperfocus";
 import { markNoteAsConsumed } from "./commands/mark-note-as-consumed";
 import { showAddToRotation } from "./commands/add-to-rotation";
 import { openMusicRelease } from "./commands/open-music-release";
@@ -441,6 +442,13 @@ export default class ConductorObsidian extends Plugin {
 			() => isActiveFileMusicRelease(this.app),
 			() => void setForFocusingToTrue(this.app),
 		);
+
+		this.addCommand({
+			id: "choose-random-music-release-for-hyperfocus",
+			name: "Choose Random Music Release for Hyperfocus",
+			callback: () =>
+				void chooseRandomMusicReleaseForHyperfocus(this.app),
+		});
 
 		this.addCheckedCommand(
 			"mark-note-as-consumed",
