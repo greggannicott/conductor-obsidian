@@ -42,6 +42,10 @@ import {
 } from "../backlog";
 import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
+import {
+	toggleForFocusing,
+	isForFocusing,
+} from "../commands/for-focusing";
 import { touchTaskFiles } from "../commands/touch-task";
 import { setProjectStatus } from "../commands/set-status";
 import { convertNoteToTask } from "../commands/convert-note-to-task";
@@ -280,6 +284,16 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 					subItem.onClick(() => {
 						void rateRelease(app, rateReleaseTarget, 0);
 					});
+				});
+			});
+		}
+
+		if (file.extension === "md" && isFileCategory(app, file, "Music Release")) {
+			menu.addItem((item) => {
+				item.setTitle("For Focusing");
+				item.setChecked(isForFocusing(app, file));
+				item.onClick(() => {
+					void toggleForFocusing(app, file);
 				});
 			});
 		}
