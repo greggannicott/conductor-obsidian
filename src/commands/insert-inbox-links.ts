@@ -1,7 +1,7 @@
 import { App, Editor, MarkdownView, Notice } from "obsidian";
 import { insertListLines } from "src/editor-utils";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
-import { getInboxFiles } from "src/utilities";
+import { getInboxFiles, getInboxDateGrouping } from "src/utilities";
 
 // True when the cursor sits at the start of a line or on an existing list item,
 // so the bullet/newline behaviour of insertListLines is appropriate. Otherwise
@@ -35,6 +35,7 @@ export const insertInboxLinks = async (app: App): Promise<boolean> => {
 		placeholder: "Select inbox notes...",
 		emptyText: "No inbox notes found",
 		getText: (file) => file.basename,
+		groupings: [getInboxDateGrouping(app)],
 	});
 	if (selected.length === 0) return false;
 

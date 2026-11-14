@@ -1,4 +1,5 @@
-import { App, Notice, TFile, parseFrontMatterStringArray } from "obsidian";
+import { App, Notice, TFile, parseFrontMatterStringArray, moment } from "obsidian";
+import type { ConductorSelectorGrouping } from "src/conductor-selector-modal";
 import {
 	TaskStatus,
 	TaskPriority,
@@ -93,6 +94,53 @@ export function getInboxFiles(app: App): TFile[] {
 		const cache = app.metadataCache.getFileCache(file);
 		return (cache?.tags ?? []).some((t) => t.tag === "#inbox");
 	});
+}
+
+// The calendar day ("YYYY-MM-DD") an inbox note belongs to, used for grouping.
+export function getInboxNoteDay(app: App, file: TFile): string {
+	const nameMatch = file.basename.match(/^(\d{4}-\d{2}-\d{2})/);
+	if (nameMatch) return nameMatch[1];
+
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+	const created =
+		frontmatter?.created ?? frontmatter?.date ?? frontmatter?.["date-created"];
+	if (typeof created === "string" && created.trim()) {
+		const parsed = moment(created.trim(), ["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", "YYYY-MM-DD HH:mm"], true);
+		if (parsed.isValid()) return parsed.format("YYYY-MM-DD");
+	}
+
+	return moment(file.stat.ctime).format("YYYY-MM-DD");
+}
+
+export function formatInboxDateHeader(day: string): string {
+	const parsed = moment(day, "YYYY-MM-DD");
+	return parsed.isValid()
+		? `${parsed.format("YYYY-MM-DD")} (${parsed.format("dddd")})`
+		: day;
+}
+
+export function getInboxDateGrouping(
+	app: App,
+): ConductorSelectorGrouping<TFile> {
+	return {
+		id: "date",
+		label: "Group by Date",
+		buildGroups: (files) => {
+			const buckets = new Map<string, TFile[]>();
+			for (const file of files) {
+				const day = getInboxNoteDay(app, file);
+				if (!buckets.has(day)) buckets.set(day, []);
+				buckets.get(day)!.push(file);
+			}
+			// Newest first.
+			return [...buckets.entries()]
+				.sort(([a], [b]) => b.localeCompare(a))
+				.map(([day, items]) => ({
+					header: formatInboxDateHeader(day),
+					items: items.sort((a, b) => a.basename.localeCompare(b.basename)),
+				}));
+		},
+	};
 }
 
 export function getFilesWithCategory(app: App, category: string): TFile[] {
