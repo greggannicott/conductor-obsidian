@@ -12,13 +12,14 @@ import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 import { insertProjectLink } from "./commands/insert-project-link";
 import { insertTaskLinks } from "./commands/insert-task-links";
+import { insertInboxLinks } from "./commands/insert-inbox-links";
 
 type MenuEntry = {
 	label: string;
 	run: (app: App) => Promise<boolean>;
 };
 
-// The five entries shown by the `:::` trigger. Hard-coded (not derived from
+// The entries shown by the `:::` trigger. Hard-coded (not derived from
 // registered commands) so the labels and ordering stay stable.
 const MENU: MenuEntry[] = [
 	{ label: "Insert Link by Category", run: (app) => insertLinkByCategory(app) },
@@ -29,6 +30,7 @@ const MENU: MenuEntry[] = [
 	},
 	{ label: "Insert Task Links", run: (app) => insertTaskLinks(app) },
 	{ label: "Insert Project Link", run: (app) => insertProjectLink(app) },
+	{ label: "Insert Inbox Links", run: (app) => insertInboxLinks(app) },
 ];
 
 function isInCodeBlockOrFrontmatter(

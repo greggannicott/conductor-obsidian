@@ -30,6 +30,7 @@ import { setActiveTaskPriority } from "./commands/set-priority";
 import { touchTask } from "./commands/touch-task";
 import { insertTaskLinks } from "./commands/insert-task-links";
 import { insertProjectLink } from "./commands/insert-project-link";
+import { insertInboxLinks } from "./commands/insert-inbox-links";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 import { createJournalNoteForExperiment } from "./commands/create-journal-note-for-experiment";
 import { createJournalNoteForProblem } from "./commands/create-journal-note-for-problem";
@@ -606,6 +607,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "insert-project-link",
 			name: "Insert Project Link",
 			callback: () => void insertProjectLink(this.app),
+		});
+
+		this.addCommand({
+			id: "insert-inbox-links",
+			name: "Insert Inbox Links",
+			callback: () => void insertInboxLinks(this.app),
 		});
 
 		this.addCommand({

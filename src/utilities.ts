@@ -86,6 +86,15 @@ export function getFilesFromProjectsFolderWithCategory(app: App, category: strin
 	});
 }
 
+export function getInboxFiles(app: App): TFile[] {
+	return app.vault.getMarkdownFiles().filter((file) => {
+		if (file.path.startsWith("_templates/")) return false;
+		if (fileHasTag(app, file, "inbox")) return true;
+		const cache = app.metadataCache.getFileCache(file);
+		return (cache?.tags ?? []).some((t) => t.tag === "#inbox");
+	});
+}
+
 export function getFilesWithCategory(app: App, category: string): TFile[] {
 	return app.vault.getMarkdownFiles().filter((f) => {
 		if (f.path.startsWith("_templates/")) return false;
