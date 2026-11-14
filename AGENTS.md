@@ -42,6 +42,7 @@
 - The command functions (`insertLinkByCategory`, `insertLinkByTopic`, `insertTaskLinks`, `insertProjectLink`) return `Promise<boolean>` reporting whether something was actually inserted. Keep that contract: the suggest deletes the `:::` up front and restores it on a `false` result, so a cancel leaves the document byte-identical.
 - The suggest is stateless: Esc only closes it immediately. Typing a space (or any non-word char) after the colons ends the trigger for good; typing a letter reopens it. There is no position-keyed dismissal.
 - `selectNoteByCategory` accepts an optional `preselectCategory` (used by "Insert Journal Link" to skip the category prompt).
+- "Insert Task Links" and "Insert Project Link" use `insertListLines` (bullets/newlines) only when the cursor is at the start of a line or on an existing list item; otherwise they insert the links inline (comma-separated, no bullets) via `replaceSelection`. Inline task links omit the parent project prefix (only bullet form includes `[[Project]] > [[Task]]`).
 
 ## Seeding test data from the real PKM
 

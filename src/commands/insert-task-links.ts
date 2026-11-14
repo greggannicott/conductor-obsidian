@@ -13,11 +13,28 @@ export const insertTaskLinks = async (app: App): Promise<boolean> => {
 	const tasks = await showOutstandingTasksSelector(app);
 	if (tasks.length === 0) return false;
 
-	insertTaskLinkLines(activeView.editor, tasks);
+	if (isInListContext(activeView.editor)) {
+		insertTaskLinkLines(activeView.editor, tasks);
+	} else {
+		const inline = tasks.map((t) => `[[${t.name}]]`).join(", ");
+		activeView.editor.replaceSelection(inline);
+	}
 	new Notice(
 		`Inserted ${tasks.length} task link${tasks.length > 1 ? "s" : ""}`,
 	);
 	return true;
+};
+
+// True when the cursor sits at the start of a line or on an existing list item,
+// so the bullet/newline behaviour of insertListLines is appropriate. Otherwise
+// the links are inserted inline at the cursor.
+const isInListContext = (editor: Editor): boolean => {
+	if (editor.getCursor().ch === 0) return true;
+	const line = editor.getLine(editor.getCursor().line);
+	return (
+		/^\s*(?:[-*+]|\d+\.)\s/.test(line) ||
+		/^\s*(?:[-*+]|\d+\.)\s*$/.test(line)
+	);
 };
 
 const insertTaskLinkLines = (editor: Editor, tasks: Task[]): void => {
