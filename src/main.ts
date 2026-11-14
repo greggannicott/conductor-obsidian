@@ -50,6 +50,7 @@ import { showAddListen } from "./commands/add-listen";
 import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
 import { showRateCurrentNote } from "./commands/rate-current-note";
+import { showSetDescriptionForCurrentNote } from "./commands/set-description";
 import { answerQuestion } from "./commands/answer-question";
 import {
 	setForFocusingToTrue,
@@ -424,6 +425,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "rate-current-note",
 			name: "Rate Current Note",
 			callback: () => void showRateCurrentNote(this.app),
+		});
+
+		this.addCommand({
+			id: "set-description-for-current-note",
+			name: "Set Description for Current Note",
+			callback: () => void showSetDescriptionForCurrentNote(this.app),
 		});
 
 		this.addCheckedCommand(
