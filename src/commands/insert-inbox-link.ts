@@ -1,5 +1,6 @@
 import { App, MarkdownView, Notice } from "obsidian";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
+import { TextInputModal } from "src/text-input-modal";
 import { getInboxFiles, getInboxDateGrouping } from "src/utilities";
 
 export const insertInboxLink = async (app: App): Promise<boolean> => {
@@ -26,7 +27,16 @@ export const insertInboxLink = async (app: App): Promise<boolean> => {
 	});
 	if (!selected) return false;
 
-	activeView.editor.replaceSelection(`[[${selected.basename}]]`);
-	new Notice(`Inserted link to "${selected.basename}"`);
+	const label = selected.basename;
+	const prompt = await TextInputModal.show(app, {
+		title: "Text to display",
+		placeholder: "Text to display",
+		value: label,
+	});
+	if (prompt.cancelled) return false;
+
+	const displayText = prompt.value.trim() || label;
+	activeView.editor.replaceSelection(`[[${selected.basename}|${displayText}]]`);
+	new Notice(`Inserted link to "${displayText}"`);
 	return true;
 };
