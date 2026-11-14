@@ -22,7 +22,7 @@
 
 - GitHub Actions `.github/workflows/release.yml` runs on any pushed tag, builds, then creates a GitHub Release and uploads `main.js`, `manifest.json`, `styles.css`.
 - Tag name must equal `manifest.json`'s `version` (no leading `v`). `.npmrc` sets `tag-version-prefix=""`.
-- `./publish.zsh [major|minor|patch]` bumps `manifest.json` and can optionally commit, tag, and push. It requires `jq`.
+- `./publish.zsh [major|minor|patch] [flags]` bumps `manifest.json`, commits, tags, and pushes (all by default). It requires `jq`. Non-interactive: runs every step without prompting. Flags: `--no-commit`, `--no-tag`, `--no-push`, `--dry-run`, `-h/--help`. Defaults to `patch` if no level given. Trigger via the `/publish` command.
 - `npm run version` updates `manifest.json` and `versions.json` from `package.json`'s version (via `version-bump.mjs`). In this repo `package.json` version and `manifest.json` version are currently not aligned, so running this will overwrite `manifest.json`'s version.
 
 ## Vault content assumptions (not in this repo)
