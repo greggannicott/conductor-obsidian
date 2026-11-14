@@ -5,6 +5,7 @@ import {
 } from "./commands/create-tasks-from-checkboxes";
 import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
 import { createNewInboxNote } from "./commands/create-new-inbox-note";
+import { openInboxNote } from "./commands/open-inbox-note";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
 import { createEpic } from "./commands/create-epic";
@@ -641,6 +642,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-topic",
 			name: "Open Topic",
 			callback: () => void openTopic(this.app),
+		});
+
+		this.addCommand({
+			id: "open-inbox-note",
+			name: "Open Inbox Note",
+			callback: () => void openInboxNote(this.app),
 		});
 
 		this.addCommand({
