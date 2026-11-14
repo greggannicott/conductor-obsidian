@@ -96,12 +96,7 @@ echo "New version: $NEW_VERSION"
 if $TAG && ! $COMMIT; then
   echo "Note: --tag with --no-commit will tag the current HEAD." >&2
 fi
-if $PUSH && ! $TAG; then
-  echo "Note: --push with --no-tag will push the current branch only." >&2
-  PUSH_BRANCH=true
-else
-  PUSH_BRANCH=false
-fi
+# (PUSH always pushes the current branch; the tag is pushed too when TAG is set.)
 
 if $DRY_RUN; then
   echo ""
@@ -111,7 +106,8 @@ if $DRY_RUN; then
   if $COMMIT; then echo "  - git add manifest.json && git commit -m \"chore: Version number bump\""; fi
   if $TAG; then echo "  - git tag -a $NEW_VERSION -m \"$NEW_VERSION\" (if not existing)"; fi
   if $PUSH; then
-    if $PUSH_BRANCH; then echo "  - git push origin HEAD"; else echo "  - git push origin $NEW_VERSION"; fi
+    echo "  - git push origin HEAD"
+    if $TAG; then echo "  - git push origin $NEW_VERSION"; fi
   fi
   exit 0
 fi
@@ -141,10 +137,9 @@ if $TAG; then
 fi
 
 if $PUSH; then
-  if $PUSH_BRANCH; then
-    git push origin HEAD
-    echo "Pushed current branch to origin"
-  else
+  git push origin HEAD
+  echo "Pushed current branch to origin"
+  if $TAG; then
     git push origin "$NEW_VERSION"
     echo "Tag $NEW_VERSION pushed"
   fi
