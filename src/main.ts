@@ -49,7 +49,6 @@ import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
 import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
-import { showRateRelease } from "./commands/rate-release";
 import { showRateCurrentNote } from "./commands/rate-current-note";
 import { answerQuestion } from "./commands/answer-question";
 import {
@@ -419,20 +418,6 @@ export default class ConductorObsidian extends Plugin {
 			id: "add-to-backlog",
 			name: "Add to Listening Backlog",
 			callback: () => void showAddToBacklog(this.app),
-		});
-
-		this.addCommand({
-			id: "rate-music-release",
-			name: "Rate Music Release",
-			callback: () => void showRateRelease(this.app),
-		});
-
-		// Alias for "rate-music-release": searching for "rating" does not
-		// fuzzy-match "Rate", so this is the name people reach for instead.
-		this.addCommand({
-			id: "add-rating-to-music-release",
-			name: "Add Rating to Music Release",
-			callback: () => void showRateRelease(this.app),
 		});
 
 		this.addCommand({
