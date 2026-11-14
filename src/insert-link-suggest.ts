@@ -12,7 +12,7 @@ import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 import { insertProjectLink } from "./commands/insert-project-link";
 import { insertTaskLinks } from "./commands/insert-task-links";
-import { insertInboxLinks } from "./commands/insert-inbox-links";
+import { insertInboxLink } from "./commands/insert-inbox-link";
 
 type MenuEntry = {
 	label: string;
@@ -30,7 +30,7 @@ const MENU: MenuEntry[] = [
 	},
 	{ label: "Insert Task Links", run: (app) => insertTaskLinks(app) },
 	{ label: "Insert Project Link", run: (app) => insertProjectLink(app) },
-	{ label: "Insert Inbox Links", run: (app) => insertInboxLinks(app) },
+	{ label: "Insert Inbox Link", run: (app) => insertInboxLink(app) },
 ];
 
 function isInCodeBlockOrFrontmatter(
