@@ -303,15 +303,6 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 			!file.path.startsWith("_templates/") &&
 			isFileCategory(app, file, "Music Release", "Artist", "Label");
 
-		if (hasTargetCategory && !fileHasTag(app, file, "details-migrated")) {
-			menu.addItem((item) => {
-				item.setTitle("Add '#details-migrated' Tag");
-				item.onClick(() => {
-					addTag(app, file, "details-migrated");
-				});
-			});
-		}
-
 		if (hasTargetCategory && !fileHasTag(app, file, "reason-done")) {
 			menu.addItem((item) => {
 				item.setTitle("Add '#reason-done' Tag");
