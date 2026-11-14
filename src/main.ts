@@ -100,6 +100,7 @@ import {
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
 import { registerClosedLinkStrikethrough } from "./events/strikethrough-closed-links";
+import { registerInsertLinkSuggest } from "./insert-link-suggest";
 
 interface ConductorSettings {
 	linearBaseUrl?: string;
@@ -688,6 +689,7 @@ export default class ConductorObsidian extends Plugin {
 		);
 
 		registerClosedLinkStrikethrough(this);
+		registerInsertLinkSuggest(this);
 	}
 
 	private addCheckedCommand(

@@ -43,7 +43,7 @@ async function pickWithLabel<T>(
 // link to itself. The dedicated pickers list their whole category.
 export async function selectNoteByCategory(
 	app: App,
-	options: { currentFile?: TFile | null } = {},
+	options: { currentFile?: TFile | null; preselectCategory?: string } = {},
 ): Promise<SelectedNote | null> {
 	const categories = getAllCategories(app);
 	if (categories.length === 0) {
@@ -51,13 +51,18 @@ export async function selectNoteByCategory(
 		return null;
 	}
 
-	const category = await ConductorSelectorModal.show(app, {
-		items: categories,
-		placeholder: "Select a category...",
-		emptyText: "No categories found",
-		getText: (cat) => cat,
-		sortItems: (a, b) => a.localeCompare(b),
-	});
+	// When a category is preselected (e.g. by the `:::` trigger for Journal),
+	// skip the category prompt and go straight to that category's picker.
+	let category: string | null = options.preselectCategory ?? null;
+	if (category === null) {
+		category = await ConductorSelectorModal.show(app, {
+			items: categories,
+			placeholder: "Select a category...",
+			emptyText: "No categories found",
+			getText: (cat) => cat,
+			sortItems: (a, b) => a.localeCompare(b),
+		});
+	}
 	if (!category) return null;
 
 	switch (category) {

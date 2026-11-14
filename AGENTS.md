@@ -36,6 +36,13 @@
 
 - Some tasks will involve creating new selectors for specific category types. These are sorted, grouped (etc) in a way specific to the category type. When this takes place, always ask the user if they want 'Open Note by Category' and 'Insert Link by Category' to use the new selector for that category type. If they choose yes, make sure it is used when that particular category is selected.
 
+## In-flow link insertion (`:::`)
+
+- Typing `:::` in the editor opens an inline suggest (`src/insert-link-suggest.ts`) offering the five link-insertion entries (Insert Link by Category, Insert Link by Topic, Insert Journal Link, Insert Task Links, Insert Project Link). Each delegates to the matching command function in `src/commands/`.
+- The command functions (`insertLinkByCategory`, `insertLinkByTopic`, `insertTaskLinks`, `insertProjectLink`) return `Promise<boolean>` reporting whether something was actually inserted. Keep that contract: the suggest deletes the `:::` up front and restores it on a `false` result, so a cancel leaves the document byte-identical.
+- The suggest is stateless: Esc only closes it immediately. Typing a space (or any non-word char) after the colons ends the trigger for good; typing a letter reopens it. There is no position-keyed dismissal.
+- `selectNoteByCategory` accepts an optional `preselectCategory` (used by "Insert Journal Link" to skip the category prompt).
+
 ## Seeding test data from the real PKM
 
 - Paths: real PKM is `/Users/greggannicott/pkm`; test playground vault is `/Users/greggannicott/code/playgrounds/obsidian-playground` (this plugin repo sits inside it).

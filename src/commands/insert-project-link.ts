@@ -2,15 +2,15 @@ import { App, MarkdownView, Notice } from "obsidian";
 import { insertListLines } from "src/editor-utils";
 import { showOutstandingProjectsSelector } from "src/insert-project-link-modal";
 
-export const insertProjectLink = async (app: App): Promise<void> => {
+export const insertProjectLink = async (app: App): Promise<boolean> => {
 	const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 	if (!activeView) {
 		new Notice("No active editor to insert into");
-		return;
+		return false;
 	}
 
 	const projects = await showOutstandingProjectsSelector(app);
-	if (projects.length === 0) return;
+	if (projects.length === 0) return false;
 
 	insertListLines(
 		activeView.editor,
@@ -21,4 +21,5 @@ export const insertProjectLink = async (app: App): Promise<void> => {
 			projects.length > 1 ? "s" : ""
 		}`,
 	);
+	return true;
 };
