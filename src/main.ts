@@ -34,6 +34,7 @@ import { createJournalNoteForExperiment } from "./commands/create-journal-note-f
 import { createJournalNoteForProblem } from "./commands/create-journal-note-for-problem";
 import { createJournalNoteForEpic } from "./commands/create-journal-note-for-epic";
 import { openNoteByTopic } from "./commands/open-note-by-topic";
+import { openTopic } from "./commands/open-topic";
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { openNoteByCategory } from "./commands/open-link-by-category";
 import {
@@ -634,6 +635,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-note-by-topic",
 			name: "Open Note by Topic",
 			callback: () => openNoteByTopic(this.app),
+		});
+
+		this.addCommand({
+			id: "open-topic",
+			name: "Open Topic",
+			callback: () => void openTopic(this.app),
 		});
 
 		this.addCommand({
