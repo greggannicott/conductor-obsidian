@@ -100,6 +100,7 @@ import {
 	isActiveFileProject,
 	isActiveFileTask,
 } from "./utilities";
+import { INBOX_TRIAGE_VIEW_TYPE, InboxTriageView } from "./base-views/inbox-triage";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
 import { registerClosedLinkStrikethrough } from "./events/strikethrough-closed-links";
@@ -703,6 +704,23 @@ export default class ConductorObsidian extends Plugin {
 
 		registerClosedLinkStrikethrough(this);
 		registerInsertLinkSuggest(this);
+
+		if (typeof this.registerBasesView === "function") {
+			const registered = this.registerBasesView(
+				INBOX_TRIAGE_VIEW_TYPE,
+				{
+					name: "Inbox Triage",
+					icon: "inbox",
+					factory: (controller, containerEl) =>
+						new InboxTriageView(controller, containerEl),
+				},
+			);
+			if (!registered) {
+				console.warn(
+					"Conductor: Bases is not enabled; 'Inbox Triage' view was not registered.",
+				);
+			}
+		}
 	}
 
 	private addCheckedCommand(

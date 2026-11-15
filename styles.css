@@ -387,3 +387,89 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 	margin-top: var(--size-4-2);
 }
+
+/* Inbox Triage base view */
+.conductor-inbox-triage {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2);
+}
+
+.conductor-inbox-triage-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.conductor-inbox-triage-group-header {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.conductor-inbox-triage-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Keep row hover/focus from changing the background; borders alone delineate rows. */
+.conductor-inbox-triage-item:focus,
+.conductor-inbox-triage-item:focus-within {
+	background: transparent;
+}
+
+.conductor-inbox-triage-title:focus,
+.conductor-inbox-triage-action:focus {
+	background: transparent;
+	box-shadow: none;
+}
+
+.conductor-inbox-triage-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.conductor-inbox-triage-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	opacity: 0.7;
+}
+
+.conductor-inbox-triage-item:hover .conductor-inbox-triage-actions {
+	opacity: 1;
+}
+
+.conductor-inbox-triage-action {
+	padding: 2px;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.conductor-inbox-triage-action--delete:hover {
+	color: var(--text-error);
+}
+
+/* No hover backgrounds on rows, links or action buttons. */
+.conductor-inbox-triage-item:hover,
+.conductor-inbox-triage-title:hover,
+.conductor-inbox-triage-action:hover {
+	background: transparent !important;
+	box-shadow: none;
+}
+
+.conductor-inbox-triage-empty {
+	color: var(--text-muted);
+	font-style: italic;
+	padding: var(--size-4-2);
+}
