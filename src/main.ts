@@ -5,6 +5,10 @@ import {
 } from "./commands/create-tasks-from-checkboxes";
 import { createNewNotesFromBullets } from "./commands/create-notes-from-bullets";
 import { createNewInboxNote } from "./commands/create-new-inbox-note";
+import {
+	createTaskFromNote,
+	isNoteTaskCreatable,
+} from "./commands/create-task-from-note";
 import { openInboxNote } from "./commands/open-inbox-note";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
@@ -544,6 +548,19 @@ export default class ConductorObsidian extends Plugin {
 			() => {
 				const file = this.app.workspace.activeEditor?.file;
 				if (file) void convertNoteToTask(this.app, file);
+			},
+		);
+
+		this.addCheckedCommand(
+			"create-task-from-note",
+			"Create Task from Note",
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				return Boolean(file && isNoteTaskCreatable(this.app, file));
+			},
+			() => {
+				const file = this.app.workspace.activeEditor?.file;
+				if (file) void createTaskFromNote(this.app, file);
 			},
 		);
 
