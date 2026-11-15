@@ -71,6 +71,14 @@ export const createTaskFromNote = async (
 		);
 	}
 
+	const originalContent = await app.vault.read(file);
+	await app.vault.modify(
+		file,
+		`${originalContent.trimEnd()}\n\nTask: [[${task.name}]]\n`,
+	);
+
+	await app.workspace.getLeaf(false).openFile(task.file);
+
 	new Notice(
 		`Created task [${task.name}] from [${file.basename}] in project [${project.name}].`,
 	);

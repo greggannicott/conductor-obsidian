@@ -9,6 +9,14 @@ import {
 } from "obsidian";
 
 import { getNoteTitle, removeTag } from "../utilities";
+import {
+	convertNoteToTask,
+	isNoteConvertible,
+} from "../commands/convert-note-to-task";
+import {
+	createTaskFromNote,
+	isNoteTaskCreatable,
+} from "../commands/create-task-from-note";
 
 export const INBOX_TRIAGE_VIEW_TYPE = "conductor-inbox-triage";
 
@@ -22,26 +30,47 @@ interface InboxTriageAction {
 export class InboxTriageView extends BasesView {
 	type = INBOX_TRIAGE_VIEW_TYPE;
 	private containerEl: HTMLElement;
-	private actions: InboxTriageAction[];
 
 	constructor(controller: QueryController, containerEl: HTMLElement) {
 		super(controller);
 		this.containerEl = containerEl.createDiv({
 			cls: "conductor-inbox-triage",
 		});
-		this.actions = [
+	}
+
+	private getActions(file: TFile): InboxTriageAction[] {
+		const actions: InboxTriageAction[] = [
 			{
 				icon: "tag",
 				tooltip: "Remove #inbox tag",
-				run: (file) => removeTag(this.app, file, "inbox"),
-			},
-			{
-				icon: "trash",
-				tooltip: "Delete note",
-				cls: "conductor-inbox-triage-action--delete",
-				run: (file) => this.app.fileManager.trashFile(file),
+				run: (target) => removeTag(this.app, target, "inbox"),
 			},
 		];
+
+		if (isNoteConvertible(this.app, file)) {
+			actions.push({
+				icon: "circle-arrow-right",
+				tooltip: "Convert note to task",
+				run: (target) => convertNoteToTask(this.app, target),
+			});
+		}
+
+		if (isNoteTaskCreatable(this.app, file)) {
+			actions.push({
+				icon: "file-plus",
+				tooltip: "Create task from note",
+				run: (target) => createTaskFromNote(this.app, target),
+			});
+		}
+
+		actions.push({
+			icon: "trash",
+			tooltip: "Delete note",
+			cls: "conductor-inbox-triage-action--delete",
+			run: (target) => this.app.fileManager.trashFile(target),
+		});
+
+		return actions;
 	}
 
 	onDataUpdated(): void {
@@ -107,7 +136,8 @@ export class InboxTriageView extends BasesView {
 		const actionsEl = itemEl.createDiv({
 			cls: "conductor-inbox-triage-actions",
 		});
-		for (const action of this.actions) {
+		const actions = this.getActions(file);
+		for (const action of actions) {
 			const buttonEl = actionsEl.createEl("button", {
 				cls: [
 					"clickable-icon",
