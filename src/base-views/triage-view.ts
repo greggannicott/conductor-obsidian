@@ -174,12 +174,13 @@ export abstract class TriageView extends BasesView {
 
 	/**
 	 * Properties the user has chosen to display, in their configured order.
-	 * Falls back to the query result's visible properties for Bases versions
-	 * where the view config does not carry an order.
+	 * An explicitly empty order means "show no properties", so it is honoured
+	 * as-is. The fallback to the query result's visible properties is only
+	 * used when the Bases version does not expose an order at all.
 	 */
 	private getVisiblePropertyIds(): BasesPropertyId[] {
 		const ordered = this.config.getOrder();
-		return ordered.length > 0 ? ordered : this.data.properties;
+		return Array.isArray(ordered) ? ordered : this.data.properties;
 	}
 
 	private getPropertyValue(
