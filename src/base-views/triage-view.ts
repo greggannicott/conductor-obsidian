@@ -33,7 +33,7 @@ export abstract class TriageView extends BasesView {
 		this.render();
 	}
 
-	protected abstract getActions(file: TFile): TriageAction[];
+	protected abstract getActions(): TriageAction[];
 
 	private render(): void {
 		this.containerEl.empty();
@@ -95,7 +95,7 @@ export abstract class TriageView extends BasesView {
 		const actionsEl = itemEl.createDiv({
 			cls: "conductor-triage-actions",
 		});
-		const actions = this.getActions(file);
+		const actions = this.getActions();
 		for (const action of actions) {
 			const buttonEl = actionsEl.createEl("button", {
 				cls: [

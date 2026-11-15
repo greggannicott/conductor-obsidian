@@ -1,5 +1,3 @@
-import { TFile } from "obsidian";
-
 import { removeTag } from "../utilities";
 import {
 	convertNoteToTask,
@@ -16,38 +14,36 @@ export const INBOX_TRIAGE_VIEW_TYPE = "conductor-inbox-triage";
 export class InboxTriageView extends TriageView {
 	type = INBOX_TRIAGE_VIEW_TYPE;
 
-	protected getActions(file: TFile): TriageAction[] {
-		const actions: TriageAction[] = [
+	/**
+	 * Every action is always rendered. Actions that do not apply to a note (a
+	 * note that is already a task, for example) are disabled instead of hidden,
+	 * so rows keep a consistent set of buttons.
+	 */
+	protected getActions(): TriageAction[] {
+		return [
 			{
 				icon: "tag",
 				tooltip: "Remove #inbox tag",
 				run: (target) => removeTag(this.app, target, "inbox"),
 			},
-		];
-
-		if (isNoteConvertible(this.app, file)) {
-			actions.push({
+			{
 				icon: "circle-arrow-right",
 				tooltip: "Convert note to task",
+				disabled: (target) => !isNoteConvertible(this.app, target),
 				run: (target) => convertNoteToTask(this.app, target),
-			});
-		}
-
-		if (isNoteTaskCreatable(this.app, file)) {
-			actions.push({
+			},
+			{
 				icon: "file-plus",
 				tooltip: "Create task from note",
+				disabled: (target) => !isNoteTaskCreatable(this.app, target),
 				run: (target) => createTaskFromNote(this.app, target),
-			});
-		}
-
-		actions.push({
-			icon: "trash",
-			tooltip: "Delete note",
-			cls: "conductor-triage-action--delete",
-			run: (target) => this.app.fileManager.trashFile(target),
-		});
-
-		return actions;
+			},
+			{
+				icon: "trash",
+				tooltip: "Delete note",
+				cls: "conductor-triage-action--delete",
+				run: (target) => this.app.fileManager.trashFile(target),
+			},
+		];
 	}
 }
