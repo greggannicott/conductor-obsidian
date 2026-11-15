@@ -432,7 +432,38 @@ If your plugin does not need CSS, delete this file.
 }
 
 .conductor-triage-title {
-	flex: 1 1 auto;
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Properties chosen by the user in the view's properties menu. */
+.conductor-triage-fields {
+	display: flex;
+	flex: 0 1 auto;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--size-4-1) var(--size-4-3);
+	min-width: 0;
+}
+
+.conductor-triage-field {
+	display: flex;
+	align-items: baseline;
+	gap: var(--size-4-1);
+	min-width: 0;
+}
+
+.conductor-triage-field-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+}
+
+.conductor-triage-field-value {
+	font-size: var(--font-ui-small);
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -441,8 +472,11 @@ If your plugin does not need CSS, delete this file.
 
 .conductor-triage-actions {
 	display: flex;
+	flex: 0 0 auto;
 	align-items: center;
 	gap: var(--size-4-1);
+	/* Pinned right even when a row has no properties to display. */
+	margin-left: auto;
 	opacity: 0.7;
 }
 

@@ -1,5 +1,6 @@
 import {
 	BasesEntry,
+	BasesPropertyId,
 	BasesView,
 	IconName,
 	QueryController,
@@ -7,6 +8,7 @@ import {
 	setIcon,
 	setTooltip,
 } from "obsidian";
+import type { Value } from "obsidian";
 
 import { getNoteTitle } from "../utilities";
 
@@ -88,6 +90,8 @@ export abstract class TriageView extends BasesView {
 			);
 		});
 
+		this.renderProperties(itemEl, entry);
+
 		const actionsEl = itemEl.createDiv({
 			cls: "conductor-triage-actions",
 		});
@@ -112,5 +116,75 @@ export abstract class TriageView extends BasesView {
 				void action.run(file);
 			});
 		}
+	}
+
+	/**
+	 * Render whichever properties the user picked in the view's properties
+	 * toolbar menu, so the row reflects the Base's configuration rather than a
+	 * hard-coded set of values. The note name is always shown as the title, so
+	 * it is skipped here to avoid repeating it.
+	 */
+	private renderProperties(
+		parentEl: HTMLElement,
+		entry: BasesEntry,
+	): void {
+		const fieldsEl = parentEl.createDiv({
+			cls: "conductor-triage-fields",
+		});
+
+		for (const propertyId of this.getVisiblePropertyIds()) {
+			if (propertyId === "file.name") continue;
+
+			const value = this.getPropertyValue(entry, propertyId);
+			if (!value) continue;
+
+			const fieldEl = fieldsEl.createDiv({
+				cls: "conductor-triage-field",
+			});
+			fieldEl.createSpan({
+				cls: "conductor-triage-field-label",
+				text: this.config.getDisplayName(propertyId),
+			});
+			value.renderTo(
+				fieldEl.createSpan({
+					cls: "conductor-triage-field-value",
+				}),
+				this.app.renderContext,
+			);
+		}
+
+		// Nothing to show: drop the container so it cannot affect the layout.
+		if (fieldsEl.childElementCount === 0) {
+			fieldsEl.remove();
+		}
+	}
+
+	/**
+	 * Properties the user has chosen to display, in their configured order.
+	 * Falls back to the query result's visible properties for Bases versions
+	 * where the view config does not carry an order.
+	 */
+	private getVisiblePropertyIds(): BasesPropertyId[] {
+		const ordered = this.config.getOrder();
+		return ordered.length > 0 ? ordered : this.data.properties;
+	}
+
+	private getPropertyValue(
+		entry: BasesEntry,
+		propertyId: BasesPropertyId,
+	): Value | null {
+		let value: Value | null;
+		try {
+			value = entry.getValue(propertyId);
+		} catch {
+			// A formula can fail to evaluate; treat it as having no value.
+			return null;
+		}
+
+		if (!value || value.toString().trim().length === 0) {
+			return null;
+		}
+
+		return value;
 	}
 }
