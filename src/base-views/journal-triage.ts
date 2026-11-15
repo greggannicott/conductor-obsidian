@@ -17,6 +17,12 @@ export class JournalTriageView extends TriageView {
 	protected getActions(): TriageAction[] {
 		return [
 			{
+				icon: "file-text",
+				tooltip: "Open note",
+				run: (target) =>
+					void this.app.workspace.getLeaf(false).openFile(target),
+			},
+			{
 				icon: "circle-check",
 				tooltip: "Mark as reflected",
 				disabled: (target) => fileHasTag(this.app, target, "reflected"),
