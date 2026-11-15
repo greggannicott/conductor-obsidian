@@ -392,8 +392,9 @@ If your plugin does not need CSS, delete this file.
 .conductor-triage {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-2);
+	gap: var(--size-4-1);
 	padding: var(--size-4-2);
+	background: var(--background-primary);
 }
 
 .conductor-triage-group {
@@ -417,12 +418,13 @@ If your plugin does not need CSS, delete this file.
 	gap: var(--size-4-2);
 	padding: var(--size-4-1) var(--size-4-2);
 	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
 }
 
 /* Keep row hover/focus from changing the background; borders alone delineate rows. */
 .conductor-triage-item:focus,
 .conductor-triage-item:focus-within {
-	background: transparent;
+	background: var(--background-primary);
 }
 
 .conductor-triage-title:focus,
@@ -502,16 +504,23 @@ If your plugin does not need CSS, delete this file.
 	opacity: 0.5;
 }
 
-/* No hover backgrounds on rows, links or action buttons. */
-.conductor-triage-item:hover,
+/* No hover backgrounds on links or action buttons; rows keep their solid
+   background so the pane's background never shows through. */
+.conductor-triage-item:hover {
+	background: var(--background-primary) !important;
+}
 .conductor-triage-title:hover,
 .conductor-triage-action:hover {
 	background: transparent !important;
 	box-shadow: none;
 }
 
-.conductor-triage-empty {
-	color: var(--text-muted);
+/* The last row of a group has no visible bottom border, but keeps a 1px
+   transparent border so its height matches the other rows; the group gap
+   (reduced to match the intra-group gap) handles the separation. */
+.conductor-triage-group > .conductor-triage-item:last-child {
+	border-bottom: 1px solid transparent;
+}
 	font-style: italic;
 	padding: var(--size-4-2);
 }
