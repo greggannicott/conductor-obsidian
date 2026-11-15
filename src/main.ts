@@ -105,6 +105,10 @@ import {
 	isActiveFileTask,
 } from "./utilities";
 import { INBOX_TRIAGE_VIEW_TYPE, InboxTriageView } from "./base-views/inbox-triage";
+import {
+	JOURNAL_TRIAGE_VIEW_TYPE,
+	JournalTriageView,
+} from "./base-views/journal-triage";
 import { createFileMenuHandler } from "./events/file-menu";
 import { createFilesMenuHandler } from "./events/files-menu";
 import { registerClosedLinkStrikethrough } from "./events/strikethrough-closed-links";
@@ -723,7 +727,7 @@ export default class ConductorObsidian extends Plugin {
 		registerInsertLinkSuggest(this);
 
 		if (typeof this.registerBasesView === "function") {
-			const registered = this.registerBasesView(
+			const registeredInbox = this.registerBasesView(
 				INBOX_TRIAGE_VIEW_TYPE,
 				{
 					name: "Inbox Triage",
@@ -732,9 +736,24 @@ export default class ConductorObsidian extends Plugin {
 						new InboxTriageView(controller, containerEl),
 				},
 			);
-			if (!registered) {
+			if (!registeredInbox) {
 				console.warn(
 					"Conductor: Bases is not enabled; 'Inbox Triage' view was not registered.",
+				);
+			}
+
+			const registeredJournal = this.registerBasesView(
+				JOURNAL_TRIAGE_VIEW_TYPE,
+				{
+					name: "Journal Triage",
+					icon: "book-open",
+					factory: (controller, containerEl) =>
+						new JournalTriageView(controller, containerEl),
+				},
+			);
+			if (!registeredJournal) {
+				console.warn(
+					"Conductor: Bases is not enabled; 'Journal Triage' view was not registered.",
 				);
 			}
 		}
