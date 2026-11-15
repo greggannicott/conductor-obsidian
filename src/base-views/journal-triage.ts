@@ -1,4 +1,6 @@
-import { addTag, fileHasTag } from "../utilities";
+import { TFile, moment } from "obsidian";
+
+import { addTag, fileHasTag, getNoteTitle } from "../utilities";
 import {
 	createTaskFromNote,
 	isNoteTaskCreatable,
@@ -9,6 +11,39 @@ export const JOURNAL_TRIAGE_VIEW_TYPE = "conductor-journal-triage";
 
 export class JournalTriageView extends TriageView {
 	type = JOURNAL_TRIAGE_VIEW_TYPE;
+
+	protected renderTitle(parentEl: HTMLElement, file: TFile): void {
+		const title = getNoteTitle(this.app, file);
+		const match = title.match(
+			/^(\d{4})-(\d{2})-(\d{2})\s+\d{4}\s*-\s*(.*)$/,
+		);
+		const rest = match ? match[4].trim() : title;
+		if (!rest) {
+			super.renderTitle(parentEl, file);
+			return;
+		}
+
+		const time = moment(file.stat.ctime).format("HH:mm");
+
+		parentEl.createSpan({
+			text: time,
+			cls: "conductor-triage-title-time",
+		});
+
+		const linkEl = parentEl.createEl("a", {
+			text: rest,
+			cls: "conductor-triage-title internal-link",
+			href: file.path,
+		});
+		linkEl.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			void this.app.workspace.openLinkText(
+				file.path,
+				"",
+				evt.ctrlKey || evt.metaKey,
+			);
+		});
+	}
 
 	/**
 	 * Every action is always rendered; actions that do not apply to a note are

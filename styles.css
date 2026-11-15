@@ -441,6 +441,22 @@ If your plugin does not need CSS, delete this file.
 	white-space: nowrap;
 }
 
+/* Leading timestamp chip shown before a journal note's linked title; not a link. */
+.conductor-triage-title-time {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 4.2em;
+	padding: 1px 6px;
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
 /* Properties chosen by the user in the view's properties menu. */
 .conductor-triage-fields {
 	display: flex;

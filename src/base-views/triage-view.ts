@@ -66,18 +66,18 @@ export abstract class TriageView extends BasesView {
 		}
 	}
 
-	private renderEntry(
-		parentEl: HTMLElement,
-		entry: BasesEntry,
-	): void {
-		const file = entry.file;
+	protected getTitle(file: TFile): string {
+		return getNoteTitle(this.app, file);
+	}
 
-		const itemEl = parentEl.createDiv({
-			cls: "conductor-triage-item",
-		});
-
-		const linkEl = itemEl.createEl("a", {
-			text: getNoteTitle(this.app, file),
+	/**
+	 * Render the note's title as a (possibly split) clickable link. The
+	 * default renders the whole title as a single link; subclasses can override
+	 * to keep part of the title (e.g. a leading timestamp) outside the link.
+	 */
+	protected renderTitle(parentEl: HTMLElement, file: TFile): void {
+		const linkEl = parentEl.createEl("a", {
+			text: this.getTitle(file),
 			cls: "conductor-triage-title internal-link",
 			href: file.path,
 		});
@@ -89,6 +89,19 @@ export abstract class TriageView extends BasesView {
 				evt.ctrlKey || evt.metaKey,
 			);
 		});
+	}
+
+	private renderEntry(
+		parentEl: HTMLElement,
+		entry: BasesEntry,
+	): void {
+		const file = entry.file;
+
+		const itemEl = parentEl.createDiv({
+			cls: "conductor-triage-item",
+		});
+
+		this.renderTitle(itemEl, file);
 
 		this.renderProperties(itemEl, entry);
 
