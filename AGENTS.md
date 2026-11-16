@@ -1,8 +1,8 @@
-# conductor-obsidian (Obsidian plugin)
+# gg-obsidian (Obsidian plugin)
 
 ## Repo layout (easy to get wrong)
 
-- This repo is developed from inside an Obsidian vault under `.../.obsidian/plugins/conductor-obsidian/` (see `README.md`). Run commands from the plugin directory, not the vault root.
+- This repo is developed from inside an Obsidian vault under `.../.obsidian/plugins/gg-obsidian/` (see `README.md`). Run commands from the plugin directory, not the vault root.
 - Source entrypoint: `src/main.ts` (bundled by `esbuild.config.mjs` to `main.js` at repo root).
 
 ## Dev + build

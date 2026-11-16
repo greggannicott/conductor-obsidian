@@ -5,7 +5,7 @@ SCRIPT_NAME="${0:t}"
 SCRIPT_DIR="${0:A:h}"
 PLAYGROUND_ROOT="${SCRIPT_DIR:h:h:h}"
 PKM_ROOT="${PKM_ROOT:-$HOME/pkm}"
-PROTECTED_REL=".obsidian/plugins/conductor-obsidian"
+PROTECTED_REL=".obsidian/plugins/gg-obsidian"
 
 DRY_RUN=0
 APPLY=0

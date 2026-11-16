@@ -1,4 +1,4 @@
-# conductor-obsidian
+# gg-obsidian
 
 Although this repo is public, it's actually for a private Obsidian plugin I use to manage projets in Obsidian. It is very much geared towards how I work in Obsidian.
 
