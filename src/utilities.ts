@@ -5,6 +5,8 @@ import {
 	TaskPriority,
 	PRIORITY_EMOJI,
 	STATUS_EMOJI,
+	SIZE_EMOJI,
+	SIZE_LABELS,
 } from "./tasks";
 import { ProjectStatus } from "./projects";
 import {
@@ -345,6 +347,13 @@ export function getPriorityDisplay(priority: TaskPriority): string {
 export function getStatusDisplay(status: TaskStatus | ProjectStatus): string {
 	const emoji = STATUS_EMOJI[status];
 	return emoji ? `${emoji} - ${valueLabel(status)}` : status;
+}
+
+export function getSizeDisplay(size: number): string {
+	const emoji = SIZE_EMOJI[size];
+	const label = SIZE_LABELS[size];
+	if (emoji && label) return `${emoji} ${size} - ${label}`;
+	return String(size);
 }
 
 // True when the file's frontmatter type field contains any of the given names.

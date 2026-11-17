@@ -11,11 +11,13 @@ import {
 	ProjectStatus,
 	outstandingProjectTypes,
 } from "../projects";
+import { TASK_SIZES } from "../tasks";
 import {
 	addTag,
 	fileHasTag,
 	getStatusDisplay,
 	getPriorityDisplay,
+	getSizeDisplay,
 	isFileCategory,
 } from "../utilities";
 import { addListen } from "../commands/add-listen";
@@ -42,6 +44,7 @@ import {
 } from "../backlog";
 import { setTaskStatus } from "../commands/set-status";
 import { setTaskPriority } from "../commands/set-priority";
+import { setTaskSize } from "../commands/set-size";
 import {
 	toggleForFocusing,
 	isForFocusing,
@@ -99,6 +102,22 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 						}
 						subItem.onClick(() => {
 							setTaskPriority(app, file, priority);
+						});
+					});
+				}
+			});
+
+			menu.addItem((item) => {
+				item.setTitle("Set Size");
+				const submenu = (item as any).setSubmenu();
+				for (const size of TASK_SIZES) {
+					submenu.addItem((subItem: any) => {
+						subItem.setTitle(getSizeDisplay(size));
+						if (task && task.size === size) {
+							subItem.setChecked(true);
+						}
+						subItem.onClick(() => {
+							setTaskSize(app, file, size);
 						});
 					});
 				}

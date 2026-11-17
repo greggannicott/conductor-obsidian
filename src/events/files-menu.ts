@@ -1,8 +1,9 @@
 import { App, Menu, TFile } from "obsidian";
-import { TASK_PRIORITIES } from "../tasks";
+import { TASK_PRIORITIES, TASK_SIZES } from "../tasks";
 import { setTaskPriorityForFiles } from "../commands/set-priority";
+import { setTaskSizeForFiles } from "../commands/set-size";
 import { touchTaskFiles } from "../commands/touch-task";
-import { getPriorityDisplay } from "../utilities";
+import { getPriorityDisplay, getSizeDisplay } from "../utilities";
 
 export function createFilesMenuHandler(app: App) {
 	return (menu: Menu, files: any[]) => {
@@ -36,6 +37,20 @@ export function createFilesMenuHandler(app: App) {
 							selectedTaskFiles,
 							priority,
 						);
+					});
+				});
+			}
+		});
+
+		menu.addItem((item: any) => {
+			item.setTitle("Set Size");
+			const submenu = (item as any).setSubmenu();
+
+			for (const size of TASK_SIZES) {
+				submenu.addItem((subItem: any) => {
+					subItem.setTitle(getSizeDisplay(size));
+					subItem.onClick(() => {
+						void setTaskSizeForFiles(app, selectedTaskFiles, size);
 					});
 				});
 			}

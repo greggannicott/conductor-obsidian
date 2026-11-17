@@ -31,6 +31,7 @@ import {
 	setActiveProjectStatus,
 } from "./commands/set-status";
 import { setActiveTaskPriority } from "./commands/set-priority";
+import { setActiveTaskSize } from "./commands/set-size";
 import { touchTask } from "./commands/touch-task";
 import { insertTaskLinks } from "./commands/insert-task-links";
 import { insertProjectLink } from "./commands/insert-project-link";
@@ -330,6 +331,27 @@ export default class ConductorObsidian extends Plugin {
 			"Set Task Priority to '🟢 03 - Low'",
 			() => isActiveFileTask(this.app),
 			() => setActiveTaskPriority(this.app, TaskPriority.Low),
+		);
+
+		this.addCheckedCommand(
+			"set-task-to-quick-win-size",
+			"Set Task Size to '🔵 1 - Quick win'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskSize(this.app, 1),
+		);
+
+		this.addCheckedCommand(
+			"set-task-to-medium-size",
+			"Set Task Size to '🟠 2 - Medium'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskSize(this.app, 2),
+		);
+
+		this.addCheckedCommand(
+			"set-task-to-weekend-project-size",
+			"Set Task Size to '🟣 3 - Weekend project'",
+			() => isActiveFileTask(this.app),
+			() => setActiveTaskSize(this.app, 3),
 		);
 
 		for (const tagName of ["inbox", "reflected", "review"]) {

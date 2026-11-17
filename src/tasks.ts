@@ -19,6 +19,7 @@ export type Task = {
 	jiraId: string;
 	impeded: boolean;
 	priority: TaskPriority;
+	size?: number;
 	branch: string;
 	type: TaskType[];
 };
@@ -76,6 +77,20 @@ export const PRIORITY_EMOJI: Record<TaskPriority, string> = {
 	[TaskPriority.High]: "🔴",
 	[TaskPriority.Medium]: "🟡",
 	[TaskPriority.Low]: "🟢",
+};
+
+export const TASK_SIZES: number[] = [1, 2, 3];
+
+export const SIZE_EMOJI: Record<number, string> = {
+	1: "🔵",
+	2: "🟠",
+	3: "🟣",
+};
+
+export const SIZE_LABELS: Record<number, string> = {
+	1: "Quick win",
+	2: "Medium",
+	3: "Weekend project",
 };
 
 export enum TaskType {
@@ -182,6 +197,10 @@ export function getTask(app: App, filePath: string): Task | null {
 		const impeded =
 			frontmatter && frontmatter["impeded"] === true ? true : false;
 		const priority = frontmatter && frontmatter["priority"];
+		const size =
+			frontmatter && typeof frontmatter["size"] === "number"
+				? frontmatter["size"]
+				: undefined;
 		const branch = frontmatter && frontmatter["branch"];
 		const types = frontmatter && frontmatter["type"];
 		return {
@@ -193,6 +212,7 @@ export function getTask(app: App, filePath: string): Task | null {
 			jiraId,
 			impeded,
 			priority,
+			size,
 			branch,
 			type: types,
 		};
