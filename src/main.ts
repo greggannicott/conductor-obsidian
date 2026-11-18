@@ -1,5 +1,6 @@
 import { Plugin, Notice } from "obsidian";
 
+import { configureBff } from "./bff";
 import {
 	createNewTasksFromCheckboxes,
 } from "./commands/create-tasks-from-checkboxes";
@@ -50,6 +51,7 @@ import {
 	repeatLastOpenRandom,
 } from "./commands/open-random";
 import { addRun } from "./commands/add-run";
+import { createProject } from "./commands/create-project";
 import { createProjectNote } from "./commands/create-project-note";
 import { showAddListen } from "./commands/add-listen";
 import { showAddViewing } from "./commands/add-viewing";
@@ -117,11 +119,13 @@ import { registerInsertLinkSuggest } from "./insert-link-suggest";
 
 interface ConductorSettings {
 	linearBaseUrl?: string;
+	bffUrl?: string;
 	lastOpenRandomOption?: string;
 }
 
 const DEFAULT_SETTINGS: ConductorSettings = {
 	linearBaseUrl: "https://linear.app/precisely",
+	bffUrl: "http://localhost:8082",
 };
 
 export default class ConductorObsidian extends Plugin {
@@ -129,6 +133,7 @@ export default class ConductorObsidian extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		configureBff(this.settings.bffUrl);
 
 		this.addCommand({
 			id: "open-project",
@@ -182,6 +187,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-new-task",
 			name: "Create New Task",
 			callback: () => void showCreateTaskFlow(this.app),
+		});
+
+		this.addCommand({
+			id: "create-project",
+			name: "Create Project",
+			callback: () => void createProject(this.app),
 		});
 
 		this.addCommand({

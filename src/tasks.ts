@@ -1,4 +1,5 @@
-import { App, TFile, moment } from "obsidian";
+import { App, Notice, TFile, moment } from "obsidian";
+import { mintId } from "./bff";
 import type { Epic } from "./epics";
 import { Context, getProjectFromLink, Project } from "./projects";
 import { TextInputModal } from "./text-input-modal";
@@ -136,11 +137,22 @@ export async function createNewTask(
 	);
 	const filePath = `Projects/${selectedProject.context}/${uniqueFileName}.md`;
 
+	let id: string;
+	try {
+		id = await mintId();
+	} catch (error) {
+		new Notice(
+			`Could not get a task ID: ${error instanceof Error ? error.message : error}`,
+		);
+		return null;
+	}
+
 	const file = await createFileFromTemplate(app, filePath, templateName);
 
 	if (file) {
 		const createdDt = moment().format("YYYY-MM-DDTHH:mm:ss");
 		await app.fileManager.processFrontMatter(file, (fm) => {
+			fm["id"] = id;
 			fm["parents"] = [`[[${selectedProject.name}]]`];
 			fm["meta-last-priority-change-dt"] = createdDt;
 			fm["meta-last-status-change-dt"] = createdDt;

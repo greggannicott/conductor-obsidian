@@ -1,4 +1,5 @@
 import { App, Notice, TFile, moment } from "obsidian";
+import { mintId } from "src/bff";
 import { showProjectSelector } from "src/choose-project-modal";
 import { getProjects, Project } from "src/projects";
 import { Category, getCategory, vaultFileExists } from "src/utilities";
@@ -25,6 +26,18 @@ export const convertNoteToTask = async (
 		return;
 	}
 
+	// Get the ID before touching the note so a BFF failure leaves the file
+	// untouched rather than half-converted.
+	let id: string;
+	try {
+		id = await mintId();
+	} catch (error) {
+		new Notice(
+			`Could not get a task ID: ${error instanceof Error ? error.message : error}`,
+		);
+		return;
+	}
+
 	const targetPath = getTargetTaskPath(app, file, project);
 	if (targetPath !== file.path) {
 		await app.vault.rename(file, targetPath);
@@ -36,7 +49,7 @@ export const convertNoteToTask = async (
 		return;
 	}
 
-	await applyTaskFrontmatter(app, taskFile, project);
+	await applyTaskFrontmatter(app, taskFile, project, id);
 
 	new Notice(
 		`Converted [${taskFile.basename}] to a task in project [${project.name}]`,
@@ -97,6 +110,7 @@ const applyTaskFrontmatter = async (
 	app: App,
 	file: TFile,
 	project: Project,
+	id: string,
 ): Promise<void> => {
 	const templateDefaults = getTaskTemplateFrontmatter(app);
 	const now = moment().format("YYYY-MM-DDTHH:mm:ss");
@@ -115,6 +129,7 @@ const applyTaskFrontmatter = async (
 			? categories
 			: [...categories, "[[Task]]"];
 
+		fm["id"] = id;
 		fm["parents"] = [`[[${project.name}]]`];
 		fm["meta-last-priority-change-dt"] = now;
 		fm["meta-last-status-change-dt"] = now;
