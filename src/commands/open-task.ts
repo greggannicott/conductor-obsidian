@@ -32,7 +32,12 @@ export const openTask = async (app: App): Promise<void> => {
 		};
 	}
 	const task = await showTaskSelector(app, getTasks(app, filters), {
-		initialGroupMode: "status",
+		// Group by project when browsing tasks across projects (no active
+		// project). When focused on an active project, tasks all belong to that
+		// project, so project grouping is omitted entirely.
+		groupModes: activeProject
+			? ["status", "priority"]
+			: ["status", "project", "priority"],
 		omitProjectName: Boolean(activeProject),
 	});
 	if (!task) return;
