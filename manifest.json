@@ -1,7 +1,7 @@
 {
   "id": "gg-obsidian",
   "name": "GG",
-  "version": "0.2.188",
+  "version": "0.2.189",
   "minAppVersion": "1.10.0",
   "description": "A set of tools to help use Obsidian as a project manager.",
   "author": "Greg Gannicott",
