@@ -15,6 +15,21 @@ export function getBffUrl(): string {
 	return baseUrl;
 }
 
+// checkBffStatus reports whether the BFF health endpoint responds. It is used
+// for the status bar indicator, so any failure (including an unreachable
+// server) simply means "down" rather than throwing.
+export async function checkBffStatus(): Promise<boolean> {
+	try {
+		const response = await fetch(`${baseUrl}/status`, {
+			method: "GET",
+			headers: { Accept: "application/json" },
+		});
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
 // mintId reserves the next shared ID. Callers should treat any failure as
 // fatal for the creation flow so notes are never written without an ID.
 export async function mintId(): Promise<string> {

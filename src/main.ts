@@ -1,6 +1,6 @@
 import { Plugin, Notice } from "obsidian";
 
-import { configureBff } from "./bff";
+import { checkBffStatus, configureBff } from "./bff";
 import {
 	createNewTasksFromCheckboxes,
 } from "./commands/create-tasks-from-checkboxes";
@@ -130,10 +130,12 @@ const DEFAULT_SETTINGS: ConductorSettings = {
 
 export default class ConductorObsidian extends Plugin {
 	settings: ConductorSettings;
+	private bffStatusEl: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
 		configureBff(this.settings.bffUrl);
+		this.setupBffStatusIndicator();
 
 		this.addCommand({
 			id: "open-project",
@@ -790,6 +792,30 @@ export default class ConductorObsidian extends Plugin {
 				);
 			}
 		}
+	}
+
+	// Show go-bff availability in the status bar. The BFF is required for ID
+	// minting, so a red indicator is a useful warning before a create command
+	// fails. Check immediately, then every 30 seconds for the life of the plugin.
+	private setupBffStatusIndicator(): void {
+		const el = this.addStatusBarItem();
+		el.setText("BFF …");
+		el.setAttr("title", "go-bff status: checking");
+		this.bffStatusEl = el;
+
+		const refresh = async () => {
+			const up = await checkBffStatus();
+			const statusEl = this.bffStatusEl;
+			if (!statusEl) return; // plugin was unloaded while the request was in flight
+			statusEl.setText("BFF ●");
+			statusEl.style.color = up
+				? "var(--text-success, green)"
+				: "var(--text-error, red)";
+			statusEl.setAttr("title", up ? "go-bff: up" : "go-bff: down");
+		};
+
+		void refresh();
+		this.registerInterval(window.setInterval(() => void refresh(), 30_000));
 	}
 
 	private addCheckedCommand(
