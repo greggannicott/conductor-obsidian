@@ -10,8 +10,9 @@ import { musicReleasePickerOptions } from "./choose-music-release-modal";
 import { projectSelectorOptions } from "./choose-project-modal";
 import { showExperimentSelectorSingle } from "./choose-experiment-modal";
 import { showEpicSelectorSingle } from "./choose-epic-modal";
+import { showProjectNoteSelector } from "./choose-project-note-modal";
 import { getProjects } from "./projects";
-import { getAllCategories, getFilesWithCategory } from "./utilities";
+import { getAllCategories, getFilesWithCategory, getNoteTitle } from "./utilities";
 
 // A note chosen from a category, paired with the text its picker displayed it
 // by - a release's title, a project's jira-prefixed name, or a journal note's
@@ -88,7 +89,17 @@ export async function selectNoteByCategory(
 			);
 			return picked && { file: picked.item.file, label: picked.label };
 		}
-		case "Experiment": {
+		case "Project Note": {
+			const projectNote = await showProjectNoteSelector(app, {
+				includeCreate: false,
+			});
+			if (!projectNote || projectNote.kind !== "note") return null;
+			return {
+				file: projectNote.file,
+				label: getNoteTitle(app, projectNote.file),
+			};
+		}
+	case "Experiment": {
 			const experiment = await showExperimentSelectorSingle(app);
 			if (!experiment) return null;
 			return { file: experiment.file, label: experiment.name };

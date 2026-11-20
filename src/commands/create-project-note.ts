@@ -34,38 +34,37 @@ type NoteContentContext = {
 	content: string;
 };
 
-export async function createProjectNote(app: App): Promise<void> {
+export type CreateProjectNoteOptions = {
+	openCreated?: boolean;
+	selectedText?: string;
+};
+
+export async function createProjectNote(
+	app: App,
+	options: CreateProjectNoteOptions = {},
+): Promise<TFile | null> {
 	const editor = app.workspace.activeEditor?.editor;
-	const selectedText = editor?.getSelection() ?? "";
+	const selectedText = options.selectedText ?? editor?.getSelection() ?? "";
 	const activeProject = getProjectForActiveFile(app);
 
 	const project = await chooseProject(app, activeProject);
-	if (!project) return;
+	if (!project) return null;
 
 	const noteType = await chooseProjectNoteType(app);
-	if (!noteType) return;
+	if (!noteType) return null;
 
 	const titleResult = await TextInputModal.show(app, {
 		title: "Project Note Title",
 		placeholder: `Enter a title for '${project.name}'...`,
 		value: selectedText || undefined,
 	});
-	if (titleResult.cancelled) return;
+	if (titleResult.cancelled) return null;
 
 	const title = sanitizeFileName(titleResult.value);
 	if (!title) {
 		new Notice("A project note title is required.");
-		return;
+		return null;
 	}
-
-	const displayResult = await TextInputModal.show(app, {
-		title: "Link Text",
-		placeholder: "Enter link text...",
-		value: title,
-	});
-	if (displayResult.cancelled) return;
-	// '|' and the ']]' terminator would break the wikilink built from this.
-	const displayText = displayResult.value.replace(/\|/g, "").replace(/]]/g, "]");
 
 	const requiresContent =
 		noteType === "Code Sample" ||
@@ -74,14 +73,13 @@ export async function createProjectNote(app: App): Promise<void> {
 	const noteContentContext = requiresContent
 		? await gatherNoteContentContext(app, noteType)
 		: null;
-	if (requiresContent && noteContentContext === null) return;
+	if (requiresContent && noteContentContext === null) return null;
 
 	const filePath = getUniqueProjectNotePath(app, project.context, title);
 	const templateVars = buildTemplateVars({
 		project,
 		noteType,
 		title,
-		displayText,
 		selectedText,
 		noteContentContext,
 	});
@@ -99,11 +97,11 @@ export async function createProjectNote(app: App): Promise<void> {
 		new Notice(
 			`Failed to create project note [${title}]: ${error?.message ?? error}`,
 		);
-		return;
+		return null;
 	}
 	if (!note) {
 		new Notice(`Project note template not found for ${noteType}.`);
-		return;
+		return null;
 	}
 
 	await app.fileManager.processFrontMatter(note, (frontmatter) => {
@@ -112,12 +110,11 @@ export async function createProjectNote(app: App): Promise<void> {
 		frontmatter.parents = [`[[${project.name}]]`];
 	});
 
-	const link = createProjectNoteLink(note, displayText);
-	if (editor) {
-		insertProjectNoteLink(editor, link, Boolean(selectedText));
-	} else {
+	if (options.openCreated !== false) {
 		await app.workspace.getLeaf(false).openFile(note);
 	}
+
+	return note;
 }
 
 // The vocabulary a `Project Notes/*` template can reference. Keys with no
@@ -127,14 +124,15 @@ function buildTemplateVars(input: {
 	project: Project;
 	noteType: ProjectNoteType;
 	title: string;
-	displayText: string;
 	selectedText: string;
 	noteContentContext: NoteContentContext | null;
 }): TemplateVars {
-	const { project, noteType, title, displayText, selectedText } = input;
+	const { project, noteType, title, selectedText } = input;
 	const vars: TemplateVars = {
 		title,
-		link_text: displayText,
+		// Kept for template compatibility now that no link is inserted;
+		// defaults to the title.
+		link_text: title,
 		project: project.name,
 		project_path: project.path,
 		context: project.context,
@@ -174,11 +172,9 @@ function getProjectForActiveFile(app: App): Project | null {
 
 	const file = app.workspace.activeEditor?.file;
 	if (!file) return null;
-
 	const parent = app.metadataCache.getFileCache(file)?.frontmatter?.parents;
 	const link = Array.isArray(parent) ? parent[0] : parent;
 	if (typeof link !== "string") return null;
-
 	const linkedFile = app.metadataCache.getFirstLinkpathDest(
 		link.replace(/^\[\[|\]\]$/g, "").split("|")[0],
 		file.path,
@@ -259,13 +255,15 @@ function getUniqueProjectNotePath(
 	return path;
 }
 
-function createProjectNoteLink(note: TFile, displayText: string): string {
+// Exported so the insert flow can build the same wikilink.
+export function createProjectNoteLink(note: TFile, displayText: string): string {
 	return displayText === ""
 		? `[[${note.basename}]]`
 		: `[[${note.basename}|${displayText}]]`;
 }
 
-function insertProjectNoteLink(
+// Exported so the insert flow can reuse the original insertion semantics.
+export function insertProjectNoteLink(
 	editor: Editor,
 	link: string,
 	hasSelection: boolean,

@@ -92,6 +92,28 @@ export const insertListLines = (
 	}
 };
 
+// Replace a captured selection range with `text` when its contents are
+// unchanged; otherwise show a notice and return false so the caller can decide
+// what to do. When `range` is null, insert at the cursor. Mirrors the
+// safety check in create-quote's replaceSelection.
+export const replaceSelectionRangeOrInsert = (
+	editor: EditorLike,
+	range: SelectionRange | null,
+	expectedText: string,
+	text: string,
+): boolean => {
+	if (range) {
+		if (editor.getRange(range.from, range.to) !== expectedText) {
+			new Notice("Source text changed; left the selection untouched.");
+			return false;
+		}
+		editor.replaceRange(text, range.from, range.to);
+		return true;
+	}
+	editor.replaceRange(text, editor.getCursor());
+	return true;
+};
+
 export const replaceLinesInEditor = (
 	editor: EditorLike,
 	selectedEditorContent: SelectedEditorContent,

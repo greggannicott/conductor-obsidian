@@ -11,6 +11,7 @@ import {
 import { insertLinkByCategory } from "./commands/insert-link-by-category";
 import { insertLinkByTopic } from "./commands/insert-link-by-topic";
 import { insertProjectLink } from "./commands/insert-project-link";
+import { insertProjectNote } from "./commands/insert-project-note";
 import { insertTaskLinks } from "./commands/insert-task-links";
 import { insertInboxLink } from "./commands/insert-inbox-link";
 
@@ -30,6 +31,7 @@ const MENU: MenuEntry[] = [
 	},
 	{ label: "Insert Task Links", run: (app) => insertTaskLinks(app) },
 	{ label: "Insert Project Link", run: (app) => insertProjectLink(app) },
+	{ label: "Insert Project Note", run: (app) => insertProjectNote(app) },
 	{ label: "Insert Inbox Link", run: (app) => insertInboxLink(app) },
 ];
 

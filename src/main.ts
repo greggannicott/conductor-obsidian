@@ -57,6 +57,7 @@ import {
 import { addRun } from "./commands/add-run";
 import { createProject } from "./commands/create-project";
 import { createProjectNote } from "./commands/create-project-note";
+import { insertProjectNote } from "./commands/insert-project-note";
 import { showAddListen } from "./commands/add-listen";
 import { showAddViewing } from "./commands/add-viewing";
 import { showAddToBacklog } from "./commands/add-to-backlog";
@@ -205,6 +206,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "create-project-note",
 			name: "Create New Project Note",
 			callback: () => void createProjectNote(this.app),
+		});
+
+		this.addCommand({
+			id: "insert-project-note",
+			name: "Insert Project Note",
+			callback: () => void insertProjectNote(this.app),
 		});
 
 		this.addCheckedCommand(
