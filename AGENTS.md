@@ -36,6 +36,11 @@
 
 - Some tasks will involve creating new selectors for specific category types. These are sorted, grouped (etc) in a way specific to the category type. When this takes place, always ask the user if they want 'Open Note by Category' and 'Insert Link by Category' to use the new selector for that category type. If they choose yes, make sure it is used when that particular category is selected.
 
+## Naming commands that show base views
+
+- Whenever adding a command that shows a view of a base (`.base`), name it using the convention `View {Base Friendly Name} > {Name of View}`.
+- For example, the command for the `Created Today` view in `Tasks.base` is `View Tasks > Created Today`, and the overview command is `View Tasks > Overview`.
+
 ## In-flow link insertion (`:::`)
 
 - Typing `:::` in the editor opens an inline suggest (`src/insert-link-suggest.ts`) offering the link-insertion entries (Insert Link by Category, Insert Link by Topic, Insert Journal Link, Insert Task Links, Insert Project Link, Insert Inbox Link). Each delegates to the matching command function in `src/commands/`.

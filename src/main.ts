@@ -11,6 +11,10 @@ import {
 	isNoteTaskCreatable,
 } from "./commands/create-task-from-note";
 import { openInboxNote } from "./commands/open-inbox-note";
+import { viewTasksOverview } from "./commands/view-tasks-overview";
+import { viewInbox } from "./commands/view-inbox";
+import { viewMusicCollection } from "./commands/view-music-collection";
+import { viewTasksCreatedToday } from "./commands/view-tasks-created-today";
 import { createQuote, createQuoteUsingCurrentNoteAsSource } from "./commands/create-quote";
 import { createMeeting } from "./commands/create-meeting";
 import { createEpic } from "./commands/create-epic";
@@ -704,6 +708,30 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-inbox-note",
 			name: "Open Inbox Note",
 			callback: () => void openInboxNote(this.app),
+		});
+
+		this.addCommand({
+			id: "view-tasks-overview",
+			name: "View Tasks > Overview",
+			callback: () => void viewTasksOverview(this.app),
+		});
+
+		this.addCommand({
+			id: "view-inbox",
+			name: "View Inbox",
+			callback: () => void viewInbox(this.app),
+		});
+
+		this.addCommand({
+			id: "view-music-collection",
+			name: "View Music Collection",
+			callback: () => void viewMusicCollection(this.app),
+		});
+
+		this.addCommand({
+			id: "view-tasks-created-today",
+			name: "View Tasks > Created Today",
+			callback: () => void viewTasksCreatedToday(this.app),
 		});
 
 		this.addCommand({
