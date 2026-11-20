@@ -30,19 +30,7 @@ export class JournalTriageView extends TriageView {
 			cls: "conductor-triage-title-time",
 		});
 
-		const linkEl = parentEl.createEl("a", {
-			text: rest,
-			cls: "conductor-triage-title internal-link",
-			href: file.path,
-		});
-		linkEl.addEventListener("click", (evt) => {
-			evt.preventDefault();
-			void this.app.workspace.openLinkText(
-				file.path,
-				"",
-				evt.ctrlKey || evt.metaKey,
-			);
-		});
+		this.createTitleLink(parentEl, file, rest);
 	}
 
 	/**

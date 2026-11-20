@@ -53,6 +53,17 @@ import { touchTaskFiles } from "../commands/touch-task";
 import { setProjectStatus } from "../commands/set-status";
 import { convertNoteToTask } from "../commands/convert-note-to-task";
 import { openRelatedLinearTicketForFile } from "../commands/linear";
+import { getInboxTriageActions } from "../base-views/inbox-triage-actions";
+
+/** Notes can carry #inbox in frontmatter or as an inline tag. */
+function hasInboxTag(app: App, file: TFile): boolean {
+	return (
+		fileHasTag(app, file, "inbox") ||
+		app.metadataCache
+			.getFileCache(file)
+			?.tags?.some((tag) => tag.tag === "#inbox") === true
+	);
+}
 
 export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 	return (menu: Menu, file: TFile) => {
@@ -366,6 +377,29 @@ export function createFileMenuHandler(app: App, linearBaseUrl?: string) {
 					await app.vault.rename(file, newPath);
 					new Notice(`Moved to ${newPath}`);
 				});
+			});
+		}
+
+		// Only inbox notes get the triage submenu, so other file menus are
+		// unaffected when the view uses Obsidian's built-in menu.
+		if (hasInboxTag(app, file)) {
+			menu.addItem((item) => {
+				// Leave the section unset so Triage sits with the other
+				// Conductor items (e.g. "Move to References").
+				item.setTitle("Triage").setIcon("inbox");
+				const submenu = (item as any).setSubmenu() as Menu;
+				for (const action of getInboxTriageActions(app)) {
+					submenu.addItem((subItem) => {
+						subItem
+							.setTitle(action.menuTitle ?? action.tooltip)
+							.setIcon(action.icon)
+							.setDisabled(action.disabled?.(file) ?? false)
+							.setWarning(action.warning ?? false)
+							.onClick(() => {
+								void action.run(file);
+							});
+					});
+				}
 			});
 		}
 	};

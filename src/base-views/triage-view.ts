@@ -11,11 +11,14 @@ import {
 import type { Value } from "obsidian";
 
 import { getNoteTitle } from "../utilities";
+import { showFileContextMenu } from "./file-context-menu";
 
 export interface TriageAction {
 	icon: IconName;
 	tooltip: string;
+	menuTitle?: string;
 	cls?: string;
+	warning?: boolean;
 	disabled?: (file: TFile) => boolean;
 	run: (file: TFile) => void | Promise<void>;
 }
@@ -76,8 +79,20 @@ export abstract class TriageView extends BasesView {
 	 * to keep part of the title (e.g. a leading timestamp) outside the link.
 	 */
 	protected renderTitle(parentEl: HTMLElement, file: TFile): void {
+		this.createTitleLink(parentEl, file, this.getTitle(file));
+	}
+
+	/**
+	 * Create the note title link used by triage rows. Both click behaviour and
+	 * the file context menu live here so every triage view gets them.
+	 */
+	protected createTitleLink(
+		parentEl: HTMLElement,
+		file: TFile,
+		title: string,
+	): HTMLAnchorElement {
 		const linkEl = parentEl.createEl("a", {
-			text: this.getTitle(file),
+			text: title,
 			cls: "conductor-triage-title internal-link",
 			href: file.path,
 		});
@@ -89,6 +104,12 @@ export abstract class TriageView extends BasesView {
 				evt.ctrlKey || evt.metaKey,
 			);
 		});
+		linkEl.addEventListener("contextmenu", (evt) => {
+			evt.preventDefault();
+			evt.stopPropagation();
+			showFileContextMenu(this.app, file, evt);
+		});
+		return linkEl;
 	}
 
 	private renderEntry(
