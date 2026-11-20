@@ -20,6 +20,9 @@ export type TextInputModalConfiguration = {
 	// Render a multi-line textarea instead of a single-line input.
 	multiline?: boolean;
 	keybindings?: TextInputKeybinding[];
+	// Optional formatter that derives a live preview string from the current
+	// input value, rendered beneath the input and updated as the user types.
+	preview?: (value: string) => string;
 };
 
 type SubmitEvent = {
@@ -52,6 +55,8 @@ export class TextInputModal extends Modal {
 	private keybindings: TextInputKeybinding[];
 	private input: HTMLInputElement | HTMLTextAreaElement;
 	private submitted = false;
+	private previewFn?: (value: string) => string;
+	private previewEl?: HTMLElement;
 
 	constructor(app: App, config: TextInputModalConfiguration) {
 		super(app);
@@ -74,6 +79,19 @@ export class TextInputModal extends Modal {
 
 		if (config.value) {
 			this.input.value = config.value;
+		}
+
+		this.previewFn = config.preview;
+		if (config.preview) {
+			this.previewEl = this.contentEl.createEl("div", {
+				cls: "text-input-preview",
+				text: config.preview(this.input.value),
+			});
+			this.input.addEventListener("input", () => {
+				if (this.previewEl && this.previewFn) {
+					this.previewEl.setText(this.previewFn(this.input.value));
+				}
+			});
 		}
 
 		if (config.description) {

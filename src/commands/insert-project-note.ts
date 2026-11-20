@@ -35,7 +35,10 @@ export const insertProjectNote = async (app: App): Promise<boolean> => {
 	}
 	if (!note) return false;
 
-	const noteTitle = getNoteTitle(app, note).replace(/^Project Note - /, "");
+	const noteTitle = getNoteTitle(app, note).replace(
+		/^(Project Note|project-note) - /i,
+		"",
+	);
 	const defaultDisplay = selectedText || noteTitle;
 	const prompt = await TextInputModal.show(app, {
 		title: "Text to display",

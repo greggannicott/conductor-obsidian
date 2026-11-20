@@ -16,6 +16,10 @@ import {
 	Category,
 } from "src/utilities";
 import { TemplateVars } from "src/template-vars";
+import {
+	normalizeProjectNoteTitle,
+	formatProjectNoteName,
+} from "src/project-note-naming";
 import { ConductorSelectorModal } from "src/conductor-selector-modal";
 
 const PROJECT_NOTE_TYPES = [
@@ -57,10 +61,14 @@ export async function createProjectNote(
 		title: "Project Note Title",
 		placeholder: `Enter a title for '${project.name}'...`,
 		value: selectedText || undefined,
+		preview: (value) => {
+			const name = formatProjectNoteName(sanitizeFileName(value));
+			return name ? `Saved as: ${name}.md` : "Saved as: Project Note - .md";
+		},
 	});
 	if (titleResult.cancelled) return null;
 
-	const title = sanitizeFileName(titleResult.value);
+	const title = normalizeProjectNoteTitle(sanitizeFileName(titleResult.value));
 	if (!title) {
 		new Notice("A project note title is required.");
 		return null;
@@ -243,7 +251,7 @@ function getUniqueProjectNotePath(
 	title: string,
 ): string {
 	const directory = `Projects/${context}`;
-	const baseName = `Project Note - ${title}`;
+	const baseName = formatProjectNoteName(title);
 	let suffix = 1;
 	let path = `${directory}/${baseName}.md`;
 
