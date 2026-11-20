@@ -20,10 +20,11 @@ import { ConductorSelectorModal } from "src/conductor-selector-modal";
 
 const PROJECT_NOTE_TYPES = [
 	"General Project Note",
-	"Code Sample",
-	"Log Sample",
 	"Agent Response",
+	"Analysis",
+	"Code Sample",
 	"Design Note",
+	"Log Sample",
 ] as const;
 
 type ProjectNoteType = (typeof PROJECT_NOTE_TYPES)[number];
@@ -203,6 +204,40 @@ function chooseProjectNoteType(app: App): Promise<ProjectNoteType | null> {
 		items: [...PROJECT_NOTE_TYPES],
 		placeholder: "Select a project note type...",
 		getText: (noteType) => noteType,
+		getSubtext: (noteType) =>
+			noteType === "Design Note"
+				? "Prescriptive"
+				: noteType === "Analysis"
+					? "Descriptive"
+					: null,
+		groupings: [
+			{
+				id: "kind",
+				label: "By kind",
+				buildGroups: (items) => {
+					const general = items.filter(
+						(t) => t === "General Project Note",
+					);
+					const outcomes = items.filter(
+						(t) => t === "Design Note" || t === "Analysis",
+					);
+					const reference = items.filter(
+						(t) =>
+							t === "Code Sample" ||
+							t === "Log Sample" ||
+							t === "Agent Response",
+					);
+					const result: { header: string; items: ProjectNoteType[] }[] = [];
+					if (general.length)
+						result.push({ header: "General", items: general });
+					if (outcomes.length)
+						result.push({ header: "Outcomes", items: outcomes });
+					if (reference.length)
+						result.push({ header: "Reference", items: reference });
+					return result;
+				},
+			},
+		],
 	});
 }
 
