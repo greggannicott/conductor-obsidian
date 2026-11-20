@@ -110,7 +110,7 @@ export function getProjectSearchFields(project: Project): string[] {
 // A project is active if the focussed file is a project, or if a task belonging to the project.
 export function getActiveProject(app: App): Project | null {
 	const activeFile = app.workspace.activeEditor?.file;
-	let activeProject!: Project | null;
+	let activeProject: Project | null = null;
 	if (activeFile) {
 		const category = getCategory(app, activeFile);
 		switch (category) {
@@ -124,10 +124,27 @@ export function getActiveProject(app: App): Project | null {
 				}
 				break;
 			default:
+				// For file types that are not projects or tasks themselves
+				// (e.g. Project Notes), attempt to resolve the parent project
+				// from the file's `parents` frontmatter link.
+				activeProject = getProjectFromLinkedParent(app, activeFile);
 				break;
 		}
 	}
 	return activeProject;
+}
+
+function getProjectFromLinkedParent(app: App, file: TFile): Project | null {
+	const parent = app.metadataCache.getFileCache(file)?.frontmatter?.parents;
+	const link = Array.isArray(parent) ? parent[0] : parent;
+	if (typeof link !== "string") return null;
+	const linkedFile = app.metadataCache.getFirstLinkpathDest(
+		link.replace(/^\[\[|\]\]$/g, "").split("|")[0],
+		file.path,
+	);
+	return linkedFile && getCategory(app, linkedFile) === Category.Project
+		? getProjectFromFile(app, linkedFile)
+		: null;
 }
 
 // Get the ticket ID for the active file: the task's jira-id if present,
