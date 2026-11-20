@@ -14,7 +14,7 @@ import {
 // in once the note is open.
 export async function createProject(app: App): Promise<void> {
 	const nameResult = await TextInputModal.show(app, {
-		title: "New Project",
+		title: "Create New Project",
 		placeholder: "Enter the project name...",
 	});
 	if (nameResult.cancelled) return;

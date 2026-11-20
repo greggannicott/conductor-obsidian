@@ -27,7 +27,7 @@ function getUniqueInboxFileName(app: App, sanitizedName: string): string {
 
 export const createNewInboxNote = async (app: App): Promise<void> => {
 	const result = await TextInputModal.show(app, {
-		title: "Create Inbox Note",
+		title: "Create New Inbox Note",
 		placeholder: "Title\nBody...",
 		multiline: true,
 	});

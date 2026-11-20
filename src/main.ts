@@ -193,13 +193,13 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "create-project",
-			name: "Create Project",
+			name: "Create New Project",
 			callback: () => void createProject(this.app),
 		});
 
 		this.addCommand({
 			id: "create-project-note",
-			name: "Create Project Note",
+			name: "Create New Project Note",
 			callback: () => void createProjectNote(this.app),
 		});
 
@@ -303,13 +303,13 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "create-tasks-from-checkboxes",
-			name: "Create Tasks from Checkboxes",
+			name: "Create New Tasks from Checkboxes",
 			callback: () => void createNewTasksFromCheckboxes(this.app),
 		});
 
 		this.addCommand({
 			id: "create-notes-from-bullets",
-			name: "Create Notes from Bullets",
+			name: "Create New Notes from Bullets",
 			callback: () => void createNewNotesFromBullets(this.app),
 		});
 
@@ -425,25 +425,25 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "create-quote",
-			name: "Create Quote",
+			name: "Create New Quote",
 			callback: () => void createQuote(this.app),
 		});
 
 		this.addCommand({
 			id: "create-quote-using-current-note-as-source",
-			name: "Create Quote Using Current Note as Source",
+			name: "Create New Quote Using Current Note as Source",
 			callback: () => void createQuoteUsingCurrentNoteAsSource(this.app),
 		});
 
 		this.addCommand({
 			id: "create-meeting",
-			name: "Create Meeting",
+			name: "Create New Meeting",
 			callback: () => void createMeeting(this.app),
 		});
 
 		this.addCommand({
 			id: "create-epic",
-			name: "Create Epic",
+			name: "Create New Epic",
 			callback: () => void createEpic(this.app),
 		});
 
@@ -592,7 +592,7 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCheckedCommand(
 			"create-task-from-note",
-			"Create Task from Note",
+			"Create New Task from Note",
 			() => {
 				const file = this.app.workspace.activeEditor?.file;
 				return Boolean(file && isNoteTaskCreatable(this.app, file));
@@ -672,19 +672,19 @@ export default class ConductorObsidian extends Plugin {
 
 		this.addCommand({
 			id: "create-journal-note-for-experiment",
-			name: "Create Journal Note for Experiment",
+			name: "Create New Journal Note for Experiment",
 			callback: () => void createJournalNoteForExperiment(this.app),
 		});
 
 		this.addCommand({
 			id: "create-journal-note-for-problem",
-			name: "Create Journal Note for Problem",
+			name: "Create New Journal Note for Problem",
 			callback: () => void createJournalNoteForProblem(this.app),
 		});
 
 		this.addCommand({
 			id: "create-journal-note-for-epic",
-			name: "Create Journal Note for Epic",
+			name: "Create New Journal Note for Epic",
 			callback: () => void createJournalNoteForEpic(this.app),
 		});
 
