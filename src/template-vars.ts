@@ -14,6 +14,11 @@ const DEFAULT_TIME_FORMAT = "HH:mm";
 
 export type TemplateVars = Record<string, string>;
 
+export interface TemplateVarOptions {
+	dateFormat?: string;
+	timeFormat?: string;
+}
+
 // Replaces placeholders in `text`. Placeholders with no value are left
 // literal, whether the name is unknown or known-but-absent, so a typo reads
 // the same as a genuinely missing value.
@@ -27,6 +32,7 @@ export function substituteTemplateVars(
 	text: string,
 	vars: TemplateVars,
 	now: moment.Moment = moment(),
+	options?: TemplateVarOptions,
 ): string {
 	return text.replace(
 		PLACEHOLDER,
@@ -37,7 +43,7 @@ export function substituteTemplateVars(
 			offset: number,
 			source: string,
 		): string => {
-			const value = resolveValue(name, format, vars, now);
+			const value = resolveValue(name, format, vars, now, options);
 			if (value === null) return match;
 			if (!value.includes("\n")) return value;
 			const lineStart = source.lastIndexOf("\n", offset) + 1;
@@ -54,12 +60,13 @@ export function substituteTemplateBody(
 	text: string,
 	vars: TemplateVars,
 	now?: moment.Moment,
+	options?: TemplateVarOptions,
 ): string {
 	const frontmatter = FRONTMATTER.exec(text);
-	if (!frontmatter) return substituteTemplateVars(text, vars, now);
+	if (!frontmatter) return substituteTemplateVars(text, vars, now, options);
 	return (
 		frontmatter[0] +
-		substituteTemplateVars(text.slice(frontmatter[0].length), vars, now)
+		substituteTemplateVars(text.slice(frontmatter[0].length), vars, now, options)
 	);
 }
 
@@ -68,10 +75,13 @@ function resolveValue(
 	format: string | undefined,
 	vars: TemplateVars,
 	now: moment.Moment,
+	options?: TemplateVarOptions,
 ): string | null {
 	if (name === "date" || name === "time") {
 		const fallback =
-			name === "date" ? DEFAULT_DATE_FORMAT : DEFAULT_TIME_FORMAT;
+			name === "date"
+				? options?.dateFormat ?? DEFAULT_DATE_FORMAT
+				: options?.timeFormat ?? DEFAULT_TIME_FORMAT;
 		return now.format(format?.trim() || fallback);
 	}
 	// `{{name:FORMAT}}` is a date/time form. A suffix on any other name is a

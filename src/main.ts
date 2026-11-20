@@ -11,6 +11,7 @@ import {
 	isNoteTaskCreatable,
 } from "./commands/create-task-from-note";
 import { openInboxNote } from "./commands/open-inbox-note";
+import { openTomorrowsDailyNote } from "./commands/open-tomorrows-daily-note";
 import { viewTasksOverview } from "./commands/view-tasks-overview";
 import { viewInbox } from "./commands/view-inbox";
 import { viewMusicCollection } from "./commands/view-music-collection";
@@ -715,6 +716,12 @@ export default class ConductorObsidian extends Plugin {
 			id: "open-inbox-note",
 			name: "Open Inbox Note",
 			callback: () => void openInboxNote(this.app),
+		});
+
+		this.addCommand({
+			id: "open-tomorrows-daily-note",
+			name: "Open Tomorrow's Daily Note",
+			callback: () => void openTomorrowsDailyNote(this.app),
 		});
 
 		this.addCommand({
