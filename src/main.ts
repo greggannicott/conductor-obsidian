@@ -379,7 +379,7 @@ export default class ConductorObsidian extends Plugin {
 			() => setActiveTaskSize(this.app, 3),
 		);
 
-		for (const tagName of ["inbox", "reflected", "review"]) {
+		for (const tagName of ["inbox", "reflected", "review", "requires-thought"]) {
 			this.addActiveFileTagCommands(tagName);
 		}
 
